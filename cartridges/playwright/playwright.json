@@ -1,0 +1,117 @@
+{
+  "id": "playwright",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Playwright",
+    "homepage": "https://playwright.dev",
+    "icon": "🎭"
+  },
+  "detect": [
+    { "type": "mcp", "server": "playwright" },
+    { "type": "dependency", "name": "@playwright/test" },
+    { "type": "file", "path": "**/playwright.config.{ts,js,mjs}", "exists": true }
+  ],
+  "objectives": [
+    {
+      "id": "install-playwright",
+      "title": "Install Playwright and its browsers",
+      "docs": "https://playwright.dev/docs/intro",
+      "why": "Browsers are downloaded separately — you need them before anything runs.",
+      "badge": "first-steps",
+      "criteria": {
+        "anyOf": [
+          { "type": "dependency", "name": "@playwright/test" },
+          { "type": "bash", "matches": "playwright install" }
+        ]
+      }
+    },
+    {
+      "id": "first-navigation",
+      "title": "Drive a browser to a page",
+      "docs": "https://playwright.dev/docs/navigations",
+      "why": "Navigating is the atom of every automation and test.",
+      "badge": "navigator",
+      "criteria": { "type": "mcp_tool", "server": "playwright", "tool": "browser_navigate", "gte": 1 }
+    },
+    {
+      "id": "accessibility-snapshot",
+      "title": "Capture an accessibility snapshot",
+      "docs": "https://playwright.dev/docs/aria-snapshots",
+      "why": "Agents should read the accessibility tree, not pixels — it's faster and far more robust.",
+      "badge": "inspector",
+      "criteria": { "type": "mcp_tool", "server": "playwright", "tool": "browser_snapshot", "gte": 1 }
+    },
+    {
+      "id": "write-a-test",
+      "title": "Write your first test spec",
+      "docs": "https://playwright.dev/docs/writing-tests",
+      "why": "Turn a one-off automation into a repeatable check.",
+      "badge": "test-author",
+      "criteria": { "type": "file", "path": "**/*.spec.{ts,js}", "exists": true }
+    },
+    {
+      "id": "run-tests",
+      "title": "Run your tests headless",
+      "docs": "https://playwright.dev/docs/running-tests",
+      "why": "Headless runs are what CI will do — make sure they're green.",
+      "badge": "green-run",
+      "criteria": { "type": "bash", "matches": "playwright test" }
+    },
+    {
+      "id": "use-codegen",
+      "title": "Record a test with codegen",
+      "docs": "https://playwright.dev/docs/codegen",
+      "why": "Codegen writes selectors for you and teaches good locator habits.",
+      "badge": "recorder",
+      "criteria": { "type": "bash", "matches": "playwright codegen" }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "prefer-snapshots",
+      "title": "Prefer accessibility snapshots over screenshots",
+      "docs": "https://playwright.dev/docs/aria-snapshots",
+      "why": "Snapshots are deterministic and cheap; screenshots are brittle and heavy.",
+      "recommended": true,
+      "badge": "a11y-first",
+      "criteria": { "type": "mcp_tool", "server": "playwright", "tool": "browser_snapshot", "gte": 3 }
+    },
+    {
+      "id": "record-a-trace",
+      "title": "Capture and open a trace",
+      "docs": "https://playwright.dev/docs/trace-viewer",
+      "why": "Traces are the single best way to debug a failing run.",
+      "recommended": true,
+      "badge": "time-traveler",
+      "criteria": { "type": "bash", "matches": "playwright show-trace|--trace" }
+    },
+    {
+      "id": "ci-integration",
+      "title": "Run Playwright in CI",
+      "docs": "https://playwright.dev/docs/ci",
+      "why": "Tests that don't run on every push rot.",
+      "recommended": true,
+      "badge": "ci-ready",
+      "criteria": { "type": "file", "path": "**/.github/workflows/*.{yml,yaml}", "contains": "playwright" }
+    }
+  ],
+  "badges": [
+    { "id": "first-steps", "name": "Curtain Up", "tier": "bronze", "description": "Installed Playwright." },
+    { "id": "navigator", "name": "Navigator", "tier": "bronze", "description": "Drove a browser to a page." },
+    { "id": "inspector", "name": "Tree Reader", "tier": "bronze", "description": "Captured an accessibility snapshot." },
+    { "id": "test-author", "name": "Playwright", "tier": "silver", "description": "Wrote your first test spec." },
+    { "id": "green-run", "name": "All Green", "tier": "silver", "description": "Ran your tests headless." },
+    { "id": "recorder", "name": "On the Record", "tier": "bronze", "description": "Recorded a test with codegen." },
+    { "id": "a11y-first", "name": "Accessibility First", "tier": "silver", "description": "Leaned on accessibility snapshots." },
+    { "id": "time-traveler", "name": "Time Traveler", "tier": "bronze", "description": "Captured a trace." },
+    { "id": "ci-ready", "name": "Ship It", "tier": "silver", "description": "Wired Playwright into CI." },
+    {
+      "id": "road-runner",
+      "name": "Road Runner",
+      "tier": "gold",
+      "description": "Drove the browser 10 times.",
+      "criteria": { "type": "mcp_tool", "server": "playwright", "tool": "browser_navigate", "gte": 10 }
+    }
+  ]
+}

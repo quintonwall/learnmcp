@@ -1,0 +1,59 @@
+{
+  "id": "general",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "AI Dev Fundamentals",
+    "homepage": "https://modelcontextprotocol.io",
+    "icon": "🧰"
+  },
+  "detect": [{ "type": "file", "path": "**/*", "exists": true }],
+  "objectives": [
+    {
+      "id": "gitignore-env",
+      "title": "Keep secrets out of git",
+      "docs": "https://git-scm.com/docs/gitignore",
+      "why": "An .env in your history is a secret leaked forever. Ignore it before you commit it.",
+      "badge": "secrets-safe",
+      "criteria": { "type": "file", "path": "**/.gitignore", "contains": "\\.env" }
+    },
+    {
+      "id": "first-mcp-server",
+      "title": "Add your first MCP server",
+      "docs": "https://modelcontextprotocol.io/quickstart",
+      "why": "MCP servers are how you give your agent real capabilities — data, tools, actions.",
+      "badge": "plugged-in",
+      "criteria": { "type": "count", "of": "mcp.added", "gte": 1 }
+    },
+    {
+      "id": "first-skill",
+      "title": "Create a Claude Code skill",
+      "docs": "https://docs.claude.com/en/docs/claude-code/skills",
+      "why": "Skills package repeatable expertise your agent can invoke on demand.",
+      "badge": "skill-smith",
+      "criteria": { "type": "skill", "exists": true }
+    },
+    {
+      "id": "version-control",
+      "title": "Put your project under version control",
+      "docs": "https://git-scm.com/docs/git-init",
+      "why": "Everything good — review, CI, collaboration, undo — starts with a git repo.",
+      "badge": "committed",
+      "criteria": { "type": "bash", "matches": "git init" }
+    }
+  ],
+  "bestPractices": [],
+  "badges": [
+    { "id": "secrets-safe", "name": "Secrets Safe", "tier": "silver", "description": "Kept your .env out of git." },
+    { "id": "plugged-in", "name": "Plugged In", "tier": "bronze", "description": "Added your first MCP server." },
+    { "id": "skill-smith", "name": "Skill Smith", "tier": "silver", "description": "Created a Claude Code skill." },
+    { "id": "committed", "name": "Committed", "tier": "bronze", "description": "Initialized a git repository." },
+    {
+      "id": "mcp-collector",
+      "name": "MCP Collector",
+      "tier": "gold",
+      "description": "Added 10 MCP servers.",
+      "criteria": { "type": "count", "of": "mcp.added", "gte": 10 }
+    }
+  ]
+}

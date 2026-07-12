@@ -1,0 +1,91 @@
+{
+  "id": "postman",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Postman",
+    "homepage": "https://www.postman.com",
+    "icon": "🛰️"
+  },
+  "detect": [
+    { "type": "mcp", "server": "postman" },
+    { "type": "dependency", "name": "postman" },
+    { "type": "file", "path": "**/postman_collection.json", "exists": true }
+  ],
+  "objectives": [
+    {
+      "id": "generate-openapi-spec",
+      "title": "Generate an OpenAPI spec from your codebase",
+      "docs": "https://www.postman.com/api-platform/api-design/",
+      "why": "A spec makes your API documented, mockable, and testable — the foundation for everything else.",
+      "badge": "spec-author",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "postman", "tool": "generate-spec", "gte": 1 },
+          { "type": "file", "path": "**/openapi.{json,yaml,yml}", "exists": true }
+        ]
+      }
+    },
+    {
+      "id": "create-mock-server",
+      "title": "Create a mock server for frontend development",
+      "docs": "https://learning.postman.com/docs/design-apis/mock-apis/overview/",
+      "why": "Mocks let the frontend build against realistic responses before the API is done.",
+      "badge": "mocker",
+      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "mock", "gte": 1 }
+    },
+    {
+      "id": "run-collection",
+      "title": "Run your collection as tests",
+      "docs": "https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/",
+      "why": "Running the collection turns your requests into a repeatable test suite.",
+      "badge": "collection-runner",
+      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "run-collection", "gte": 1 }
+    },
+    {
+      "id": "security-audit",
+      "title": "Security-audit your API (OWASP API Top 10)",
+      "docs": "https://learning.postman.com/docs/api-governance/api-definition/api-definition-warnings/",
+      "why": "Catch the common API vulnerabilities before they ship.",
+      "badge": "hardened",
+      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "security", "gte": 1 }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "api-key-not-committed",
+      "title": "Keep your Postman API key out of git",
+      "why": "Secrets in git are secrets leaked.",
+      "recommended": true,
+      "criteria": { "type": "env", "key": "POSTMAN_API_KEY", "absent_from": "git" }
+    },
+    {
+      "id": "agent-ready-descriptions",
+      "title": "Describe your endpoints well enough for AI agents",
+      "docs": "https://www.postman.com/api-platform/",
+      "why": "Clear summaries and named params are what let AI agents actually use your API.",
+      "recommended": true,
+      "badge": "agent-ready",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/openapi.{yaml,yml,json}" },
+        "rubric": "Do the operations have clear summaries/descriptions and named, described parameters suitable for an AI agent to call?",
+        "confidence_gte": 0.8
+      }
+    }
+  ],
+  "badges": [
+    { "id": "spec-author", "name": "Spec Author", "tier": "bronze", "description": "Generated your first OpenAPI spec." },
+    { "id": "mocker", "name": "Great Pretender", "tier": "bronze", "description": "Stood up your first mock server." },
+    { "id": "collection-runner", "name": "Test Runner", "tier": "bronze", "description": "Ran a collection as tests." },
+    { "id": "hardened", "name": "Locked Down", "tier": "silver", "description": "Ran a security audit on your API." },
+    { "id": "agent-ready", "name": "Agent-Ready", "tier": "gold", "description": "Your API is described well enough for agents to use." },
+    {
+      "id": "collection-runner-gold",
+      "name": "Marathoner",
+      "tier": "gold",
+      "description": "Ran collections 10 times.",
+      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "run-collection", "gte": 10 }
+    }
+  ]
+}

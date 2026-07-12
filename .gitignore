@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+coverage/
+
+# local learnmcp state
+.learnmcp/state.sqlite
+~/.learnmcp/
+
+# design docs / requirements (local only)
+requirements/

@@ -1,0 +1,97 @@
+{
+  "id": "supabase",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Supabase",
+    "homepage": "https://supabase.com",
+    "icon": "⚡"
+  },
+  "detect": [
+    { "type": "mcp", "server": "supabase" },
+    { "type": "dependency", "name": "@supabase/supabase-js" },
+    { "type": "file", "path": "**/supabase/config.toml", "exists": true }
+  ],
+  "objectives": [
+    {
+      "id": "inspect-schema",
+      "title": "Inspect your database schema",
+      "docs": "https://supabase.com/docs/guides/getting-started/mcp",
+      "why": "Listing tables grounds the agent in your actual schema before it writes a line of SQL.",
+      "badge": "connected",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "list_tables", "gte": 1 }
+    },
+    {
+      "id": "run-sql",
+      "title": "Run a SQL query",
+      "docs": "https://supabase.com/docs/guides/database/overview",
+      "why": "Querying is how you check your work and explore your data.",
+      "badge": "query-runner",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "execute_sql", "gte": 1 }
+    },
+    {
+      "id": "apply-migration",
+      "title": "Apply a migration",
+      "docs": "https://supabase.com/docs/guides/deployment/database-migrations",
+      "why": "Migrations make schema changes versioned, reviewable, and repeatable.",
+      "badge": "migrator",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "apply_migration", "gte": 1 }
+    },
+    {
+      "id": "deploy-edge-function",
+      "title": "Deploy an Edge Function",
+      "docs": "https://supabase.com/docs/guides/functions",
+      "why": "Edge Functions put server-side logic next to your data, globally.",
+      "badge": "functions",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "deploy_edge_function", "gte": 1 }
+    },
+    {
+      "id": "generate-types",
+      "title": "Generate TypeScript types from your schema",
+      "docs": "https://supabase.com/docs/guides/api/rest/generating-types",
+      "why": "Generated types make your database queries type-safe end to end.",
+      "badge": "typed",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "generate_typescript_types", "gte": 1 }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "service-key-not-committed",
+      "title": "Keep your service-role key out of git",
+      "why": "The service-role key bypasses RLS entirely — leaking it exposes your whole database.",
+      "recommended": true,
+      "badge": "vault",
+      "criteria": { "type": "env", "key": "SUPABASE_SERVICE_ROLE_KEY", "absent_from": "git" }
+    },
+    {
+      "id": "enable-rls",
+      "title": "Enable Row Level Security on user-facing tables",
+      "docs": "https://supabase.com/docs/guides/database/postgres/row-level-security",
+      "why": "Without RLS, your anon key can read and write everything. RLS is the whole security model.",
+      "recommended": true,
+      "badge": "locked-down",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/supabase/migrations/*.sql" },
+        "rubric": "Do the migrations enable Row Level Security (ENABLE ROW LEVEL SECURITY) and define policies on user-facing tables?",
+        "confidence_gte": 0.8
+      }
+    }
+  ],
+  "badges": [
+    { "id": "connected", "name": "Plugged In", "tier": "bronze", "description": "Inspected your schema." },
+    { "id": "query-runner", "name": "Query Runner", "tier": "bronze", "description": "Ran a SQL query." },
+    { "id": "migrator", "name": "Migrator", "tier": "silver", "description": "Applied a migration." },
+    { "id": "functions", "name": "On the Edge", "tier": "silver", "description": "Deployed an Edge Function." },
+    { "id": "typed", "name": "Type Safe", "tier": "bronze", "description": "Generated types from your schema." },
+    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your service-role key out of git." },
+    { "id": "locked-down", "name": "Locked Down", "tier": "gold", "description": "Enabled RLS with policies." },
+    {
+      "id": "schema-architect",
+      "name": "Schema Architect",
+      "tier": "gold",
+      "description": "Applied 10 migrations.",
+      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "apply_migration", "gte": 10 }
+    }
+  ]
+}

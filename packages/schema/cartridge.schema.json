@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://learnmcp.dev/cartridge.schema.json",
+  "title": "learnmcp cartridge",
+  "description": "A pluggable, declarative learning cartridge. Contains no executable code — only matchers the engine evaluates.",
+  "type": "object",
+  "required": ["id", "version", "provider"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "version": { "type": "string" },
+    "provider": {
+      "type": "object",
+      "required": ["name"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "homepage": { "type": "string", "format": "uri" },
+        "icon": { "type": "string" }
+      }
+    },
+    "trust": { "enum": ["official", "community", "generated"], "default": "community" },
+    "detect": { "type": "array", "items": { "$ref": "#/definitions/matcher" } },
+    "objectives": { "type": "array", "items": { "$ref": "#/definitions/objective" } },
+    "bestPractices": { "type": "array", "items": { "$ref": "#/definitions/objective" } },
+    "badges": { "type": "array", "items": { "$ref": "#/definitions/badge" } }
+  },
+  "definitions": {
+    "objective": {
+      "type": "object",
+      "required": ["id", "title", "criteria"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "docs": { "type": "string", "format": "uri" },
+        "why": { "type": "string" },
+        "criteria": { "$ref": "#/definitions/matcher" },
+        "badge": { "type": "string" },
+        "recommended": { "type": "boolean" }
+      }
+    },
+    "badge": {
+      "type": "object",
+      "required": ["id", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "enum": ["bronze", "silver", "gold", "platinum"] },
+        "description": { "type": "string" },
+        "points": { "type": "integer", "minimum": 0 },
+        "criteria": { "$ref": "#/definitions/matcher" }
+      }
+    },
+    "matcher": {
+      "oneOf": [
+        { "$ref": "#/definitions/leafMatcher" },
+        { "type": "object", "required": ["allOf"], "properties": { "allOf": { "type": "array", "items": { "$ref": "#/definitions/matcher" }, "minItems": 1 } }, "additionalProperties": false },
+        { "type": "object", "required": ["anyOf"], "properties": { "anyOf": { "type": "array", "items": { "$ref": "#/definitions/matcher" }, "minItems": 1 } }, "additionalProperties": false },
+        { "type": "object", "required": ["not"], "properties": { "not": { "$ref": "#/definitions/matcher" } }, "additionalProperties": false }
+      ]
+    },
+    "leafMatcher": {
+      "type": "object",
+      "required": ["type"],
+      "properties": { "type": { "type": "string" } },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "bash" } } },
+          "then": { "required": ["matches"], "properties": { "type": {}, "matches": { "type": "string" }, "gte": { "type": "integer", "minimum": 1 } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "file" } } },
+          "then": { "required": ["path"], "properties": { "type": {}, "path": { "type": "string" }, "exists": { "type": "boolean" }, "contains": { "type": "string" } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "dependency" } } },
+          "then": { "required": ["name"], "properties": { "type": {}, "name": { "type": "string" }, "manifest": { "type": "string" } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "mcp" } } },
+          "then": { "required": ["server"], "properties": { "type": {}, "server": { "type": "string" } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "mcp_tool" } } },
+          "then": { "required": ["server", "tool"], "properties": { "type": {}, "server": { "type": "string" }, "tool": { "type": "string" }, "gte": { "type": "integer", "minimum": 1 } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "env" } } },
+          "then": { "required": ["key"], "properties": { "type": {}, "key": { "type": "string" }, "present": { "type": "boolean" }, "absent_from": { "enum": ["git"] } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "skill" } } },
+          "then": { "properties": { "type": {}, "name": { "type": "string" }, "exists": { "type": "boolean" } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "count" } } },
+          "then": { "required": ["of", "gte"], "properties": { "type": {}, "of": { "type": "string" }, "gte": { "type": "integer", "minimum": 1 } }, "additionalProperties": false }
+        },
+        {
+          "if": { "properties": { "type": { "const": "llm_judge" } } },
+          "then": { "required": ["rubric"], "properties": { "type": {}, "over": { "type": "object", "properties": { "file": { "type": "string" } } }, "rubric": { "type": "string" }, "confidence_gte": { "type": "number", "minimum": 0, "maximum": 1 } }, "additionalProperties": false }
+        }
+      ]
+    }
+  }
+}

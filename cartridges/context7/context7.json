@@ -1,0 +1,77 @@
+{
+  "id": "context7",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Context7",
+    "homepage": "https://context7.com",
+    "icon": "📚"
+  },
+  "detect": [
+    { "type": "mcp", "server": "context7" }
+  ],
+  "objectives": [
+    {
+      "id": "resolve-library",
+      "title": "Resolve a library id",
+      "docs": "https://github.com/upstash/context7",
+      "why": "Context7 maps a package name to the exact library it has docs for — always start here.",
+      "badge": "librarian",
+      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "resolve-library-id", "gte": 1 }
+    },
+    {
+      "id": "fetch-docs",
+      "title": "Fetch up-to-date library docs",
+      "docs": "https://github.com/upstash/context7",
+      "why": "Pull current docs into context so the model stops hallucinating stale APIs.",
+      "badge": "scholar",
+      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "get-library-docs", "gte": 1 }
+    },
+    {
+      "id": "add-to-rules",
+      "title": "Teach your agent to reach for Context7",
+      "docs": "https://github.com/upstash/context7#tips",
+      "why": "Adding 'use context7' to your rules makes fresh docs the default, not an afterthought.",
+      "badge": "documented",
+      "criteria": { "type": "file", "path": "**/{CLAUDE,AGENTS}.md", "contains": "context7" }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "api-key-not-committed",
+      "title": "Keep your Context7 API key out of git",
+      "why": "The key raises your rate limits — and shouldn't be public.",
+      "recommended": true,
+      "badge": "keeper",
+      "criteria": { "type": "env", "key": "CONTEXT7_API_KEY", "absent_from": "git" }
+    },
+    {
+      "id": "fetch-before-code",
+      "title": "Fetch docs before using an unfamiliar API",
+      "docs": "https://github.com/upstash/context7",
+      "why": "Grounding in real docs first is the whole point — it prevents plausible-but-wrong code.",
+      "recommended": true,
+      "badge": "informed",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/{CLAUDE,AGENTS}.md" },
+        "rubric": "Do the project rules instruct the agent to fetch current library docs via Context7 before writing code against unfamiliar or fast-moving libraries?",
+        "confidence_gte": 0.75
+      }
+    }
+  ],
+  "badges": [
+    { "id": "librarian", "name": "Librarian", "tier": "bronze", "description": "Resolved a library id." },
+    { "id": "scholar", "name": "Scholar", "tier": "bronze", "description": "Fetched up-to-date docs." },
+    { "id": "documented", "name": "House Rules", "tier": "silver", "description": "Made Context7 a default in your rules." },
+    { "id": "keeper", "name": "Key Keeper", "tier": "bronze", "description": "Kept your API key out of git." },
+    { "id": "informed", "name": "Always Current", "tier": "gold", "description": "Grounds code in fresh docs by default." },
+    {
+      "id": "docs-devotee",
+      "name": "Docs Devotee",
+      "tier": "gold",
+      "description": "Fetched library docs 10 times.",
+      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "get-library-docs", "gte": 10 }
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "id": "slack",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Slack",
+    "homepage": "https://slack.com",
+    "icon": "💬"
+  },
+  "detect": [
+    { "type": "mcp", "server": "slack" }
+  ],
+  "objectives": [
+    {
+      "id": "list-channels",
+      "title": "List your workspace channels",
+      "docs": "https://github.com/modelcontextprotocol/servers/tree/main/src/slack",
+      "why": "Discovering channels grounds the agent before it posts anywhere.",
+      "badge": "connected",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_list_channels", "gte": 1 }
+    },
+    {
+      "id": "post-a-message",
+      "title": "Post your first message",
+      "docs": "https://api.slack.com/messaging/sending",
+      "why": "Posting is the core action — get a message into a channel.",
+      "badge": "poster",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_post_message", "gte": 1 }
+    },
+    {
+      "id": "reply-in-thread",
+      "title": "Reply in a thread",
+      "docs": "https://api.slack.com/messaging/retrieving#threading",
+      "why": "Threading keeps channels readable instead of a wall of top-level noise.",
+      "badge": "threader",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_reply_to_thread", "gte": 1 }
+    },
+    {
+      "id": "add-a-reaction",
+      "title": "React to a message",
+      "docs": "https://api.slack.com/methods/reactions.add",
+      "why": "Reactions are a lightweight way for a bot to acknowledge without adding noise.",
+      "badge": "reactor",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_add_reaction", "gte": 1 }
+    },
+    {
+      "id": "read-history",
+      "title": "Read channel history",
+      "docs": "https://api.slack.com/methods/conversations.history",
+      "why": "Reading context before acting is what separates a helpful bot from a spammy one.",
+      "badge": "listener",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_get_channel_history", "gte": 1 }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "token-not-committed",
+      "title": "Keep your Slack bot token out of git",
+      "why": "A leaked bot token lets anyone post as your app.",
+      "recommended": true,
+      "badge": "vault",
+      "criteria": { "type": "env", "key": "SLACK_BOT_TOKEN", "absent_from": "git" }
+    },
+    {
+      "id": "be-a-good-citizen",
+      "title": "Post considerately: threads over spam, respect rate limits",
+      "docs": "https://api.slack.com/apis/rate-limits",
+      "why": "A bot that floods channels or ignores rate limits gets muted or removed.",
+      "recommended": true,
+      "badge": "good-citizen",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/*.{ts,js,py}" },
+        "rubric": "Does the Slack integration prefer thread replies and reactions over channel spam, and handle rate limiting (429 / Retry-After) gracefully?",
+        "confidence_gte": 0.75
+      }
+    }
+  ],
+  "badges": [
+    { "id": "connected", "name": "Signed In", "tier": "bronze", "description": "Listed your channels." },
+    { "id": "poster", "name": "First Post", "tier": "bronze", "description": "Posted your first message." },
+    { "id": "threader", "name": "Threader", "tier": "bronze", "description": "Replied in a thread." },
+    { "id": "reactor", "name": "Reactor", "tier": "bronze", "description": "Reacted to a message." },
+    { "id": "listener", "name": "Good Listener", "tier": "silver", "description": "Read channel history before acting." },
+    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your bot token out of git." },
+    { "id": "good-citizen", "name": "Good Citizen", "tier": "gold", "description": "Posts considerately and respects rate limits." },
+    {
+      "id": "town-crier",
+      "name": "Town Crier",
+      "tier": "gold",
+      "description": "Posted 25 messages.",
+      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_post_message", "gte": 25 }
+    }
+  ]
+}

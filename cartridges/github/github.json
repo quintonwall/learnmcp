@@ -1,0 +1,110 @@
+{
+  "id": "github",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "GitHub",
+    "homepage": "https://github.com",
+    "icon": "🐙"
+  },
+  "detect": [
+    { "type": "mcp", "server": "github" },
+    { "type": "file", "path": "**/.github/**", "exists": true }
+  ],
+  "objectives": [
+    {
+      "id": "browse-a-repo",
+      "title": "Read from a repository",
+      "docs": "https://github.com/github/github-mcp-server",
+      "why": "Fetching files and searching code is how the agent grounds itself in your repo.",
+      "badge": "connected",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "github", "tool": "get_file_contents", "gte": 1 },
+          { "type": "mcp_tool", "server": "github", "tool": "search_repositories", "gte": 1 }
+        ]
+      }
+    },
+    {
+      "id": "open-an-issue",
+      "title": "Open an issue",
+      "docs": "https://docs.github.com/issues",
+      "why": "Issues turn 'we should fix this' into tracked, assignable work.",
+      "badge": "issue-opener",
+      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_issue", "gte": 1 }
+    },
+    {
+      "id": "open-a-pr",
+      "title": "Open a pull request",
+      "docs": "https://docs.github.com/pull-requests",
+      "why": "PRs are where review, CI, and collaboration all happen.",
+      "badge": "collaborator",
+      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_pull_request", "gte": 1 }
+    },
+    {
+      "id": "merge-a-pr",
+      "title": "Merge a pull request",
+      "docs": "https://docs.github.com/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request",
+      "why": "Shipping the change is the point — close the loop.",
+      "badge": "merger",
+      "criteria": { "type": "mcp_tool", "server": "github", "tool": "merge_pull_request", "gte": 1 }
+    },
+    {
+      "id": "add-ci",
+      "title": "Add a GitHub Actions workflow",
+      "docs": "https://docs.github.com/actions",
+      "why": "CI on every push is what keeps main green.",
+      "badge": "automator",
+      "criteria": { "type": "file", "path": "**/.github/workflows/*.{yml,yaml}", "exists": true }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "token-not-committed",
+      "title": "Keep your GitHub token out of git",
+      "why": "A leaked PAT is repo (and sometimes org) access handed to a stranger.",
+      "recommended": true,
+      "badge": "vault",
+      "criteria": { "type": "env", "key": "GITHUB_PERSONAL_ACCESS_TOKEN", "absent_from": "git" }
+    },
+    {
+      "id": "define-codeowners",
+      "title": "Add a CODEOWNERS file",
+      "docs": "https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
+      "why": "CODEOWNERS routes reviews automatically and encodes who owns what.",
+      "recommended": true,
+      "badge": "steward",
+      "criteria": { "type": "file", "path": "**/{.github/,}CODEOWNERS", "exists": true }
+    },
+    {
+      "id": "readable-readme",
+      "title": "Write a README that explains setup",
+      "why": "A clear README is the difference between a repo people can use and one they can't.",
+      "recommended": true,
+      "badge": "documented",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/README.md" },
+        "rubric": "Does the README explain what the project is and how to install and run it clearly enough for a new contributor?",
+        "confidence_gte": 0.75
+      }
+    }
+  ],
+  "badges": [
+    { "id": "connected", "name": "Cloned In", "tier": "bronze", "description": "Read from a repository." },
+    { "id": "issue-opener", "name": "Issue Opener", "tier": "bronze", "description": "Opened an issue." },
+    { "id": "collaborator", "name": "Collaborator", "tier": "silver", "description": "Opened a pull request." },
+    { "id": "merger", "name": "Ship It", "tier": "silver", "description": "Merged a pull request." },
+    { "id": "automator", "name": "Automator", "tier": "silver", "description": "Added a GitHub Actions workflow." },
+    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your token out of git." },
+    { "id": "steward", "name": "Code Steward", "tier": "silver", "description": "Added a CODEOWNERS file." },
+    { "id": "documented", "name": "Well Documented", "tier": "gold", "description": "Wrote a clear README." },
+    {
+      "id": "prolific",
+      "name": "Prolific",
+      "tier": "gold",
+      "description": "Opened 10 pull requests.",
+      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_pull_request", "gte": 10 }
+    }
+  ]
+}

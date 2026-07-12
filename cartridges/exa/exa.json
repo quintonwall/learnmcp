@@ -1,0 +1,92 @@
+{
+  "id": "exa",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Exa",
+    "homepage": "https://exa.ai",
+    "icon": "🔎"
+  },
+  "detect": [
+    { "type": "mcp", "server": "exa" },
+    { "type": "dependency", "name": "exa-js" }
+  ],
+  "objectives": [
+    {
+      "id": "first-search",
+      "title": "Run your first Exa web search",
+      "docs": "https://docs.exa.ai/reference/getting-started",
+      "why": "Exa's neural search finds pages by meaning, not just keywords — great grounding for an LLM.",
+      "badge": "searcher",
+      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_search_exa", "gte": 1 }
+    },
+    {
+      "id": "fetch-contents",
+      "title": "Fetch a page's clean contents",
+      "docs": "https://github.com/exa-labs/exa-mcp-server",
+      "why": "Fetch the full, readable text of a result so the model works from source, not snippets.",
+      "badge": "crawler",
+      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_fetch_exa", "gte": 1 }
+    },
+    {
+      "id": "deep-research",
+      "title": "Run a structured research task",
+      "docs": "https://github.com/exa-labs/exa-mcp-server",
+      "why": "Let Exa gather and synthesize sources instead of hand-stitching searches.",
+      "badge": "analyst",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "exa", "tool": "deep_researcher_start", "gte": 1 },
+          { "type": "mcp_tool", "server": "exa", "tool": "company_research_exa", "gte": 1 }
+        ]
+      }
+    },
+    {
+      "id": "use-sdk",
+      "title": "Call Exa from code with the SDK",
+      "docs": "https://docs.exa.ai/sdks/typescript-sdk-specification",
+      "why": "The SDK is how you move from ad-hoc lookups to a real retrieval pipeline.",
+      "badge": "builder",
+      "criteria": { "type": "dependency", "name": "exa-js" }
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "api-key-not-committed",
+      "title": "Keep your Exa API key out of git",
+      "why": "A leaked key is a billable key.",
+      "recommended": true,
+      "badge": "vault",
+      "criteria": { "type": "env", "key": "EXA_API_KEY", "absent_from": "git" }
+    },
+    {
+      "id": "ground-answers-with-citations",
+      "title": "Ground model answers in retrieved sources",
+      "docs": "https://docs.exa.ai/reference/getting-started",
+      "why": "Passing Exa results as cited context is what turns search into trustworthy answers.",
+      "recommended": true,
+      "badge": "grounded",
+      "criteria": {
+        "type": "llm_judge",
+        "over": { "file": "**/*.{ts,js,py}" },
+        "rubric": "Does the code feed Exa search results into the LLM as grounded context or citations, rather than ignoring or dumping them raw?",
+        "confidence_gte": 0.75
+      }
+    }
+  ],
+  "badges": [
+    { "id": "searcher", "name": "First Query", "tier": "bronze", "description": "Ran your first Exa search." },
+    { "id": "crawler", "name": "Deep Reader", "tier": "bronze", "description": "Pulled clean page contents." },
+    { "id": "analyst", "name": "Analyst", "tier": "silver", "description": "Ran a structured research task." },
+    { "id": "builder", "name": "Pipeline Builder", "tier": "bronze", "description": "Called Exa from code." },
+    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your API key out of git." },
+    { "id": "grounded", "name": "Well Grounded", "tier": "gold", "description": "Grounded answers in cited sources." },
+    {
+      "id": "power-searcher",
+      "name": "Power Searcher",
+      "tier": "gold",
+      "description": "Ran 10 Exa searches.",
+      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_search_exa", "gte": 10 }
+    }
+  ]
+}
