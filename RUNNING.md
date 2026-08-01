@@ -10,6 +10,39 @@ sessions, see the **Using it** section of the [README](README.md) instead.
   `node:sqlite`.
 - npm (workspaces).
 
+## Staying up to date
+
+Four things ship on different clocks. Only one needs you to do anything.
+
+| What | How it updates |
+|---|---|
+| **Cartridges** | Automatic. Read from GitHub at runtime; a merged PR is live within 5 minutes (sooner on a cold start). No deploy. |
+| **The server** (learnmcp.ai) | Automatic. Vercel builds on every push to `main`. |
+| **The plugin** (hooks, commands, `.mcp.json`) | **Manual** — see below. |
+| **A local checkout** | `git pull && npm install && npm run build` |
+
+### Releasing a plugin change
+
+`claude plugin update` compares **versions, not content**. Change a hook without bumping
+the version and it reports "already at the latest version" — every installed copy stays
+stale, silently. So a plugin change is only released once you:
+
+1. Bump `version` in **both**
+   [`packages/plugin/.claude-plugin/plugin.json`](packages/plugin/.claude-plugin/plugin.json)
+   and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+   CI fails if the two disagree.
+2. Push to `main`.
+
+Users then pick it up with:
+
+```bash
+claude plugin marketplace update quintonwall   # refresh the marketplace clone
+claude plugin update learnmcp@quintonwall      # install the new version
+```
+
+and a restart of Claude Code. Nothing about the *server* or *cartridges* needs this — only
+files that live inside the plugin directory.
+
 ## Build & test
 
 ```bash

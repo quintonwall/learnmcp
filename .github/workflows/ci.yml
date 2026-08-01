@@ -26,6 +26,23 @@ jobs:
       - name: Test
         run: npm test
 
+  plugin-version:
+    # `claude plugin update` compares versions, not content. If plugin files change and
+    # the version doesn't, every installed copy silently stays stale — so the two
+    # manifests must at least agree with each other.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: plugin.json and marketplace.json versions must match
+        run: |
+          plugin=$(node -p "require('./packages/plugin/.claude-plugin/plugin.json').version")
+          market=$(node -p "require('./.claude-plugin/marketplace.json').plugins.find(p=>p.name==='learnmcp').version")
+          echo "plugin.json=$plugin  marketplace.json=$market"
+          [ "$plugin" = "$market" ] || {
+            echo "::error::version mismatch — bump both to release a plugin change"
+            exit 1
+          }
+
   cartridges:
     # Every cartridge in the registry has to be valid — this repo IS the registry, so a
     # bad PR here breaks detection for everyone.
