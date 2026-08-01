@@ -14,7 +14,7 @@ import type { FetchLike } from "./remote.js";
  * and returns one in a response header, which is saved to ~/.learnmcp/token and reused.
  */
 
-export const DEFAULT_REMOTE_URL = "https://learnmcp.dev/mcp";
+export const DEFAULT_REMOTE_URL = "https://learnmcp-chi.vercel.app/mcp";
 const TOKEN_HEADER = "x-learnmcp-token";
 
 export function tokenPath(): string {

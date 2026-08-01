@@ -2,7 +2,7 @@
   "mcpServers": {
     "learnmcp": {
       "type": "http",
-      "url": "${LEARNMCP_URL:-https://learnmcp.dev/mcp}"
+      "url": "${LEARNMCP_URL:-https://learnmcp-chi.vercel.app/mcp}"
     }
   }
 }

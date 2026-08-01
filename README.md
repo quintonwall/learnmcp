@@ -47,7 +47,51 @@ model thinks to look.
 Just work. When you use a tool learnmcp knows, the matching track activates on its own and
 you'll see the next suggestion at session start.
 
-Ask it anything, or use the commands:
+### A first session, start to finish
+
+Say you have the [Postman plugin](https://github.com/Postman-Devrel/postman-claude-code-plugin)
+installed. Open Claude Code in any project:
+
+> learnmcp is tracking your progress. Rank Novice · 0 pts.
+> Active learning tracks: **postman**.
+> Suggested next: **Generate an OpenAPI spec from your codebase** — A spec makes your API
+> documented, mockable, and testable.
+
+You didn't configure anything; it saw the Postman MCP and loaded the matching track. Follow
+the suggestion using Postman's own command:
+
+```
+/postman:generate-spec
+```
+
+```
+learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
+           · Initiate · 10 pts (90 to Apprentice)
+           · Next: Sync your spec to a Postman collection
+```
+
+Keep going and it compounds — `/postman:security` is worth silver:
+
+```
+learnmcp — 🏅 Locked Down (+25) · ✅ Security-audit your API (OWASP API Top 10)
+           · Initiate · 35 pts (65 to Apprentice)
+```
+
+Then check where you stand:
+
+```
+/progress
+```
+
+```json
+{ "points": 35, "rank": "Initiate", "nextRank": "Apprentice",
+  "pointsToNextRank": 65, "badges": 2, "leaderboardPosition": 1,
+  "claimed": false }
+```
+
+You never told learnmcp you did anything. Running the command *is* the signal.
+
+### Commands
 
 | | |
 |---|---|
@@ -56,9 +100,14 @@ Ask it anything, or use the commands:
 | `/progress` | your points, rank, and standing |
 | `/cartridge` | what it can teach; refresh from the registry |
 
+Or just ask in plain language — *"where am I on the leaderboard?"*, *"what can learnmcp
+teach me?"*, *"claim my profile"*. The tools behind those are `my_progress`, `my_badges`,
+`leaderboard`, `cartridge_popularity`, `claim_profile`, `learn_next`, `list_cartridges`,
+`add_cartridge`, and `generate_cartridge`.
+
 Points are bronze 10, silver 25, gold 100, accumulating across every tool into one rank:
 Novice → Initiate → Apprentice → Journeyman → Adept → Expert → Master → Grandmaster →
-Legend. There's a global leaderboard and a per-cartridge one — ask for `leaderboard`.
+Legend. There's a global leaderboard and a per-cartridge one.
 
 ### Keeping progress local instead
 
