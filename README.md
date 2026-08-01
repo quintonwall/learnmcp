@@ -24,9 +24,9 @@ curriculum.
 ```
 You: /postman:generate-spec
 
-learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
-           · Initiate · 10 pts (90 to Apprentice)
-           · Next: Sync your spec to a Postman collection
+🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
+              · Initiate · 10 pts (90 to Apprentice)
+              · Next: Sync your spec to a Postman collection
 ```
 
 ---
@@ -83,16 +83,16 @@ the suggestion using Postman's own command:
 ```
 
 ```
-learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
-           · Initiate · 10 pts (90 to Apprentice)
-           · Next: Sync your spec to a Postman collection
+🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
+              · Initiate · 10 pts (90 to Apprentice)
+              · Next: Sync your spec to a Postman collection
 ```
 
 Keep going and it compounds — `/postman:security` is worth silver:
 
 ```
-learnmcp — 🏅 Locked Down (+25) · ✅ Security-audit your API (OWASP API Top 10)
-           · Initiate · 35 pts (65 to Apprentice)
+🎓 learnmcp — 🏅 Locked Down (+25) · ✅ Security-audit your API (OWASP API Top 10)
+              · Initiate · 35 pts (65 to Apprentice)
 ```
 
 Then check where you stand:

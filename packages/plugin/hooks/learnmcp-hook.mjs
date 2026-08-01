@@ -34,7 +34,17 @@ const purple = paint("1;38;5;177"); // the learnmcp wordmark
 const dim = paint("2");
 
 /** Every user-visible line opens the same way, so learnmcp is recognisable at a glance. */
-const BRAND = `🎓 ${purple("learnmcp")}`;
+const BRAND = `🎓 ${purple("learnmcp")} ${dim("—")}`;
+/** Continuation lines hang under the wordmark; 🎓 renders two columns wide. */
+const INDENT = " ".repeat(14);
+
+/**
+ * One headline plus indented continuations. Cramming a badge, its objective, the rank and
+ * the next step onto a single line makes the reward impossible to pick out at a glance.
+ */
+function block(headline, ...rest) {
+  return [`${BRAND} ${headline}`, ...rest.filter(Boolean).map((l) => `${INDENT}${dim("·")} ${l}`)].join("\n");
+}
 
 const tokenPath = () => path.join(os.homedir(), ".learnmcp", "token");
 
@@ -321,9 +331,10 @@ async function main() {
     // the model and never rendered, so on its own the user sees nothing at all — which
     // reads as learnmcp being broken. systemMessage is the only part they actually see.
     emit({
-      systemMessage:
-        `${BRAND}  ${gold(`${rank} · ${points} pts`)}` +
-        (next?.title ? `  ${dim("·")}  ${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : ""),
+      systemMessage: block(
+        gold(`${rank} · ${points} pts`),
+        next?.title ? `${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : null,
+      ),
       hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
     });
     return;
@@ -356,10 +367,17 @@ async function main() {
       ...objectives.map((o) => green(`✅ ${o.title}`)),
     ];
     const next = await callTool(url, "learn_next", {});
-    const suffix = next?.title
-      ? `  ${dim("·")}  ${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}`
-      : "";
-    emit({ systemMessage: `${BRAND}  ${parts.join(`  ${dim("·")}  `)}${suffix}` });
+    const r = last.rank ?? {};
+    const standing = r.next
+      ? `${r.rank?.name} · ${last.points} pts (${r.pointsToNext} to ${r.next.name})`
+      : `${r.rank?.name} · ${last.points} pts`;
+    emit({
+      systemMessage: block(
+        parts.join(` ${dim("·")} `),
+        gold(standing),
+        next?.title ? `${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : null,
+      ),
+    });
   }
 }
 
