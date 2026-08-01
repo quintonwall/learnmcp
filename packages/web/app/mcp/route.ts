@@ -24,6 +24,9 @@ import path from "node:path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Declared here rather than in vercel.json: a `functions` glob is resolved relative to the
+// Vercel root directory, which doesn't line up with a Next app nested in a workspace.
+export const maxDuration = 30;
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

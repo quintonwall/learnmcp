@@ -3,10 +3,5 @@
   "buildCommand": "npm run build --workspace @learnmcp/schema && npm run build --workspace @learnmcp/server && npm run build --workspace @learnmcp/web",
   "installCommand": "npm install",
   "outputDirectory": "packages/web/.next",
-  "framework": "nextjs",
-  "functions": {
-    "packages/web/app/mcp/route.ts": {
-      "maxDuration": 30
-    }
-  }
+  "framework": "nextjs"
 }
