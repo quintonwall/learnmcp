@@ -89,6 +89,35 @@ export default async function HomePage() {
         sent anywhere. You lose the leaderboard; that&rsquo;s the only difference.
       </div>
 
+      <h2>Your profile</h2>
+      <p className="lead">
+        There is no sign-up. The first time learnmcp records anything it mints an anonymous
+        learner and stores a token at <code>~/.learnmcp/token</code> — that token{" "}
+        <em>is</em> your identity, so back it up if you care about your streak. You show on
+        the <Link href="/leaderboard">leaderboard</Link> straight away as something like{" "}
+        <code>learner-7f3c</code>.
+      </p>
+      <div className="notice">
+        🚧 <strong>Claiming a handle isn&rsquo;t built yet.</strong> Signing in to attach
+        your name — and to carry progress across machines — is the next thing on the list.
+        Until then everyone is anonymous, which is why the board is full of pseudonyms.
+        Nothing is lost in the meantime; claiming will attach a name to progress you already
+        have.
+      </div>
+
+      <h2>Add a tool it doesn&rsquo;t know yet</h2>
+      <p className="lead">
+        Cartridges are plain JSON with no executable code, and the registry is a directory
+        in the repo — so teaching learnmcp a new tool is a pull request. Validate yours in
+        the browser first, then open the PR.
+      </p>
+      <div className="cta">
+        <Link className="primary" href="/submit">
+          Contribute a cartridge
+        </Link>
+        <a href={`${REPO}/tree/main/cartridges`}>See existing ones</a>
+      </div>
+
       <h2>{cartridges.length} cartridges available</h2>
       <p className="lead">
         A cartridge is what teaches one tool — plain JSON, no code. They live in{" "}

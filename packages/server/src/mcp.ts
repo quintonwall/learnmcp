@@ -438,12 +438,16 @@ function registerCloudTools(
       if (learner.claimed) {
         return ok({ claimed: true, handle: learner.handle, message: "Already claimed." });
       }
-      const web = cloud.webUrl ?? "https://learnmcp.ai";
+      // Sign-in isn't built yet. Say so plainly rather than handing back a URL that 404s —
+      // the progress is real and saved either way, only the display name is missing.
       return ok({
         claimed: false,
-        url: `${web.replace(/\/$/, "")}/claim?learner=${learner.id}`,
+        available: false,
+        learnerId: learner.id,
+        displayName: `learner-${learner.id.slice(0, 4)}`,
         message:
-          "Open this URL and sign in with GitHub to claim your progress. Nothing is lost if you don't — your badges are already saved.",
+          "Claiming isn't available yet — sign-in is still being built. Your progress is already saved against this machine's learner id and counts on the leaderboard; you currently appear as " +
+          `learner-${learner.id.slice(0, 4)}. Keep ~/.learnmcp/token safe and you'll be able to attach a handle to it later.`,
       });
     },
   );

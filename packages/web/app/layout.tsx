@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <nav>
               <Link href="/cartridges">Cartridges</Link>
               <Link href="/leaderboard">Leaderboard</Link>
-              <Link href="/submit">Submit</Link>
+              <Link href="/submit">Contribute</Link>
             </nav>
           </div>
         </header>
