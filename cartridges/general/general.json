@@ -1,59 +1,276 @@
 {
   "id": "general",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "AI Dev Fundamentals",
-    "homepage": "https://modelcontextprotocol.io",
-    "icon": "🧰"
+    "homepage": "https://docs.claude.com/en/docs/claude-code",
+    "icon": "\ud83e\uddf0"
   },
-  "detect": [{ "type": "file", "path": "**/*", "exists": true }],
+  "detect": [
+    {
+      "type": "file",
+      "path": "**/*",
+      "exists": true
+    }
+  ],
   "objectives": [
+    {
+      "id": "version-control",
+      "title": "Put the project under version control",
+      "why": "Everything else assumes you can undo.",
+      "badge": "committed",
+      "criteria": {
+        "type": "bash",
+        "matches": "git\\s+init"
+      },
+      "docs": "https://git-scm.com/docs/git-init"
+    },
     {
       "id": "gitignore-env",
       "title": "Keep secrets out of git",
-      "docs": "https://git-scm.com/docs/gitignore",
       "why": "An .env in your history is a secret leaked forever. Ignore it before you commit it.",
       "badge": "secrets-safe",
-      "criteria": { "type": "file", "path": "**/.gitignore", "contains": "\\.env" }
+      "criteria": {
+        "type": "file",
+        "path": "**/.gitignore",
+        "contains": "\\.env"
+      },
+      "docs": "https://docs.github.com/get-started/getting-started-with-git/ignoring-files"
+    },
+    {
+      "id": "write-claude-md",
+      "title": "Write a CLAUDE.md",
+      "why": "Project context you'd otherwise repeat in every prompt, written down once.",
+      "badge": "house-rules",
+      "criteria": {
+        "type": "file",
+        "path": "**/CLAUDE.md",
+        "exists": true
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/memory"
     },
     {
       "id": "first-mcp-server",
       "title": "Add your first MCP server",
-      "docs": "https://modelcontextprotocol.io/quickstart",
-      "why": "MCP servers are how you give your agent real capabilities — data, tools, actions.",
+      "why": "MCP is how your agent reaches the tools you already use.",
       "badge": "plugged-in",
-      "criteria": { "type": "count", "of": "mcp.added", "gte": 1 }
+      "criteria": {
+        "type": "count",
+        "of": "mcp.added",
+        "gte": 1
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/mcp"
     },
     {
       "id": "first-skill",
-      "title": "Create a Claude Code skill",
-      "docs": "https://docs.claude.com/en/docs/claude-code/skills",
+      "title": "Create a skill",
       "why": "Skills package repeatable expertise your agent can invoke on demand.",
       "badge": "skill-smith",
-      "criteria": { "type": "skill", "exists": true }
+      "criteria": {
+        "type": "skill",
+        "exists": true
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/skills"
     },
     {
-      "id": "version-control",
-      "title": "Put your project under version control",
-      "docs": "https://git-scm.com/docs/git-init",
-      "why": "Everything good — review, CI, collaboration, undo — starts with a git repo.",
-      "badge": "committed",
-      "criteria": { "type": "bash", "matches": "git init" }
+      "id": "custom-command",
+      "title": "Add a slash command",
+      "why": "A command turns a prompt you keep retyping into one you can run.",
+      "badge": "commander",
+      "criteria": {
+        "type": "file",
+        "path": "**/.claude/commands/*.md",
+        "exists": true
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/slash-commands"
+    },
+    {
+      "id": "add-a-hook",
+      "title": "Automate something with a hook",
+      "why": "Hooks run deterministically \u2014 the right place for anything that must always happen.",
+      "badge": "automator",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "file",
+            "path": "**/.claude/settings*.json",
+            "contains": "\\\"hooks\\\""
+          },
+          {
+            "type": "file",
+            "path": "**/hooks/hooks.json",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/hooks"
+    },
+    {
+      "id": "use-a-subagent",
+      "title": "Delegate to a subagent",
+      "why": "A subagent keeps a long side-quest out of your main context.",
+      "badge": "delegator",
+      "criteria": {
+        "type": "file",
+        "path": "**/.claude/agents/*.md",
+        "exists": true
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/sub-agents"
+    },
+    {
+      "id": "branch-before-work",
+      "title": "Work on a branch",
+      "why": "Branching is what makes a change reviewable \u2014 and abandonable.",
+      "badge": "brancher",
+      "criteria": {
+        "type": "bash",
+        "matches": "git\\s+(checkout\\s+-b|switch\\s+-c)"
+      },
+      "docs": "https://git-scm.com/docs/git-branch"
+    },
+    {
+      "id": "run-tests",
+      "title": "Run your tests",
+      "why": "Tests you don't run are documentation, and out-of-date documentation at that.",
+      "badge": "tester",
+      "criteria": {
+        "type": "bash",
+        "matches": "(npm|pnpm|yarn)\\s+(run\\s+)?test|pytest|go\\s+test|cargo\\s+test|vitest|jest"
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/quickstart"
+    },
+    {
+      "id": "write-a-readme",
+      "title": "Write a README",
+      "why": "The first thing anyone reads, including your future self.",
+      "badge": "author",
+      "criteria": {
+        "type": "file",
+        "path": "**/README.md",
+        "exists": true
+      },
+      "docs": "https://docs.github.com/repositories"
     }
   ],
-  "bestPractices": [],
+  "bestPractices": [
+    {
+      "id": "commit-often",
+      "title": "Commit in small steps",
+      "why": "Small commits are reviewable, bisectable, and safe to revert.",
+      "badge": "steady-hand",
+      "criteria": {
+        "type": "bash",
+        "matches": "git\\s+commit",
+        "gte": 10
+      },
+      "recommended": true
+    },
+    {
+      "id": "no-secrets-in-code",
+      "title": "Never hardcode credentials",
+      "why": "A key in source is a key in every clone, every fork, and every backup.",
+      "badge": "clean-hands",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/*.{ts,js,py,go,rb}"
+        },
+        "rubric": "Does the code read secrets from environment variables or a secret store, rather than containing hardcoded API keys, tokens or passwords?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
+    }
+  ],
   "badges": [
-    { "id": "secrets-safe", "name": "Secrets Safe", "tier": "silver", "description": "Kept your .env out of git." },
-    { "id": "plugged-in", "name": "Plugged In", "tier": "bronze", "description": "Added your first MCP server." },
-    { "id": "skill-smith", "name": "Skill Smith", "tier": "silver", "description": "Created a Claude Code skill." },
-    { "id": "committed", "name": "Committed", "tier": "bronze", "description": "Initialized a git repository." },
+    {
+      "id": "committed",
+      "name": "Committed",
+      "tier": "bronze",
+      "description": "Put the project under version control."
+    },
+    {
+      "id": "secrets-safe",
+      "name": "Secrets Safe",
+      "tier": "silver",
+      "description": "Keeps secrets out of git."
+    },
+    {
+      "id": "house-rules",
+      "name": "House Rules",
+      "tier": "bronze",
+      "description": "Wrote a CLAUDE.md."
+    },
+    {
+      "id": "plugged-in",
+      "name": "Plugged In",
+      "tier": "bronze",
+      "description": "Added your first MCP server."
+    },
+    {
+      "id": "skill-smith",
+      "name": "Skill Smith",
+      "tier": "silver",
+      "description": "Created a skill."
+    },
+    {
+      "id": "commander",
+      "name": "Commander",
+      "tier": "bronze",
+      "description": "Added a slash command."
+    },
+    {
+      "id": "automator",
+      "name": "Hook Wrangler",
+      "tier": "silver",
+      "description": "Automated something with a hook."
+    },
+    {
+      "id": "delegator",
+      "name": "Delegator",
+      "tier": "silver",
+      "description": "Delegated to a subagent."
+    },
+    {
+      "id": "brancher",
+      "name": "Brancher",
+      "tier": "bronze",
+      "description": "Worked on a branch."
+    },
+    {
+      "id": "tester",
+      "name": "Tester",
+      "tier": "bronze",
+      "description": "Ran the tests."
+    },
+    {
+      "id": "author",
+      "name": "Author",
+      "tier": "bronze",
+      "description": "Wrote a README."
+    },
+    {
+      "id": "steady-hand",
+      "name": "Steady Hand",
+      "tier": "silver",
+      "description": "Commits in small steps."
+    },
+    {
+      "id": "clean-hands",
+      "name": "Clean Hands",
+      "tier": "gold",
+      "description": "No hardcoded credentials."
+    },
     {
       "id": "mcp-collector",
       "name": "MCP Collector",
       "tier": "gold",
-      "description": "Added 10 MCP servers.",
-      "criteria": { "type": "count", "of": "mcp.added", "gte": 10 }
+      "description": "Added 5 MCP servers.",
+      "criteria": {
+        "type": "count",
+        "of": "mcp.added",
+        "gte": 5
+      }
     }
   ]
 }

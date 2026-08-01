@@ -21,6 +21,21 @@ const DEFAULT_URL = "https://learnmcp.ai/mcp";
 const TOKEN_HEADER = "x-learnmcp-token";
 const TIMEOUT_MS = 6000;
 
+// Colour the one line the user actually sees, so a badge doesn't read as grey noise.
+// Honours the NO_COLOR convention (https://no-color.org) — some terminals and log
+// pipelines render escape codes literally, which is worse than no colour at all.
+const COLOR = !process.env.NO_COLOR && !process.env.LEARNMCP_NO_COLOR;
+const paint = (code) => (s) => (COLOR ? `\x1b[${code}m${s}\x1b[0m` : s);
+const gold = paint("1;38;5;220"); // badge earned + points
+const green = paint("1;38;5;42"); // objective completed, matching the ✅
+const orange = paint("1;38;5;208"); // what to do next
+const cyan = paint("1;38;5;44"); // a track switching on
+const purple = paint("1;38;5;177"); // the learnmcp wordmark
+const dim = paint("2");
+
+/** Every user-visible line opens the same way, so learnmcp is recognisable at a glance. */
+const BRAND = `🎓 ${purple("learnmcp")}`;
+
 const tokenPath = () => path.join(os.homedir(), ".learnmcp", "token");
 
 function loadToken() {
@@ -307,8 +322,8 @@ async function main() {
     // reads as learnmcp being broken. systemMessage is the only part they actually see.
     emit({
       systemMessage:
-        `learnmcp — ${rank} · ${points} pts` +
-        (next?.title ? `  ·  Next: ${next.title} (${next.cartridgeId})` : ""),
+        `${BRAND}  ${gold(`${rank} · ${points} pts`)}` +
+        (next?.title ? `  ${dim("·")}  ${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : ""),
       hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
     });
     return;
@@ -336,13 +351,15 @@ async function main() {
   // between "learnmcp knows this tool" and apparent silence.
   if (last && (badges.length || objectives.length || tracks.length)) {
     const parts = [
-      ...tracks.map((c) => `🎓 ${c.name} track activated (0/${c.objectives})`),
-      ...badges.map((b) => `🏅 ${b.name} (+${b.points})`),
-      ...objectives.map((o) => `✅ ${o.title}`),
+      ...tracks.map((c) => cyan(`🧩 ${c.name} track activated`) + dim(` (0/${c.objectives})`)),
+      ...badges.map((b) => gold(`🏅 ${b.name} (+${b.points})`)),
+      ...objectives.map((o) => green(`✅ ${o.title}`)),
     ];
     const next = await callTool(url, "learn_next", {});
-    const suffix = next?.title ? `  ·  Next: ${next.title} (${next.cartridgeId})` : "";
-    emit({ systemMessage: `learnmcp — ${parts.join("  ·  ")}${suffix}` });
+    const suffix = next?.title
+      ? `  ${dim("·")}  ${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}`
+      : "";
+    emit({ systemMessage: `${BRAND}  ${parts.join(`  ${dim("·")}  `)}${suffix}` });
   }
 }
 

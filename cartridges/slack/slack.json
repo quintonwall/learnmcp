@@ -1,95 +1,208 @@
 {
   "id": "slack",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "Slack",
     "homepage": "https://slack.com",
-    "icon": "💬"
+    "icon": "\ud83d\udcac"
   },
   "detect": [
-    { "type": "mcp", "server": "slack" }
+    {
+      "type": "mcp",
+      "server": "slack"
+    }
   ],
   "objectives": [
     {
       "id": "list-channels",
-      "title": "List your workspace channels",
-      "docs": "https://github.com/modelcontextprotocol/servers/tree/main/src/slack",
-      "why": "Discovering channels grounds the agent before it posts anywhere.",
+      "title": "Find the channels you can post to",
+      "why": "Knowing where a message belongs is most of not being annoying.",
       "badge": "connected",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_list_channels", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_list_channels"
+      },
+      "docs": "https://api.slack.com/methods/conversations.list"
+    },
+    {
+      "id": "read-history",
+      "title": "Read a channel before posting in it",
+      "why": "Context first: half the time the question has already been answered.",
+      "badge": "listener",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_get_channel_history"
+      },
+      "docs": "https://api.slack.com/methods/conversations.history"
     },
     {
       "id": "post-a-message",
       "title": "Post your first message",
-      "docs": "https://api.slack.com/messaging/sending",
-      "why": "Posting is the core action — get a message into a channel.",
+      "why": "The point of the integration: getting something useful in front of people.",
       "badge": "poster",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_post_message", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_post_message"
+      },
+      "docs": "https://api.slack.com/methods/chat.postMessage"
     },
     {
       "id": "reply-in-thread",
       "title": "Reply in a thread",
-      "docs": "https://api.slack.com/messaging/retrieving#threading",
-      "why": "Threading keeps channels readable instead of a wall of top-level noise.",
+      "why": "Threads keep a busy channel readable for everyone who isn't in the conversation.",
       "badge": "threader",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_reply_to_thread", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_reply_to_thread"
+      },
+      "docs": "https://api.slack.com/messaging/sending#threading"
+    },
+    {
+      "id": "follow-a-thread",
+      "title": "Read a thread's replies",
+      "why": "Following the thread is how you answer without repeating what's already been said.",
+      "badge": "follower",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_get_thread_replies"
+      },
+      "docs": "https://api.slack.com/methods/conversations.replies"
     },
     {
       "id": "add-a-reaction",
-      "title": "React to a message",
-      "docs": "https://api.slack.com/methods/reactions.add",
-      "why": "Reactions are a lightweight way for a bot to acknowledge without adding noise.",
+      "title": "Acknowledge with a reaction",
+      "why": "An emoji ack is the cheapest way to say 'seen' without adding noise.",
       "badge": "reactor",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_add_reaction", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_add_reaction"
+      },
+      "docs": "https://api.slack.com/methods/reactions.add"
     },
     {
-      "id": "read-history",
-      "title": "Read channel history",
-      "docs": "https://api.slack.com/methods/conversations.history",
-      "why": "Reading context before acting is what separates a helpful bot from a spammy one.",
-      "badge": "listener",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_get_channel_history", "gte": 1 }
+      "id": "look-up-a-user",
+      "title": "Look up who you're talking to",
+      "why": "Addressing the right person by name is worth the extra call.",
+      "badge": "people-person",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "slack",
+            "tool": "slack_get_users"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "slack",
+            "tool": "slack_get_user_profile"
+          }
+        ]
+      },
+      "docs": "https://api.slack.com/methods/users.list"
     }
   ],
   "bestPractices": [
     {
       "id": "token-not-committed",
       "title": "Keep your Slack bot token out of git",
-      "why": "A leaked bot token lets anyone post as your app.",
-      "recommended": true,
+      "why": "A leaked bot token lets anyone post as your bot.",
       "badge": "vault",
-      "criteria": { "type": "env", "key": "SLACK_BOT_TOKEN", "absent_from": "git" }
+      "criteria": {
+        "type": "env",
+        "key": "SLACK_BOT_TOKEN",
+        "absent_from": "git"
+      },
+      "recommended": true
     },
     {
       "id": "be-a-good-citizen",
-      "title": "Post considerately: threads over spam, respect rate limits",
-      "docs": "https://api.slack.com/apis/rate-limits",
-      "why": "A bot that floods channels or ignores rate limits gets muted or removed.",
-      "recommended": true,
+      "title": "Thread replies and keep channels quiet",
+      "why": "An integration that posts a new top-level message per event is one people mute.",
       "badge": "good-citizen",
       "criteria": {
         "type": "llm_judge",
-        "over": { "file": "**/*.{ts,js,py}" },
-        "rubric": "Does the Slack integration prefer thread replies and reactions over channel spam, and handle rate limiting (429 / Retry-After) gracefully?",
-        "confidence_gte": 0.75
-      }
+        "over": {
+          "file": "**/*.{ts,js,py}"
+        },
+        "rubric": "Does the Slack integration reply in threads and avoid posting a separate top-level message for every event?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
     }
   ],
   "badges": [
-    { "id": "connected", "name": "Signed In", "tier": "bronze", "description": "Listed your channels." },
-    { "id": "poster", "name": "First Post", "tier": "bronze", "description": "Posted your first message." },
-    { "id": "threader", "name": "Threader", "tier": "bronze", "description": "Replied in a thread." },
-    { "id": "reactor", "name": "Reactor", "tier": "bronze", "description": "Reacted to a message." },
-    { "id": "listener", "name": "Good Listener", "tier": "silver", "description": "Read channel history before acting." },
-    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your bot token out of git." },
-    { "id": "good-citizen", "name": "Good Citizen", "tier": "gold", "description": "Posts considerately and respects rate limits." },
+    {
+      "id": "connected",
+      "name": "Tuned In",
+      "tier": "bronze",
+      "description": "Listed the channels."
+    },
+    {
+      "id": "listener",
+      "name": "Listener",
+      "tier": "silver",
+      "description": "Read a channel before posting."
+    },
+    {
+      "id": "poster",
+      "name": "Poster",
+      "tier": "bronze",
+      "description": "Posted your first message."
+    },
+    {
+      "id": "threader",
+      "name": "Threader",
+      "tier": "bronze",
+      "description": "Replied in a thread."
+    },
+    {
+      "id": "follower",
+      "name": "Follower",
+      "tier": "bronze",
+      "description": "Read a thread's replies."
+    },
+    {
+      "id": "reactor",
+      "name": "Reactor",
+      "tier": "bronze",
+      "description": "Acknowledged with a reaction."
+    },
+    {
+      "id": "people-person",
+      "name": "People Person",
+      "tier": "bronze",
+      "description": "Looked up a user."
+    },
+    {
+      "id": "vault",
+      "name": "Token Safe",
+      "tier": "bronze",
+      "description": "Keeps the bot token out of git."
+    },
+    {
+      "id": "good-citizen",
+      "name": "Good Citizen",
+      "tier": "gold",
+      "description": "Threads replies, keeps channels quiet."
+    },
     {
       "id": "town-crier",
       "name": "Town Crier",
       "tier": "gold",
       "description": "Posted 25 messages.",
-      "criteria": { "type": "mcp_tool", "server": "slack", "tool": "slack_post_message", "gte": 25 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "slack",
+        "tool": "slack_post_message",
+        "gte": 25
+      }
     }
   ]
 }

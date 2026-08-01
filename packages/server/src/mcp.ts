@@ -67,7 +67,7 @@ function describeMatcher(m: unknown): string {
 function summarizeRecord(r: RecordResult): RecordResult & { message: string } {
   const parts: string[] = [];
   for (const c of r.newCartridges ?? []) {
-    parts.push(`🎓 ${c.name} track activated (0/${c.objectives})`);
+    parts.push(`🧩 ${c.name} track activated (0/${c.objectives})`);
   }
   for (const b of r.newBadges) parts.push(`🏅 ${b.name} (+${b.points})`);
   for (const o of r.newObjectives) parts.push(`✅ ${o.title}`);

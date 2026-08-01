@@ -1,97 +1,379 @@
 {
   "id": "supabase",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "Supabase",
     "homepage": "https://supabase.com",
-    "icon": "⚡"
+    "icon": "\u26a1"
   },
   "detect": [
-    { "type": "mcp", "server": "supabase" },
-    { "type": "dependency", "name": "@supabase/supabase-js" },
-    { "type": "file", "path": "**/supabase/config.toml", "exists": true }
+    {
+      "type": "mcp",
+      "server": "supabase"
+    },
+    {
+      "type": "dependency",
+      "name": "@supabase/supabase-js"
+    },
+    {
+      "type": "file",
+      "path": "**/supabase/config.toml",
+      "exists": true
+    },
+    {
+      "type": "bash",
+      "matches": "^\\s*supabase\\s+"
+    }
   ],
   "objectives": [
     {
-      "id": "inspect-schema",
-      "title": "Inspect your database schema",
-      "docs": "https://supabase.com/docs/guides/getting-started/mcp",
-      "why": "Listing tables grounds the agent in your actual schema before it writes a line of SQL.",
+      "id": "init-project",
+      "title": "Initialise Supabase in the repo",
+      "why": "Config in the repo means the same database shape for everyone, not just you.",
       "badge": "connected",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "list_tables", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "bash",
+            "matches": "supabase\\s+init"
+          },
+          {
+            "type": "file",
+            "path": "**/supabase/config.toml",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/local-development"
+    },
+    {
+      "id": "run-locally",
+      "title": "Run the stack locally",
+      "why": "Developing against production is how Friday afternoons go wrong.",
+      "badge": "local-first",
+      "criteria": {
+        "type": "bash",
+        "matches": "supabase\\s+start"
+      },
+      "docs": "https://supabase.com/docs/guides/local-development/cli/getting-started"
+    },
+    {
+      "id": "inspect-schema",
+      "title": "Inspect your schema",
+      "why": "Knowing what's actually there beats trusting what you remember.",
+      "badge": "surveyor",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "list_tables"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+inspect"
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/database/overview"
     },
     {
       "id": "run-sql",
-      "title": "Run a SQL query",
-      "docs": "https://supabase.com/docs/guides/database/overview",
-      "why": "Querying is how you check your work and explore your data.",
+      "title": "Run a query",
+      "why": "SQL is the fastest way to answer a question about your data.",
       "badge": "query-runner",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "execute_sql", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "supabase",
+        "tool": "execute_sql"
+      },
+      "docs": "https://supabase.com/docs/guides/database/overview"
     },
     {
-      "id": "apply-migration",
-      "title": "Apply a migration",
-      "docs": "https://supabase.com/docs/guides/deployment/database-migrations",
-      "why": "Migrations make schema changes versioned, reviewable, and repeatable.",
+      "id": "write-a-migration",
+      "title": "Capture schema changes as a migration",
+      "why": "A change made in the dashboard and nowhere else is a change you cannot deploy.",
       "badge": "migrator",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "apply_migration", "gte": 1 }
-    },
-    {
-      "id": "deploy-edge-function",
-      "title": "Deploy an Edge Function",
-      "docs": "https://supabase.com/docs/guides/functions",
-      "why": "Edge Functions put server-side logic next to your data, globally.",
-      "badge": "functions",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "deploy_edge_function", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "apply_migration"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+(migration\\s+new|db\\s+(push|diff))"
+          },
+          {
+            "type": "file",
+            "path": "**/supabase/migrations/*.sql",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/deployment/database-migrations"
     },
     {
       "id": "generate-types",
-      "title": "Generate TypeScript types from your schema",
-      "docs": "https://supabase.com/docs/guides/api/rest/generating-types",
-      "why": "Generated types make your database queries type-safe end to end.",
+      "title": "Generate TypeScript types from the schema",
+      "why": "Generated types turn a whole class of runtime bug into a compile error.",
       "badge": "typed",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "generate_typescript_types", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "generate_typescript_types"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+gen\\s+types"
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/api/rest/generating-types"
+    },
+    {
+      "id": "wire-up-auth",
+      "title": "Wire up authentication",
+      "why": "Auth is the thing every RLS policy depends on \u2014 get it in early.",
+      "badge": "gatekeeper",
+      "criteria": {
+        "type": "file",
+        "path": "**/*.{ts,tsx,js,jsx}",
+        "contains": "(supabase|sb)\\.auth\\."
+      },
+      "docs": "https://supabase.com/docs/guides/auth"
+    },
+    {
+      "id": "deploy-edge-function",
+      "title": "Deploy an edge function",
+      "why": "Server-side logic close to the data, without a server to run.",
+      "badge": "functions",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "deploy_edge_function"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+functions\\s+deploy"
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/functions"
+    },
+    {
+      "id": "use-storage-or-realtime",
+      "title": "Use storage or realtime",
+      "why": "The parts of Supabase that aren't Postgres are most of why you'd pick it.",
+      "badge": "full-stack",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "file",
+            "path": "**/*.{ts,tsx,js,jsx}",
+            "contains": "storage\\.from\\("
+          },
+          {
+            "type": "file",
+            "path": "**/*.{ts,tsx,js,jsx}",
+            "contains": "\\.channel\\("
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/realtime"
+    },
+    {
+      "id": "check-advisors",
+      "title": "Check the security and performance advisors",
+      "why": "Advisors catch the missing index and the unprotected table before your users do.",
+      "badge": "advised",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "get_advisors"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+inspect\\s+db"
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/database/database-advisors"
+    },
+    {
+      "id": "link-and-deploy",
+      "title": "Link the project and push to production",
+      "why": "The last mile: local schema becomes the deployed one.",
+      "badge": "shipper",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "bash",
+            "matches": "supabase\\s+link"
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+db\\s+push"
+          }
+        ]
+      },
+      "docs": "https://supabase.com/docs/guides/deployment"
     }
   ],
   "bestPractices": [
     {
       "id": "service-key-not-committed",
-      "title": "Keep your service-role key out of git",
-      "why": "The service-role key bypasses RLS entirely — leaking it exposes your whole database.",
-      "recommended": true,
+      "title": "Keep the service_role key out of git",
+      "why": "service_role bypasses RLS entirely \u2014 it is a master key.",
       "badge": "vault",
-      "criteria": { "type": "env", "key": "SUPABASE_SERVICE_ROLE_KEY", "absent_from": "git" }
+      "criteria": {
+        "type": "env",
+        "key": "SUPABASE_SERVICE_ROLE_KEY",
+        "absent_from": "git"
+      },
+      "recommended": true
     },
     {
       "id": "enable-rls",
-      "title": "Enable Row Level Security on user-facing tables",
-      "docs": "https://supabase.com/docs/guides/database/postgres/row-level-security",
-      "why": "Without RLS, your anon key can read and write everything. RLS is the whole security model.",
-      "recommended": true,
+      "title": "Enable row level security on your tables",
+      "why": "A table without RLS is readable by anyone holding the anon key, which is public by design.",
       "badge": "locked-down",
       "criteria": {
         "type": "llm_judge",
-        "over": { "file": "**/supabase/migrations/*.sql" },
-        "rubric": "Do the migrations enable Row Level Security (ENABLE ROW LEVEL SECURITY) and define policies on user-facing tables?",
+        "over": {
+          "file": "**/supabase/migrations/*.sql"
+        },
+        "rubric": "Do the migrations enable row level security on the tables they create, and define policies rather than leaving them open?",
         "confidence_gte": 0.8
-      }
+      },
+      "recommended": true
+    },
+    {
+      "id": "migrations-in-git",
+      "title": "Keep migrations in version control",
+      "why": "Migrations are the only reproducible record of how the schema got here.",
+      "badge": "historian",
+      "criteria": {
+        "type": "file",
+        "path": "**/supabase/migrations/*.sql",
+        "exists": true
+      },
+      "recommended": true
     }
   ],
   "badges": [
-    { "id": "connected", "name": "Plugged In", "tier": "bronze", "description": "Inspected your schema." },
-    { "id": "query-runner", "name": "Query Runner", "tier": "bronze", "description": "Ran a SQL query." },
-    { "id": "migrator", "name": "Migrator", "tier": "silver", "description": "Applied a migration." },
-    { "id": "functions", "name": "On the Edge", "tier": "silver", "description": "Deployed an Edge Function." },
-    { "id": "typed", "name": "Type Safe", "tier": "bronze", "description": "Generated types from your schema." },
-    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your service-role key out of git." },
-    { "id": "locked-down", "name": "Locked Down", "tier": "gold", "description": "Enabled RLS with policies." },
+    {
+      "id": "connected",
+      "name": "Wired Up",
+      "tier": "bronze",
+      "description": "Initialised Supabase in a repo."
+    },
+    {
+      "id": "local-first",
+      "name": "Local First",
+      "tier": "bronze",
+      "description": "Ran the stack locally."
+    },
+    {
+      "id": "surveyor",
+      "name": "Surveyor",
+      "tier": "bronze",
+      "description": "Inspected the schema."
+    },
+    {
+      "id": "query-runner",
+      "name": "Query Runner",
+      "tier": "bronze",
+      "description": "Ran a query."
+    },
+    {
+      "id": "migrator",
+      "name": "Migrator",
+      "tier": "silver",
+      "description": "Captured schema changes as a migration."
+    },
+    {
+      "id": "typed",
+      "name": "Typed",
+      "tier": "bronze",
+      "description": "Generated types from the schema."
+    },
+    {
+      "id": "gatekeeper",
+      "name": "Gatekeeper",
+      "tier": "silver",
+      "description": "Wired up authentication."
+    },
+    {
+      "id": "functions",
+      "name": "Edge Runner",
+      "tier": "silver",
+      "description": "Deployed an edge function."
+    },
+    {
+      "id": "full-stack",
+      "name": "Full Stack",
+      "tier": "silver",
+      "description": "Used storage or realtime."
+    },
+    {
+      "id": "advised",
+      "name": "Well Advised",
+      "tier": "silver",
+      "description": "Checked the advisors."
+    },
+    {
+      "id": "shipper",
+      "name": "Shipper",
+      "tier": "silver",
+      "description": "Pushed the schema to production."
+    },
+    {
+      "id": "vault",
+      "name": "Key Keeper",
+      "tier": "bronze",
+      "description": "Keeps the service_role key out of git."
+    },
+    {
+      "id": "locked-down",
+      "name": "Row Guard",
+      "tier": "gold",
+      "description": "RLS enabled with real policies."
+    },
+    {
+      "id": "historian",
+      "name": "Historian",
+      "tier": "bronze",
+      "description": "Migrations under version control."
+    },
     {
       "id": "schema-architect",
       "name": "Schema Architect",
       "tier": "gold",
       "description": "Applied 10 migrations.",
-      "criteria": { "type": "mcp_tool", "server": "supabase", "tool": "apply_migration", "gte": 10 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "supabase",
+            "tool": "apply_migration",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "supabase\\s+db\\s+push",
+            "gte": 10
+          }
+        ]
+      }
     }
   ]
 }

@@ -1,110 +1,375 @@
 {
   "id": "github",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "GitHub",
     "homepage": "https://github.com",
-    "icon": "🐙"
+    "icon": "\ud83d\udc19"
   },
   "detect": [
-    { "type": "mcp", "server": "github" },
-    { "type": "file", "path": "**/.github/**", "exists": true }
+    {
+      "type": "mcp",
+      "server": "github"
+    },
+    {
+      "type": "file",
+      "path": "**/.github/**",
+      "exists": true
+    },
+    {
+      "type": "bash",
+      "matches": "^\\s*gh\\s+"
+    }
   ],
   "objectives": [
     {
       "id": "browse-a-repo",
-      "title": "Read from a repository",
-      "docs": "https://github.com/github/github-mcp-server",
-      "why": "Fetching files and searching code is how the agent grounds itself in your repo.",
+      "title": "Read a repository through the API",
+      "why": "Pulling files and searching code beats cloning everything to answer one question.",
       "badge": "connected",
       "criteria": {
         "anyOf": [
-          { "type": "mcp_tool", "server": "github", "tool": "get_file_contents", "gte": 1 },
-          { "type": "mcp_tool", "server": "github", "tool": "search_repositories", "gte": 1 }
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "get_file_contents"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "search_repositories"
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+(repo\\s+view|browse|search)"
+          }
         ]
-      }
+      },
+      "docs": "https://docs.github.com/rest"
+    },
+    {
+      "id": "use-branches",
+      "title": "Work on a branch, not on main",
+      "why": "A branch is what makes the change reviewable and revertible.",
+      "badge": "brancher",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "bash",
+            "matches": "git\\s+(checkout\\s+-b|switch\\s+-c)"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "create_branch"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/get-started/quickstart/github-flow"
     },
     {
       "id": "open-an-issue",
       "title": "Open an issue",
-      "docs": "https://docs.github.com/issues",
-      "why": "Issues turn 'we should fix this' into tracked, assignable work.",
+      "why": "Written-down work is work someone else can pick up.",
       "badge": "issue-opener",
-      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_issue", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "create_issue"
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+issue\\s+create"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/issues"
     },
     {
       "id": "open-a-pr",
       "title": "Open a pull request",
-      "docs": "https://docs.github.com/pull-requests",
-      "why": "PRs are where review, CI, and collaboration all happen.",
+      "why": "A PR is the unit of review \u2014 a direct push to main skips every safeguard.",
       "badge": "collaborator",
-      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_pull_request", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "create_pull_request"
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+pr\\s+create"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/pull-requests"
+    },
+    {
+      "id": "review-a-pr",
+      "title": "Review someone's pull request",
+      "why": "Review is where defects get cheap to fix and knowledge actually spreads.",
+      "badge": "reviewer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "create_pull_request_review"
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+pr\\s+(review|comment|diff)"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests"
     },
     {
       "id": "merge-a-pr",
-      "title": "Merge a pull request",
-      "docs": "https://docs.github.com/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/merging-a-pull-request",
-      "why": "Shipping the change is the point — close the loop.",
+      "title": "Merge a reviewed pull request",
+      "why": "Closing the loop: reviewed, green, merged.",
       "badge": "merger",
-      "criteria": { "type": "mcp_tool", "server": "github", "tool": "merge_pull_request", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "merge_pull_request"
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+pr\\s+merge"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/pull-requests"
     },
     {
       "id": "add-ci",
-      "title": "Add a GitHub Actions workflow",
-      "docs": "https://docs.github.com/actions",
-      "why": "CI on every push is what keeps main green.",
+      "title": "Add a CI workflow",
+      "why": "CI is the difference between 'tests exist' and 'tests run'.",
       "badge": "automator",
-      "criteria": { "type": "file", "path": "**/.github/workflows/*.{yml,yaml}", "exists": true }
+      "criteria": {
+        "type": "file",
+        "path": "**/.github/workflows/*.{yml,yaml}",
+        "exists": true
+      },
+      "docs": "https://docs.github.com/actions/quickstart"
+    },
+    {
+      "id": "run-a-workflow",
+      "title": "Trigger and watch a workflow run",
+      "why": "Knowing how to re-run and read logs is half of debugging CI.",
+      "badge": "operator",
+      "criteria": {
+        "type": "bash",
+        "matches": "gh\\s+(workflow\\s+(run|view)|run\\s+(list|view|watch|rerun))"
+      },
+      "docs": "https://docs.github.com/actions/using-workflows/manually-running-a-workflow"
+    },
+    {
+      "id": "cut-a-release",
+      "title": "Cut a release",
+      "why": "A tagged release is how anyone else knows which version they're running.",
+      "badge": "releaser",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "bash",
+            "matches": "gh\\s+release\\s+create"
+          },
+          {
+            "type": "bash",
+            "matches": "git\\s+tag\\s+-a"
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/repositories/releasing-projects-on-github"
+    },
+    {
+      "id": "automate-dependencies",
+      "title": "Let Dependabot watch your dependencies",
+      "why": "Unattended dependencies are how a project quietly accumulates CVEs.",
+      "badge": "gardener",
+      "criteria": {
+        "type": "file",
+        "path": "**/.github/dependabot.{yml,yaml}",
+        "exists": true
+      },
+      "docs": "https://docs.github.com/code-security/dependabot"
+    },
+    {
+      "id": "templates",
+      "title": "Add issue or PR templates",
+      "why": "Templates turn 'it's broken' into a report someone can act on.",
+      "badge": "templater",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "file",
+            "path": "**/.github/ISSUE_TEMPLATE/**",
+            "exists": true
+          },
+          {
+            "type": "file",
+            "path": "**/.github/PULL_REQUEST_TEMPLATE*",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://docs.github.com/communities/using-templates-to-encourage-useful-issues-and-pull-requests"
     }
   ],
   "bestPractices": [
     {
       "id": "token-not-committed",
       "title": "Keep your GitHub token out of git",
-      "why": "A leaked PAT is repo (and sometimes org) access handed to a stranger.",
-      "recommended": true,
+      "why": "A committed token is a compromised account.",
       "badge": "vault",
-      "criteria": { "type": "env", "key": "GITHUB_PERSONAL_ACCESS_TOKEN", "absent_from": "git" }
+      "criteria": {
+        "type": "env",
+        "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "absent_from": "git"
+      },
+      "recommended": true
     },
     {
       "id": "define-codeowners",
-      "title": "Add a CODEOWNERS file",
-      "docs": "https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners",
-      "why": "CODEOWNERS routes reviews automatically and encodes who owns what.",
-      "recommended": true,
+      "title": "Define CODEOWNERS",
+      "why": "Without owners, review requests land on whoever happens to be looking.",
       "badge": "steward",
-      "criteria": { "type": "file", "path": "**/{.github/,}CODEOWNERS", "exists": true }
+      "criteria": {
+        "type": "file",
+        "path": "**/{.github/,}CODEOWNERS",
+        "exists": true
+      },
+      "recommended": true
     },
     {
       "id": "readable-readme",
-      "title": "Write a README that explains setup",
-      "why": "A clear README is the difference between a repo people can use and one they can't.",
-      "recommended": true,
+      "title": "Write a README that explains the project",
+      "why": "The README is the only documentation most people will ever read.",
       "badge": "documented",
       "criteria": {
         "type": "llm_judge",
-        "over": { "file": "**/README.md" },
-        "rubric": "Does the README explain what the project is and how to install and run it clearly enough for a new contributor?",
-        "confidence_gte": 0.75
-      }
+        "over": {
+          "file": "**/README.md"
+        },
+        "rubric": "Does the README explain what the project is, how to install it, and how to run it, well enough for a newcomer to get started?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
     }
   ],
   "badges": [
-    { "id": "connected", "name": "Cloned In", "tier": "bronze", "description": "Read from a repository." },
-    { "id": "issue-opener", "name": "Issue Opener", "tier": "bronze", "description": "Opened an issue." },
-    { "id": "collaborator", "name": "Collaborator", "tier": "silver", "description": "Opened a pull request." },
-    { "id": "merger", "name": "Ship It", "tier": "silver", "description": "Merged a pull request." },
-    { "id": "automator", "name": "Automator", "tier": "silver", "description": "Added a GitHub Actions workflow." },
-    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your token out of git." },
-    { "id": "steward", "name": "Code Steward", "tier": "silver", "description": "Added a CODEOWNERS file." },
-    { "id": "documented", "name": "Well Documented", "tier": "gold", "description": "Wrote a clear README." },
+    {
+      "id": "connected",
+      "name": "Repo Reader",
+      "tier": "bronze",
+      "description": "Read a repository through the API."
+    },
+    {
+      "id": "brancher",
+      "name": "Branch Keeper",
+      "tier": "bronze",
+      "description": "Worked on a branch."
+    },
+    {
+      "id": "issue-opener",
+      "name": "Issue Opener",
+      "tier": "bronze",
+      "description": "Opened an issue."
+    },
+    {
+      "id": "collaborator",
+      "name": "Collaborator",
+      "tier": "silver",
+      "description": "Opened a pull request."
+    },
+    {
+      "id": "reviewer",
+      "name": "Reviewer",
+      "tier": "silver",
+      "description": "Reviewed a pull request."
+    },
+    {
+      "id": "merger",
+      "name": "Merger",
+      "tier": "silver",
+      "description": "Merged a reviewed PR."
+    },
+    {
+      "id": "automator",
+      "name": "Pipeline Builder",
+      "tier": "silver",
+      "description": "Added a CI workflow."
+    },
+    {
+      "id": "operator",
+      "name": "Runner",
+      "tier": "bronze",
+      "description": "Drove a workflow run."
+    },
+    {
+      "id": "releaser",
+      "name": "Releaser",
+      "tier": "silver",
+      "description": "Cut a release."
+    },
+    {
+      "id": "gardener",
+      "name": "Gardener",
+      "tier": "bronze",
+      "description": "Automated dependency updates."
+    },
+    {
+      "id": "templater",
+      "name": "Templater",
+      "tier": "bronze",
+      "description": "Added issue or PR templates."
+    },
+    {
+      "id": "vault",
+      "name": "Token Keeper",
+      "tier": "bronze",
+      "description": "Keeps tokens out of git."
+    },
+    {
+      "id": "steward",
+      "name": "Steward",
+      "tier": "silver",
+      "description": "Defined CODEOWNERS."
+    },
+    {
+      "id": "documented",
+      "name": "Well Read",
+      "tier": "gold",
+      "description": "README a newcomer can actually follow."
+    },
     {
       "id": "prolific",
       "name": "Prolific",
       "tier": "gold",
       "description": "Opened 10 pull requests.",
-      "criteria": { "type": "mcp_tool", "server": "github", "tool": "create_pull_request", "gte": 10 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "github",
+            "tool": "create_pull_request",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "gh\\s+pr\\s+create",
+            "gte": 10
+          }
+        ]
+      }
     }
   ]
 }

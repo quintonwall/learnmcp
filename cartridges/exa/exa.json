@@ -1,92 +1,202 @@
 {
   "id": "exa",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "Exa",
     "homepage": "https://exa.ai",
-    "icon": "🔎"
+    "icon": "\ud83d\udd0e"
   },
   "detect": [
-    { "type": "mcp", "server": "exa" },
-    { "type": "dependency", "name": "exa-js" }
+    {
+      "type": "mcp",
+      "server": "exa"
+    },
+    {
+      "type": "dependency",
+      "name": "exa-js"
+    }
   ],
   "objectives": [
     {
       "id": "first-search",
-      "title": "Run your first Exa web search",
-      "docs": "https://docs.exa.ai/reference/getting-started",
-      "why": "Exa's neural search finds pages by meaning, not just keywords — great grounding for an LLM.",
+      "title": "Run your first neural search",
+      "why": "Exa searches by meaning, so you can describe what you want instead of guessing keywords.",
       "badge": "searcher",
-      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_search_exa", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "exa",
+        "tool": "web_search_exa"
+      },
+      "docs": "https://docs.exa.ai/reference/search"
     },
     {
       "id": "fetch-contents",
-      "title": "Fetch a page's clean contents",
-      "docs": "https://github.com/exa-labs/exa-mcp-server",
-      "why": "Fetch the full, readable text of a result so the model works from source, not snippets.",
+      "title": "Pull the full contents of a result",
+      "why": "A search result title tells you almost nothing; the page contents are the answer.",
       "badge": "crawler",
-      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_fetch_exa", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "exa",
+            "tool": "web_fetch_exa"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "exa",
+            "tool": "crawling_exa"
+          }
+        ]
+      },
+      "docs": "https://docs.exa.ai/reference/get-contents"
+    },
+    {
+      "id": "company-research",
+      "title": "Research a company",
+      "why": "Structured company lookups beat reading five marketing sites yourself.",
+      "badge": "profiler",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "exa",
+        "tool": "company_research_exa"
+      },
+      "docs": "https://docs.exa.ai/reference/company-research"
+    },
+    {
+      "id": "code-context",
+      "title": "Search for code context",
+      "why": "Finding how a library is really used beats guessing from its README.",
+      "badge": "code-hound",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "exa",
+        "tool": "get_code_context_exa"
+      },
+      "docs": "https://docs.exa.ai/reference/code-search"
     },
     {
       "id": "deep-research",
-      "title": "Run a structured research task",
-      "docs": "https://github.com/exa-labs/exa-mcp-server",
-      "why": "Let Exa gather and synthesize sources instead of hand-stitching searches.",
+      "title": "Kick off a deep research task",
+      "why": "Deep research chains many searches into something closer to a briefing than a result list.",
       "badge": "analyst",
       "criteria": {
         "anyOf": [
-          { "type": "mcp_tool", "server": "exa", "tool": "deep_researcher_start", "gte": 1 },
-          { "type": "mcp_tool", "server": "exa", "tool": "company_research_exa", "gte": 1 }
+          {
+            "type": "mcp_tool",
+            "server": "exa",
+            "tool": "deep_researcher_start"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "exa",
+            "tool": "deep_researcher_check"
+          }
         ]
-      }
+      },
+      "docs": "https://docs.exa.ai/reference/research"
     },
     {
       "id": "use-sdk",
-      "title": "Call Exa from code with the SDK",
-      "docs": "https://docs.exa.ai/sdks/typescript-sdk-specification",
-      "why": "The SDK is how you move from ad-hoc lookups to a real retrieval pipeline.",
+      "title": "Call Exa from your own code",
+      "why": "Anything you do interactively is worth automating once it works.",
       "badge": "builder",
-      "criteria": { "type": "dependency", "name": "exa-js" }
+      "criteria": {
+        "type": "dependency",
+        "name": "exa-js"
+      },
+      "docs": "https://docs.exa.ai/sdks/typescript-sdk-specification"
     }
   ],
   "bestPractices": [
     {
       "id": "api-key-not-committed",
       "title": "Keep your Exa API key out of git",
-      "why": "A leaked key is a billable key.",
-      "recommended": true,
+      "why": "A committed key is someone else's search budget.",
       "badge": "vault",
-      "criteria": { "type": "env", "key": "EXA_API_KEY", "absent_from": "git" }
+      "criteria": {
+        "type": "env",
+        "key": "EXA_API_KEY",
+        "absent_from": "git"
+      },
+      "recommended": true
     },
     {
       "id": "ground-answers-with-citations",
-      "title": "Ground model answers in retrieved sources",
-      "docs": "https://docs.exa.ai/reference/getting-started",
-      "why": "Passing Exa results as cited context is what turns search into trustworthy answers.",
-      "recommended": true,
+      "title": "Ground answers in the sources you retrieved",
+      "why": "Search results are only worth fetching if the answer actually cites them.",
       "badge": "grounded",
       "criteria": {
         "type": "llm_judge",
-        "over": { "file": "**/*.{ts,js,py}" },
-        "rubric": "Does the code feed Exa search results into the LLM as grounded context or citations, rather than ignoring or dumping them raw?",
-        "confidence_gte": 0.75
-      }
+        "over": {
+          "file": "**/*.{ts,js,py}"
+        },
+        "rubric": "Does the code feed Exa search results into the model's context and surface the source URLs, rather than searching and discarding the results?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
     }
   ],
   "badges": [
-    { "id": "searcher", "name": "First Query", "tier": "bronze", "description": "Ran your first Exa search." },
-    { "id": "crawler", "name": "Deep Reader", "tier": "bronze", "description": "Pulled clean page contents." },
-    { "id": "analyst", "name": "Analyst", "tier": "silver", "description": "Ran a structured research task." },
-    { "id": "builder", "name": "Pipeline Builder", "tier": "bronze", "description": "Called Exa from code." },
-    { "id": "vault", "name": "Key Keeper", "tier": "bronze", "description": "Kept your API key out of git." },
-    { "id": "grounded", "name": "Well Grounded", "tier": "gold", "description": "Grounded answers in cited sources." },
+    {
+      "id": "searcher",
+      "name": "Searcher",
+      "tier": "bronze",
+      "description": "Ran your first neural search."
+    },
+    {
+      "id": "crawler",
+      "name": "Crawler",
+      "tier": "bronze",
+      "description": "Pulled full page contents."
+    },
+    {
+      "id": "profiler",
+      "name": "Profiler",
+      "tier": "bronze",
+      "description": "Researched a company."
+    },
+    {
+      "id": "code-hound",
+      "name": "Code Hound",
+      "tier": "bronze",
+      "description": "Searched for code context."
+    },
+    {
+      "id": "analyst",
+      "name": "Analyst",
+      "tier": "silver",
+      "description": "Ran a deep research task."
+    },
+    {
+      "id": "builder",
+      "name": "Builder",
+      "tier": "bronze",
+      "description": "Called Exa from code."
+    },
+    {
+      "id": "vault",
+      "name": "Key Safe",
+      "tier": "bronze",
+      "description": "Keeps the API key out of git."
+    },
+    {
+      "id": "grounded",
+      "name": "Grounded",
+      "tier": "gold",
+      "description": "Answers cite their sources."
+    },
     {
       "id": "power-searcher",
       "name": "Power Searcher",
       "tier": "gold",
-      "description": "Ran 10 Exa searches.",
-      "criteria": { "type": "mcp_tool", "server": "exa", "tool": "web_search_exa", "gte": 10 }
+      "description": "Ran 25 searches.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "exa",
+        "tool": "web_search_exa",
+        "gte": 25
+      }
     }
   ]
 }

@@ -1,77 +1,188 @@
 {
   "id": "context7",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "Context7",
     "homepage": "https://context7.com",
-    "icon": "📚"
+    "icon": "\ud83d\udcda"
   },
   "detect": [
-    { "type": "mcp", "server": "context7" }
+    {
+      "type": "mcp",
+      "server": "context7"
+    },
+    {
+      "type": "file",
+      "path": "**/.mcp.json",
+      "contains": "context7"
+    }
   ],
   "objectives": [
     {
       "id": "resolve-library",
-      "title": "Resolve a library id",
-      "docs": "https://github.com/upstash/context7",
-      "why": "Context7 maps a package name to the exact library it has docs for — always start here.",
+      "title": "Resolve a library to its Context7 id",
+      "why": "Resolving first is what stops you fetching docs for the wrong package.",
       "badge": "librarian",
-      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "resolve-library-id", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "context7",
+        "tool": "resolve-library-id"
+      },
+      "docs": "https://context7.com"
     },
     {
       "id": "fetch-docs",
-      "title": "Fetch up-to-date library docs",
-      "docs": "https://github.com/upstash/context7",
-      "why": "Pull current docs into context so the model stops hallucinating stale APIs.",
+      "title": "Fetch version-accurate docs",
+      "why": "Model training data goes stale; Context7 pulls the docs for the version you actually use.",
       "badge": "scholar",
-      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "get-library-docs", "gte": 1 }
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "context7",
+        "tool": "get-library-docs"
+      },
+      "docs": "https://context7.com"
+    },
+    {
+      "id": "topic-scoped-lookup",
+      "title": "Narrow a lookup to a topic",
+      "why": "Pulling a whole library's docs burns context; a topic-scoped fetch is the difference between usable and overwhelming.",
+      "badge": "focused",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "context7",
+        "tool": "get-library-docs",
+        "gte": 3
+      },
+      "docs": "https://context7.com"
+    },
+    {
+      "id": "cover-your-stack",
+      "title": "Look up several of your dependencies",
+      "why": "One library is a trial; your whole stack is a habit.",
+      "badge": "polyglot",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "context7",
+        "tool": "resolve-library-id",
+        "gte": 3
+      },
+      "docs": "https://context7.com"
     },
     {
       "id": "add-to-rules",
-      "title": "Teach your agent to reach for Context7",
-      "docs": "https://github.com/upstash/context7#tips",
-      "why": "Adding 'use context7' to your rules makes fresh docs the default, not an afterthought.",
+      "title": "Tell your agent to check docs first",
+      "why": "A rule in CLAUDE.md is what makes this happen without you asking every time.",
       "badge": "documented",
-      "criteria": { "type": "file", "path": "**/{CLAUDE,AGENTS}.md", "contains": "context7" }
+      "criteria": {
+        "type": "file",
+        "path": "**/{CLAUDE,AGENTS}.md",
+        "contains": "context7"
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/memory"
+    },
+    {
+      "id": "add-to-project",
+      "title": "Check the server into the project",
+      "why": "In .mcp.json it works for your teammates too, not just on your laptop.",
+      "badge": "shared",
+      "criteria": {
+        "type": "file",
+        "path": "**/.mcp.json",
+        "contains": "context7"
+      },
+      "docs": "https://docs.claude.com/en/docs/claude-code/mcp"
     }
   ],
   "bestPractices": [
     {
       "id": "api-key-not-committed",
       "title": "Keep your Context7 API key out of git",
-      "why": "The key raises your rate limits — and shouldn't be public.",
-      "recommended": true,
+      "why": "A committed key is someone else's quota.",
       "badge": "keeper",
-      "criteria": { "type": "env", "key": "CONTEXT7_API_KEY", "absent_from": "git" }
+      "criteria": {
+        "type": "env",
+        "key": "CONTEXT7_API_KEY",
+        "absent_from": "git"
+      },
+      "recommended": true
     },
     {
       "id": "fetch-before-code",
-      "title": "Fetch docs before using an unfamiliar API",
-      "docs": "https://github.com/upstash/context7",
-      "why": "Grounding in real docs first is the whole point — it prevents plausible-but-wrong code.",
-      "recommended": true,
+      "title": "Fetch docs before writing against an unfamiliar API",
+      "why": "Hallucinated method names are exactly what up-to-date docs prevent.",
       "badge": "informed",
       "criteria": {
         "type": "llm_judge",
-        "over": { "file": "**/{CLAUDE,AGENTS}.md" },
-        "rubric": "Do the project rules instruct the agent to fetch current library docs via Context7 before writing code against unfamiliar or fast-moving libraries?",
-        "confidence_gte": 0.75
-      }
+        "over": {
+          "file": "**/{CLAUDE,AGENTS}.md"
+        },
+        "rubric": "Do the project rules instruct the agent to look up current documentation before writing code against an unfamiliar library?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
     }
   ],
   "badges": [
-    { "id": "librarian", "name": "Librarian", "tier": "bronze", "description": "Resolved a library id." },
-    { "id": "scholar", "name": "Scholar", "tier": "bronze", "description": "Fetched up-to-date docs." },
-    { "id": "documented", "name": "House Rules", "tier": "silver", "description": "Made Context7 a default in your rules." },
-    { "id": "keeper", "name": "Key Keeper", "tier": "bronze", "description": "Kept your API key out of git." },
-    { "id": "informed", "name": "Always Current", "tier": "gold", "description": "Grounds code in fresh docs by default." },
+    {
+      "id": "librarian",
+      "name": "Librarian",
+      "tier": "bronze",
+      "description": "Resolved a library id."
+    },
+    {
+      "id": "scholar",
+      "name": "Scholar",
+      "tier": "bronze",
+      "description": "Fetched version-accurate docs."
+    },
+    {
+      "id": "focused",
+      "name": "Focused",
+      "tier": "silver",
+      "description": "Scoped lookups to a topic."
+    },
+    {
+      "id": "polyglot",
+      "name": "Polyglot",
+      "tier": "silver",
+      "description": "Looked up several dependencies."
+    },
+    {
+      "id": "documented",
+      "name": "Rule Setter",
+      "tier": "silver",
+      "description": "Told your agent to check docs first."
+    },
+    {
+      "id": "shared",
+      "name": "Shared",
+      "tier": "bronze",
+      "description": "Checked the server into the project."
+    },
+    {
+      "id": "keeper",
+      "name": "Keeper",
+      "tier": "bronze",
+      "description": "Keeps the API key out of git."
+    },
+    {
+      "id": "informed",
+      "name": "Informed",
+      "tier": "gold",
+      "description": "Docs-first is written into the rules."
+    },
     {
       "id": "docs-devotee",
       "name": "Docs Devotee",
       "tier": "gold",
-      "description": "Fetched library docs 10 times.",
-      "criteria": { "type": "mcp_tool", "server": "context7", "tool": "get-library-docs", "gte": 10 }
+      "description": "Fetched docs 25 times.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "context7",
+        "tool": "get-library-docs",
+        "gte": 25
+      }
     }
   ]
 }
