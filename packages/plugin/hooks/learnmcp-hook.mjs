@@ -320,6 +320,7 @@ async function main() {
 
   const badges = [];
   const objectives = [];
+  const tracks = [];
   let last = null;
   for (const signal of signals) {
     const res = await callTool(url, "record_activity", { signal });
@@ -327,11 +328,15 @@ async function main() {
     last = res;
     badges.push(...(res.newBadges ?? []));
     objectives.push(...(res.newObjectives ?? []));
+    tracks.push(...(res.newCartridges ?? []));
   }
 
-  // Speak up only when something was actually earned — never on every action.
-  if (last && (badges.length || objectives.length)) {
+  // Speak up when something is earned, or when a track activates for the first time.
+  // Activation is the one other moment worth interrupting for: it's the difference
+  // between "learnmcp knows this tool" and apparent silence.
+  if (last && (badges.length || objectives.length || tracks.length)) {
     const parts = [
+      ...tracks.map((c) => `🎓 ${c.name} track activated (0/${c.objectives})`),
       ...badges.map((b) => `🏅 ${b.name} (+${b.points})`),
       ...objectives.map((o) => `✅ ${o.title}`),
     ];

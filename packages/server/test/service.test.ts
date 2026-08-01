@@ -55,6 +55,26 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
     expect(last!.newBadges.map((b) => b.badgeId)).toContain("collection-runner-gold");
   });
 
+  it("reports a track as newly activated exactly once", () => {
+    const first = service.record(SCOPE, { kind: "mcp.added", server: "postman" });
+    expect(first.newCartridges.map((c) => c.id)).toContain("postman");
+    expect(first.newCartridges.find((c) => c.id === "postman")!.objectives).toBeGreaterThan(0);
+
+    // Already known — activating again must not re-announce it.
+    const second = service.record(SCOPE, {
+      kind: "mcp_tool",
+      server: "postman",
+      tool: "getWorkspaces",
+    });
+    expect(second.newCartridges).toEqual([]);
+    expect(second.activeCartridgeIds).toContain("postman");
+  });
+
+  it("does not claim activation on recompute, which has no before-state", () => {
+    service.record(SCOPE, { kind: "mcp.added", server: "postman" });
+    expect(service.recompute(SCOPE).newCartridges).toEqual([]);
+  });
+
   it("recommends the first objective of an active cartridge", () => {
     service.record(SCOPE, { kind: "mcp.added", server: "postman" });
     const rec = service.learnNext(SCOPE);

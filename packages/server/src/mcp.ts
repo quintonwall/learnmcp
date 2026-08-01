@@ -40,8 +40,35 @@ const ok = (data: unknown) => ({
   content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
 });
 
+/** Plain-English rendering of a detect matcher, for "how do I switch this track on?". */
+function describeMatcher(m: unknown): string {
+  const x = m as Record<string, string>;
+  switch (x?.type) {
+    case "mcp":
+      return `using the ${x.server} MCP server`;
+    case "mcp_tool":
+      return `calling ${x.server}'s ${x.tool} tool`;
+    case "command":
+      return `running a /${String(x.name).replace(/[()]/g, "")} command`;
+    case "dependency":
+      return `having ${x.name} as a dependency`;
+    case "file":
+      // `**/*` is how the always-on cartridge says "any project at all".
+      return x.path === "**/*" ? "always on" : `having a ${x.path} file`;
+    case "bash":
+      return `running a command matching /${x.matches}/`;
+    case "skill":
+      return x.name ? `having the ${x.name} skill` : "authoring a skill";
+    default:
+      return x?.type ?? "an unknown signal";
+  }
+}
+
 function summarizeRecord(r: RecordResult): RecordResult & { message: string } {
   const parts: string[] = [];
+  for (const c of r.newCartridges ?? []) {
+    parts.push(`🎓 ${c.name} track activated (0/${c.objectives})`);
+  }
   for (const b of r.newBadges) parts.push(`🏅 ${b.name} (+${b.points})`);
   for (const o of r.newObjectives) parts.push(`✅ ${o.title}`);
   if (r.rank.next) {
@@ -151,21 +178,34 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   server.registerTool(
     "list_cartridges",
     {
-      title: "List installed cartridges",
-      description: "List cartridges currently loaded in the registry.",
-      inputSchema: {},
+      title: "List available cartridges",
+      description:
+        "Everything learnmcp can teach: each cartridge, what it covers, how many objectives and badges it has, and whether that track is already active for you.",
+      inputSchema: { scope: z.string().optional() },
     },
-    async () =>
-      ok(
-        registry.list().map((c) => ({
-          id: c.id,
-          name: c.provider.name,
-          version: c.version,
-          trust: c.trust,
-          objectives: c.objectives.length,
-          badges: c.badges.length,
-        })),
-      ),
+    async ({ scope: s }) => {
+      const active = new Set(service.progress(scope(s)).activeCartridgeIds);
+      const cartridges = registry.list().map((c) => ({
+        id: c.id,
+        name: c.provider.name,
+        icon: c.provider.icon,
+        version: c.version,
+        trust: c.trust,
+        active: active.has(c.id),
+        // What actually switches the track on — the useful bit when someone asks
+        // "how do I get this one going?".
+        activatedBy: c.detect.map(describeMatcher),
+        objectives: c.objectives.length + c.bestPractices.length,
+        badges: c.badges.length,
+        teaches: c.objectives.map((o) => o.title),
+      }));
+      return ok({
+        total: cartridges.length,
+        activeForYou: cartridges.filter((c) => c.active).map((c) => c.id),
+        registry: `${cartridgeRepoUrl()} — open a PR to add one`,
+        cartridges,
+      });
+    },
   );
 
   server.registerTool(

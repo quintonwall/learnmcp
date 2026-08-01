@@ -19,6 +19,15 @@ export interface RecordResult {
   /** Objectives newly completed by this signal. */
   newObjectives: ObjectiveRef[];
   activeCartridgeIds: string[];
+  /**
+   * Cartridges that became active *because of this signal*. Empty on recompute(), which
+   * derives state from the whole log and so has no "before" to compare against.
+   *
+   * This is the only moment learnmcp can say "I know this tool" — without it, picking up
+   * a new track is completely silent until the first badge lands, which reads as nothing
+   * happening at all.
+   */
+  newCartridges: Array<{ id: string; name: string; objectives: number }>;
   points: number;
   rank: RankProgress;
   /** Subjective checks awaiting an LLM verdict; resolve with resolveJudgement(). */
@@ -48,8 +57,32 @@ export class ProgressService {
 
   /** Ingest a signal, persist any newly-earned badges/objectives, return the deltas. */
   record(scope: string, signal: Signal): RecordResult {
+    // Snapshot which tracks were already known so we can tell the difference between
+    // "postman track just activated" and "postman was already active". Evaluation is pure
+    // and in-memory, so the extra pass is cheap.
+    const before = new Set(
+      evaluateProject(
+        this.registry.list(),
+        this.store.getSignals(scope),
+        this.store.getJudgements(scope),
+      ).activeCartridgeIds,
+    );
+
     this.store.recordSignal(scope, signal);
-    return this.recompute(scope);
+    const result = this.recompute(scope);
+
+    const byId = new Map(this.registry.list().map((c) => [c.id, c]));
+    result.newCartridges = result.activeCartridgeIds
+      .filter((id) => !before.has(id))
+      .map((id) => {
+        const c = byId.get(id);
+        return {
+          id,
+          name: c?.provider.name ?? id,
+          objectives: (c?.objectives.length ?? 0) + (c?.bestPractices.length ?? 0),
+        };
+      });
+    return result;
   }
 
   /** Recompute state from the full signal log and reconcile it with the store. */
@@ -74,6 +107,7 @@ export class ProgressService {
       newBadges,
       newObjectives,
       activeCartridgeIds: state.activeCartridgeIds,
+      newCartridges: [], // only record() has a before-state to diff against
       points: state.points,
       rank: state.rank,
       pending: state.pending,
