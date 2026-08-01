@@ -82,3 +82,58 @@ form.submit button {
 
 footer.site { border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; margin-top: 48px; }
 footer.site .wrap { padding: 20px; }
+
+/* Terminal snippets — install commands and sample learnmcp output. */
+pre {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+pre .prompt { color: var(--muted); user-select: none; }
+pre .out { color: var(--gold); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+p code, li code, td code {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.steps { counter-reset: step; display: grid; gap: 18px; margin: 20px 0; }
+.step { position: relative; padding-left: 40px; }
+.step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.step h3 { margin: 2px 0 6px; font-size: 16px; }
+.step p { color: var(--muted); margin: 0; max-width: 640px; }
+
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0; }
+.cta a {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 9px 15px;
+  font-weight: 600;
+}
+.cta a:hover { border-color: var(--accent); text-decoration: none; }
+.cta a.primary { background: var(--accent); color: #0b0d12; border-color: var(--accent); }
