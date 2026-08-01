@@ -77,6 +77,33 @@ describe("leaf matchers", () => {
     expect(matched(m, [])).toBe(false);
   });
 
+  it("mcp_tool matches an exact tool name", () => {
+    const m: Matcher = { type: "mcp_tool", server: "linear", tool: "create_issue", gte: 1 };
+    expect(matched(m, [{ kind: "mcp_tool", server: "linear", tool: "create_issue" }])).toBe(true);
+    expect(matched(m, [{ kind: "mcp_tool", server: "linear", tool: "list_issues" }])).toBe(false);
+    // Same tool name on a different server must not count.
+    expect(matched(m, [{ kind: "mcp_tool", server: "github", tool: "create_issue" }])).toBe(false);
+  });
+
+  it("mcp_tool accepts a regex, for servers you can't introspect", () => {
+    const m: Matcher = { type: "mcp_tool", server: "linear", tool: "create_?[Ii]ssue", gte: 1 };
+    expect(matched(m, [{ kind: "mcp_tool", server: "linear", tool: "createIssue" }])).toBe(true);
+    expect(matched(m, [{ kind: "mcp_tool", server: "linear", tool: "create_issue" }])).toBe(true);
+    expect(matched(m, [{ kind: "mcp_tool", server: "linear", tool: "delete_issue" }])).toBe(false);
+  });
+
+  it("mcp_tool anchors, so a prefix can't satisfy it", () => {
+    const m: Matcher = { type: "mcp_tool", server: "s", tool: "deploy", gte: 1 };
+    expect(matched(m, [{ kind: "mcp_tool", server: "s", tool: "deploy_status" }])).toBe(false);
+  });
+
+  it("mcp_tool sums counts across everything the regex matches", () => {
+    const m: Matcher = { type: "mcp_tool", server: "s", tool: "create.*", gte: 3 };
+    const call = (tool: string) => ({ kind: "mcp_tool", server: "s", tool }) as const;
+    expect(matched(m, [call("createOne"), call("createTwo")])).toBe(false);
+    expect(matched(m, [call("createOne"), call("createTwo"), call("createOne")])).toBe(true);
+  });
+
   it("command matches an invoked slash command", () => {
     const m: Matcher = { type: "command", name: "postman:mock", gte: 1 };
     expect(matched(m, [{ kind: "command", name: "postman:mock" }])).toBe(true);

@@ -41,7 +41,14 @@ export const McpMatcher = z.object({
   server: z.string(),
 });
 
-/** A specific MCP tool was invoked at least `gte` times (default 1). */
+/**
+ * An MCP tool was invoked at least `gte` times (default 1).
+ *
+ * `tool` is matched exactly first, then as an anchored regex — so `createIssue` behaves as
+ * before, while `create_?[Ii]ssue` covers a server whose exact spelling you couldn't
+ * confirm. Servers behind OAuth can't be introspected when authoring a cartridge, and a
+ * name guessed slightly wrong fails silently forever.
+ */
 export const McpToolMatcher = z.object({
   type: z.literal("mcp_tool"),
   server: z.string(),

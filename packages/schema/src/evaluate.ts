@@ -83,8 +83,24 @@ function evaluateLeaf(m: LeafMatcherT, ctx: MatchContext): EvalResult {
       );
     case "mcp":
       return bool(ctx.mcpServers.has(m.server));
-    case "mcp_tool":
-      return bool((ctx.mcpToolCalls.get(`${m.server}:${m.tool}`) ?? 0) >= m.gte);
+    case "mcp_tool": {
+      // Exact name fast path, then treat `tool` as an anchored regex. Servers that require
+      // OAuth can't be introspected ahead of time, so an author who can't confirm the exact
+      // spelling can still write `create_?[Ii]ssue` instead of guessing and silently missing.
+      // A plain name is its own regex, so this stays backwards compatible.
+      const exact = ctx.mcpToolCalls.get(`${m.server}:${m.tool}`) ?? 0;
+      if (exact >= m.gte) return YES;
+
+      const re = safeRegExp(`^(?:${m.tool})$`);
+      if (!re) return bool(exact >= m.gte);
+      let hits = 0;
+      for (const [key, n] of ctx.mcpToolCalls) {
+        const sep = key.indexOf(":");
+        if (key.slice(0, sep) !== m.server) continue;
+        if (re.test(key.slice(sep + 1))) hits += n;
+      }
+      return bool(hits >= m.gte);
+    }
     case "env": {
       const entry = ctx.env.get(m.key);
       if (m.absent_from === "git") return bool(!!entry && entry.inGit !== true);

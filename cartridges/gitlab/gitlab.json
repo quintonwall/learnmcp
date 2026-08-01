@@ -1,0 +1,295 @@
+{
+  "id": "gitlab",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "GitLab",
+    "homepage": "https://gitlab.com",
+    "icon": "\ud83e\udd8a"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "gitlab"
+    },
+    {
+      "type": "file",
+      "path": "**/.gitlab-ci.yml",
+      "exists": true
+    },
+    {
+      "type": "bash",
+      "matches": "^\\s*glab\\s+"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "browse-a-project",
+      "title": "Read a project through the API",
+      "why": "Answering a question shouldn't require cloning the repo.",
+      "badge": "connected",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "(get|list|search)_?.*[Pp]roject.*"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+repo\\s+(view|list)"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/api/"
+    },
+    {
+      "id": "open-an-issue",
+      "title": "Open an issue",
+      "why": "Written-down work is work someone else can pick up.",
+      "badge": "reporter",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "create_?[Ii]ssue"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+issue\\s+create"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/user/project/issues/"
+    },
+    {
+      "id": "open-an-mr",
+      "title": "Open a merge request",
+      "why": "The MR is the unit of review; pushing to main skips every safeguard.",
+      "badge": "proposer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "create_?[Mm]erge_?[Rr]equest"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+mr\\s+create"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/user/project/merge_requests/"
+    },
+    {
+      "id": "review-an-mr",
+      "title": "Review a merge request",
+      "why": "Review is where defects get cheap and knowledge spreads.",
+      "badge": "reviewer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "(create|add)_?.*(note|comment|review).*"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+mr\\s+(diff|note|approve)"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/user/project/merge_requests/reviews/"
+    },
+    {
+      "id": "merge-an-mr",
+      "title": "Merge a reviewed MR",
+      "why": "Reviewed, green, merged \u2014 closing the loop.",
+      "badge": "integrator",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "(accept|merge)_?[Mm]erge_?[Rr]equest"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+mr\\s+merge"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/user/project/merge_requests/"
+    },
+    {
+      "id": "add-ci",
+      "title": "Add a CI pipeline",
+      "why": "A .gitlab-ci.yml is the difference between 'tests exist' and 'tests run'.",
+      "badge": "pipeline-builder",
+      "criteria": {
+        "type": "file",
+        "path": "**/.gitlab-ci.yml",
+        "exists": true
+      },
+      "docs": "https://docs.gitlab.com/ee/ci/quick_start/"
+    },
+    {
+      "id": "watch-a-pipeline",
+      "title": "Watch a pipeline run",
+      "why": "Reading pipeline logs is most of debugging CI.",
+      "badge": "pipeline-watcher",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "(get|list)_?.*(pipeline|job).*"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+(ci|pipeline)\\s+"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/ci/pipelines/"
+    },
+    {
+      "id": "cut-a-release",
+      "title": "Tag a release",
+      "why": "A tagged release is how anyone knows which version they're running.",
+      "badge": "releaser",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "create_?[Rr]elease"
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+release\\s+create"
+          },
+          {
+            "type": "bash",
+            "matches": "git\\s+tag\\s+-a"
+          }
+        ]
+      },
+      "docs": "https://docs.gitlab.com/ee/user/project/releases/"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "token-not-committed",
+      "title": "Keep your GitLab token out of git",
+      "why": "A committed token is a compromised account.",
+      "badge": "token-guard",
+      "criteria": {
+        "type": "env",
+        "key": "GITLAB_TOKEN",
+        "absent_from": "git"
+      },
+      "recommended": true
+    },
+    {
+      "id": "pipeline-has-tests",
+      "title": "Run tests in the pipeline, not just lint",
+      "why": "A pipeline that only lints gives false confidence at exactly the wrong moment.",
+      "badge": "tested-pipeline",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/.gitlab-ci.yml"
+        },
+        "rubric": "Does the pipeline run an automated test suite, rather than only linting or building?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "connected",
+      "name": "Project Reader",
+      "tier": "bronze",
+      "description": "Read a project through the API."
+    },
+    {
+      "id": "reporter",
+      "name": "Reporter",
+      "tier": "bronze",
+      "description": "Opened an issue."
+    },
+    {
+      "id": "proposer",
+      "name": "Proposer",
+      "tier": "silver",
+      "description": "Opened a merge request."
+    },
+    {
+      "id": "reviewer",
+      "name": "MR Reviewer",
+      "tier": "silver",
+      "description": "Reviewed a merge request."
+    },
+    {
+      "id": "integrator",
+      "name": "Integrator",
+      "tier": "silver",
+      "description": "Merged a reviewed MR."
+    },
+    {
+      "id": "pipeline-builder",
+      "name": "Pipeline Author",
+      "tier": "silver",
+      "description": "Added a CI pipeline."
+    },
+    {
+      "id": "pipeline-watcher",
+      "name": "Pipeline Watcher",
+      "tier": "bronze",
+      "description": "Watched a pipeline run."
+    },
+    {
+      "id": "releaser",
+      "name": "Release Cutter",
+      "tier": "silver",
+      "description": "Tagged a release."
+    },
+    {
+      "id": "token-guard",
+      "name": "Token Guard",
+      "tier": "bronze",
+      "description": "Keeps the GitLab token out of git."
+    },
+    {
+      "id": "tested-pipeline",
+      "name": "Tested Pipeline",
+      "tier": "gold",
+      "description": "Pipeline runs a real test suite."
+    },
+    {
+      "id": "merge-machine",
+      "name": "Merge Machine",
+      "tier": "gold",
+      "description": "Merged 10 merge requests.",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "gitlab",
+            "tool": "(accept|merge)_?[Mm]erge_?[Rr]equest",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "glab\\s+mr\\s+merge",
+            "gte": 10
+          }
+        ]
+      }
+    }
+  ]
+}

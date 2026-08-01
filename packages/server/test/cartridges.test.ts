@@ -24,8 +24,11 @@ describe("shipped cartridges", () => {
     expect(ids).toEqual([
       "context7",
       "exa",
+      "firebase",
       "general",
       "github",
+      "gitlab",
+      "linear",
       "playwright",
       "postman",
       "slack",

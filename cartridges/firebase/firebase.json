@@ -1,0 +1,361 @@
+{
+  "id": "firebase",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Firebase",
+    "homepage": "https://firebase.google.com",
+    "icon": "\ud83d\udd25"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "firebase"
+    },
+    {
+      "type": "file",
+      "path": "**/firebase.json",
+      "exists": true
+    },
+    {
+      "type": "dependency",
+      "name": "firebase"
+    },
+    {
+      "type": "bash",
+      "matches": "^\\s*firebase\\s+"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "sign-in",
+      "title": "Authenticate the Firebase CLI",
+      "why": "Nothing else works until the CLI knows who you are.",
+      "badge": "signed-in",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_login"
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+login"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/cli"
+    },
+    {
+      "id": "init-project",
+      "title": "Initialise Firebase in the repo",
+      "why": "firebase.json is what makes the setup reproducible for everyone else.",
+      "badge": "initialised",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_init"
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+init"
+          },
+          {
+            "type": "file",
+            "path": "**/firebase.json",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/cli#initialize_a_firebase_project"
+    },
+    {
+      "id": "inspect-project",
+      "title": "Inspect your project and apps",
+      "why": "Knowing which project you're pointed at prevents deploying to the wrong one.",
+      "badge": "surveyor",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_get_project"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_list_apps"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_list_projects"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/projects/learn-more"
+    },
+    {
+      "id": "wire-sdk-config",
+      "title": "Pull the SDK config into your app",
+      "why": "Hand-copied config is how staging keys end up in production builds.",
+      "badge": "wired",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "firebase",
+        "tool": "firebase_get_sdk_config"
+      },
+      "docs": "https://firebase.google.com/docs/web/setup"
+    },
+    {
+      "id": "manage-environments",
+      "title": "Separate your environments",
+      "why": "One project for everything means every mistake is a production mistake.",
+      "badge": "two-worlds",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_get_environment"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_update_environment"
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+use\\s+"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/projects/multiprojects"
+    },
+    {
+      "id": "review-security-rules",
+      "title": "Read your security rules",
+      "why": "Default-open rules are the single most common Firebase incident.",
+      "badge": "rule-reader",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_get_security_rules"
+          },
+          {
+            "type": "file",
+            "path": "**/{firestore,storage,database}.rules",
+            "exists": true
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/rules"
+    },
+    {
+      "id": "deploy",
+      "title": "Deploy to Firebase",
+      "why": "Shipping is the point.",
+      "badge": "deployer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_deploy"
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+deploy"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/cli#deployment"
+    },
+    {
+      "id": "verify-deploy",
+      "title": "Check the deploy actually landed",
+      "why": "A deploy you didn't verify is a deploy you'll hear about from users.",
+      "badge": "verifier",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_deploy_status"
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+hosting:channel"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs/hosting/test-preview-deploy"
+    },
+    {
+      "id": "preview-channel",
+      "title": "Ship a preview channel before production",
+      "why": "Preview URLs let reviewers click the change instead of imagining it.",
+      "badge": "previewer",
+      "criteria": {
+        "type": "bash",
+        "matches": "firebase\\s+hosting:channel:deploy"
+      },
+      "docs": "https://firebase.google.com/docs/hosting/test-preview-deploy"
+    },
+    {
+      "id": "consult-docs",
+      "title": "Look up the docs before guessing",
+      "why": "The knowledge tools answer from current docs rather than stale memory.",
+      "badge": "studious",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "developerknowledge_search_documents"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "developerknowledge_answer_query"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "developerknowledge_get_documents"
+          }
+        ]
+      },
+      "docs": "https://firebase.google.com/docs"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "rules-not-open",
+      "title": "Don't ship wide-open security rules",
+      "why": "`allow read, write: if true` exposes the whole database to anyone with your public config.",
+      "badge": "fortified",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/*.rules"
+        },
+        "rubric": "Do the security rules restrict access based on auth state or ownership, rather than allowing unrestricted read/write?",
+        "confidence_gte": 0.8
+      },
+      "recommended": true
+    },
+    {
+      "id": "service-account-not-committed",
+      "title": "Keep service account keys out of git",
+      "why": "A committed service account key is full admin access to the project.",
+      "badge": "key-guard",
+      "criteria": {
+        "type": "env",
+        "key": "GOOGLE_APPLICATION_CREDENTIALS",
+        "absent_from": "git"
+      },
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "signed-in",
+      "name": "Signed In",
+      "tier": "bronze",
+      "description": "Authenticated the Firebase CLI."
+    },
+    {
+      "id": "initialised",
+      "name": "Initialised",
+      "tier": "bronze",
+      "description": "Set Firebase up in the repo."
+    },
+    {
+      "id": "surveyor",
+      "name": "Project Surveyor",
+      "tier": "bronze",
+      "description": "Inspected your project and apps."
+    },
+    {
+      "id": "wired",
+      "name": "Wired",
+      "tier": "bronze",
+      "description": "Pulled the SDK config in."
+    },
+    {
+      "id": "two-worlds",
+      "name": "Two Worlds",
+      "tier": "silver",
+      "description": "Separated environments."
+    },
+    {
+      "id": "rule-reader",
+      "name": "Rule Reader",
+      "tier": "silver",
+      "description": "Read your security rules."
+    },
+    {
+      "id": "deployer",
+      "name": "Deployer",
+      "tier": "silver",
+      "description": "Deployed to Firebase."
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier",
+      "tier": "bronze",
+      "description": "Checked the deploy landed."
+    },
+    {
+      "id": "previewer",
+      "name": "Preview Artist",
+      "tier": "silver",
+      "description": "Shipped a preview channel."
+    },
+    {
+      "id": "studious",
+      "name": "Studious",
+      "tier": "bronze",
+      "description": "Consulted the docs."
+    },
+    {
+      "id": "fortified",
+      "name": "Fortified",
+      "tier": "gold",
+      "description": "Security rules that actually restrict access."
+    },
+    {
+      "id": "key-guard",
+      "name": "Key Guard",
+      "tier": "bronze",
+      "description": "Keeps service account keys out of git."
+    },
+    {
+      "id": "shipping-lane",
+      "name": "Shipping Lane",
+      "tier": "gold",
+      "description": "Deployed 10 times.",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "firebase",
+            "tool": "firebase_deploy",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "firebase\\s+deploy",
+            "gte": 10
+          }
+        ]
+      }
+    }
+  ]
+}
