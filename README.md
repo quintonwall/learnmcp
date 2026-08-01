@@ -7,6 +7,7 @@
 [![open issues](https://img.shields.io/github/issues/quintonwall/learnmcp?style=flat-square)](https://github.com/quintonwall/learnmcp/issues)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](cartridges/)
 [![MCP](https://img.shields.io/badge/MCP-remote-0b7285?style=flat-square)](https://modelcontextprotocol.io)
+[![sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?style=flat-square)](https://github.com/sponsors/quintonwall)
 
 **Add one plugin. Learn the tools you already use, as you use them.**
 
@@ -222,6 +223,21 @@ case to [`packages/server/test/cartridges.test.ts`](packages/server/test/cartrid
 **Don't want to write it by hand?** Ask learnmcp to
 `generate a cartridge from https://vercel.com/docs` — it reads the docs and drafts the
 track. Review it, then PR it.
+
+---
+
+## Sponsor
+
+learnmcp is free, open source, and the hosted server is free to use — someone pays for the
+database and the bandwidth behind it, and right now that's me.
+
+### 💜 [Sponsor this project](https://github.com/sponsors/quintonwall)
+
+Sponsoring keeps the hosted instance running for everyone, and funds the next round of
+work: claimable profiles, more first-party cartridges, and a public gallery.
+
+Not in a position to sponsor? [Contributing a cartridge](#contributing-a-cartridge),
+filing an issue, or telling someone about it all help just as much.
 
 ---
 
