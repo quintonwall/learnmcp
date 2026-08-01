@@ -35,7 +35,7 @@ learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your co
 
 ```bash
 claude plugin marketplace add quintonwall/learnmcp
-claude plugin install learnmcp@learnmcp
+claude plugin install learnmcp@quintonwall
 ```
 
 Restart Claude Code. Under a minute, and you're done.
