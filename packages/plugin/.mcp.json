@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "learnmcp": {
-      "type": "http",
-      "url": "${LEARNMCP_URL:-https://learnmcp.ai/mcp}"
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/mcp-proxy.mjs"]
     }
   }
 }
