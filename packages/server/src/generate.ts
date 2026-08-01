@@ -90,7 +90,7 @@ Rules:
 - NEVER GUESS AN IDENTIFIER. A misspelt tool name fails silently forever, which is worse
   than omitting the objective: the cartridge looks complete and rewards nothing. If the docs
   don't state a name, use a command, file, dependency or bash matcher you can be certain of,
-  or leave that objective out. `mcp_tool` accepts a regex, but that is for tolerating a
+  or leave that objective out. \`mcp_tool\` accepts a regex, but that is for tolerating a
   documented naming variation — not a licence to invent a plausible-looking name.
 - Reads and lookups are not achievements. Reward doing something, not calling any tool.
 - Prefer concrete, detectable criteria (command / mcp_tool / file / dependency / bash). Use
