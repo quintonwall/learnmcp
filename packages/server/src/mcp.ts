@@ -1,13 +1,27 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { homedir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { z } from "zod";
-import { Signal } from "@learnmcp/schema";
+import { Signal, validateCartridge } from "@learnmcp/schema";
 import type { CartridgeRegistry } from "./registry.js";
 import { ProgressService, type RecordResult } from "./service.js";
 import type { ProgressStore } from "./store.js";
-import { scanProject } from "./scanner.js";
+import { scanProject, claudeEnvSignals } from "./scanner.js";
 import { generateCartridge } from "./generate.js";
 import { httpFetchText, createAnthropicComplete } from "./generate-anthropic.js";
-import { userCartridgesDir } from "./config.js";
+import { userCartridgesDir, registryCacheDir, buildSync } from "./config.js";
+import { syncGithubCartridges, cartridgeRepoUrl } from "./github.js";
+import type { IdentityStore, Learner } from "./identity.js";
+
+export interface CloudContext {
+  identity: IdentityStore;
+  learner: Learner;
+  /** Set only on the request that minted the learner — surfaced once so the client saves it. */
+  issuedToken?: string;
+  /** Base URL of the web app, for the claim link. */
+  webUrl?: string;
+}
 
 export interface McpServerDeps {
   registry: CartridgeRegistry;
@@ -15,6 +29,11 @@ export interface McpServerDeps {
   /** Default scope (project identifier) when a tool call omits one. */
   defaultScope: string;
   version?: string;
+  /**
+   * Present when running as the hosted remote MCP: progress belongs to a learner in the
+   * database rather than a local file, and the identity/leaderboard tools are exposed.
+   */
+  cloud?: CloudContext;
 }
 
 const ok = (data: unknown) => ({
@@ -103,7 +122,9 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     },
     async ({ dir, scope: s }) => {
       const sc = scope(s);
-      const signals = scanProject(dir);
+      // Plugin/user-level MCP servers too — on Codex (no hooks) this scan is the only
+      // chance to notice them, and the project itself never references them.
+      const signals = [...scanProject(dir), ...claudeEnvSignals(homedir())];
       let last: RecordResult | null = null;
       for (const sig of signals) last = service.record(sc, sig);
       const result = last ?? service.recompute(sc);
@@ -182,18 +203,248 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
   );
 
   server.registerTool(
+    "add_cartridge",
+    {
+      title: "Add a cartridge",
+      description:
+        "Install a learning cartridge from its JSON document so learnmcp can teach a new service. Validated, written to the user cartridge dir, and hot-loaded immediately — no restart or redeploy. Use scope 'project' to check it into the current repo instead of installing it for just this user.",
+      inputSchema: {
+        cartridge: z
+          .union([z.string(), z.record(z.unknown())])
+          .describe("The cartridge document, as JSON text or an object."),
+        scope: z.enum(["user", "project"]).optional(),
+      },
+    },
+    async ({ cartridge, scope: where }) => {
+      let parsed: unknown;
+      try {
+        parsed = typeof cartridge === "string" ? JSON.parse(cartridge) : cartridge;
+      } catch (err) {
+        return ok({ error: `not valid JSON: ${(err as Error).message}` });
+      }
+
+      // Validate before writing: an invalid cartridge is skipped at load time with only a
+      // warning, which is a confusing way to find out it never installed.
+      const res = validateCartridge(parsed);
+      if (!res.ok) return ok({ error: `invalid cartridge: ${res.error}` });
+
+      const dir =
+        where === "project"
+          ? path.join(defaultScope, ".learnmcp", "cartridges")
+          : userCartridgesDir();
+      const file = path.join(dir, `${res.cartridge.id}.json`);
+      try {
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(file, JSON.stringify(res.cartridge, null, 2));
+      } catch (err) {
+        return ok({ error: `could not write ${file}: ${(err as Error).message}` });
+      }
+
+      await registry.reload();
+      const loaded = registry.list().some((c) => c.id === res.cartridge.id);
+      return ok({
+        added: res.cartridge.id,
+        name: res.cartridge.provider.name,
+        trust: res.cartridge.trust,
+        objectives: res.cartridge.objectives.length,
+        badges: res.cartridge.badges.length,
+        path: file,
+        loaded,
+      });
+    },
+  );
+
+  server.registerTool(
     "reload_cartridges",
     {
       title: "Reload cartridges",
       description:
-        "Re-scan cartridge source directories (project, user, registry cache) without restarting the server.",
-      inputSchema: {},
+        "Refresh the cartridge registry from GitHub and re-scan local sources (project, user, cache) without restarting. Picks up cartridges merged into the repo since the last refresh.",
+      inputSchema: {
+        skipFetch: z
+          .boolean()
+          .optional()
+          .describe("Reload from local sources only, without hitting GitHub."),
+      },
     },
-    async () => {
+    async ({ skipFetch }) => {
+      // Refresh from the GitHub registry first so a merged PR shows up in the same call.
+      // Best-effort: offline, or a rate-limit, must still allow a local reload.
+      let fetched: Awaited<ReturnType<typeof syncGithubCartridges>> | null = null;
+      let fetchError: string | undefined;
+      if (!skipFetch) {
+        try {
+          fetched = await syncGithubCartridges(registryCacheDir(), {});
+        } catch (err) {
+          fetchError = (err as Error).message;
+        }
+      }
+
       const cartridges = await registry.reload();
-      return ok({ reloaded: cartridges.length, ids: cartridges.map((c) => c.id) });
+      return ok({
+        reloaded: cartridges.length,
+        ids: cartridges.map((c) => c.id),
+        registry: {
+          source: `${cartridgeRepoUrl()} (open a PR to add one)`,
+          fetched: fetched?.cartridges.length ?? 0,
+          skipped: fetched?.skipped ?? [],
+          ...(fetchError ? { error: fetchError, note: "served from the local cache" } : {}),
+        },
+      });
     },
   );
 
+  server.registerTool(
+    "sync_progress",
+    {
+      title: "Sync progress to the server",
+      description:
+        "Push earned badges, points, and rank to the configured learnmcp server (profile + leaderboards), and pull approved community cartridges. No-op if the server isn't configured.",
+      inputSchema: { scope: z.string().optional() },
+    },
+    async ({ scope: s }) => {
+      const sync = buildSync(service);
+      if (!sync) {
+        return ok({
+          synced: false,
+          reason:
+            "server not configured — set LEARNMCP_SERVER_URL, LEARNMCP_SERVER_KEY, and LEARNMCP_USER_ID (see HOSTING.md)",
+        });
+      }
+      const pushed = await sync.pushProgress(scope(s));
+      const pulled = await sync.pullCartridges(registryCacheDir());
+      await registry.reload();
+      return ok({ synced: true, ...pushed, pulledFromRegistry: pulled.length });
+    },
+  );
+
+  if (deps.cloud) registerCloudTools(server, service, deps.cloud, scope);
+
   return server;
+}
+
+/**
+ * Identity and leaderboard tools — only meaningful when progress lives in the database,
+ * so they're registered for the hosted remote MCP and absent from the local server.
+ */
+function registerCloudTools(
+  server: McpServer,
+  service: ProgressService,
+  cloud: CloudContext,
+  scope: (s?: string) => string,
+): void {
+  const { identity, learner } = cloud;
+
+  server.registerTool(
+    "my_progress",
+    {
+      title: "My points, rank and standing",
+      description:
+        "Your total points, current rank, how far to the next one, badge count, and your position on the global leaderboard.",
+      inputSchema: {},
+    },
+    async () => {
+      const local = service.listBadges(scope());
+      const board = await identity.leaderboard(500).catch(() => []);
+      const me = board.find((r) => r.points === local.points);
+      return ok({
+        learnerId: learner.id,
+        handle: learner.handle,
+        claimed: learner.claimed,
+        points: local.points,
+        rank: local.rank.rank.name,
+        nextRank: local.rank.next?.name ?? null,
+        pointsToNextRank: local.rank.pointsToNext ?? null,
+        badges: local.badges.length,
+        leaderboardPosition: me?.position ?? null,
+        ...(learner.claimed
+          ? {}
+          : { tip: "You're anonymous. Run claim_profile to put a handle on the leaderboard." }),
+      });
+    },
+  );
+
+  server.registerTool(
+    "my_badges",
+    {
+      title: "My badges",
+      description: "Every badge you've earned, with tier points and which cartridge awarded it.",
+      inputSchema: {},
+    },
+    async () => {
+      const { badges, points, rank } = service.listBadges(scope());
+      return ok({
+        points,
+        rank: rank.rank.name,
+        badges: badges.map((b) => ({
+          name: b.name,
+          cartridge: b.cartridgeId,
+          points: b.points,
+          earnedAt: new Date(b.earnedAt).toISOString(),
+        })),
+      });
+    },
+  );
+
+  server.registerTool(
+    "leaderboard",
+    {
+      title: "Learner leaderboard",
+      description:
+        "Top learners by points. Pass a cartridge id for that cartridge's board instead of the global one.",
+      inputSchema: {
+        cartridge: z.string().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+      },
+    },
+    async ({ cartridge, limit }) => {
+      try {
+        return ok(
+          cartridge
+            ? { cartridge, entries: await identity.cartridgeLeaderboard(cartridge, limit ?? 10) }
+            : { entries: await identity.leaderboard(limit ?? 20) },
+        );
+      } catch (err) {
+        return ok({ error: `leaderboard unavailable: ${(err as Error).message}` });
+      }
+    },
+  );
+
+  server.registerTool(
+    "cartridge_popularity",
+    {
+      title: "Which cartridges people actually use",
+      description: "Distinct learners and points awarded per cartridge, most-used first.",
+      inputSchema: {},
+    },
+    async () => {
+      try {
+        return ok({ cartridges: await identity.popularity() });
+      } catch (err) {
+        return ok({ error: `popularity unavailable: ${(err as Error).message}` });
+      }
+    },
+  );
+
+  server.registerTool(
+    "claim_profile",
+    {
+      title: "Claim your profile",
+      description:
+        "Link your anonymous progress to a signed-in account so your handle appears on the leaderboard. Returns a URL to open; progress is already saved either way.",
+      inputSchema: {},
+    },
+    async () => {
+      if (learner.claimed) {
+        return ok({ claimed: true, handle: learner.handle, message: "Already claimed." });
+      }
+      const web = cloud.webUrl ?? "https://learnmcp.dev";
+      return ok({
+        claimed: false,
+        url: `${web.replace(/\/$/, "")}/claim?learner=${learner.id}`,
+        message:
+          "Open this URL and sign in with GitHub to claim your progress. Nothing is lost if you don't — your badges are already saved.",
+      });
+    },
+  );
 }

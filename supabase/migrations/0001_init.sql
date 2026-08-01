@@ -85,18 +85,23 @@ alter table user_profiles      enable row level security;
 alter table user_badges        enable row level security;
 
 -- Cartridges: anyone can read approved ones; authors can read/write their own drafts.
+drop policy if exists cartridges_read_approved on cartridges;
 create policy cartridges_read_approved on cartridges
   for select using (approved or submitted_by = auth.uid());
+drop policy if exists cartridges_insert_own on cartridges;
 create policy cartridges_insert_own on cartridges
   for insert with check (submitted_by = auth.uid());
+drop policy if exists cartridges_update_own on cartridges;
 create policy cartridges_update_own on cartridges
   for update using (submitted_by = auth.uid());
 
+drop policy if exists versions_read on cartridge_versions;
 create policy versions_read on cartridge_versions
   for select using (
     exists (select 1 from cartridges c
             where c.id = cartridge_id and (c.approved or c.submitted_by = auth.uid()))
   );
+drop policy if exists versions_insert_own on cartridge_versions;
 create policy versions_insert_own on cartridge_versions
   for insert with check (
     exists (select 1 from cartridges c
@@ -104,12 +109,16 @@ create policy versions_insert_own on cartridge_versions
   );
 
 -- Profiles: public read (for the leaderboard); only you write your own.
+drop policy if exists profiles_read_all on user_profiles;
 create policy profiles_read_all on user_profiles for select using (true);
+drop policy if exists profiles_upsert_own on user_profiles;
 create policy profiles_upsert_own on user_profiles
   for insert with check (user_id = auth.uid());
+drop policy if exists profiles_update_own on user_profiles;
 create policy profiles_update_own on user_profiles
   for update using (user_id = auth.uid());
 
 -- Badges: only you read/write your own.
+drop policy if exists badges_rw_own on user_badges;
 create policy badges_rw_own on user_badges
   for all using (user_id = auth.uid()) with check (user_id = auth.uid());

@@ -14,3 +14,6 @@ coverage/
 
 # design docs / requirements (local only)
 requirements/
+
+# prepack copy of the shared cartridges/ into the publishable server package
+packages/server/cartridges/

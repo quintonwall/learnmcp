@@ -117,6 +117,47 @@ function mcpSignals(root: string, files: string[]): Signal[] {
   return out;
 }
 
+/**
+ * MCP servers that Claude Code provides but the project never mentions: those bundled by
+ * installed plugins, plus user-level config. Without this a plugin-supplied server (the
+ * Postman plugin, say) is invisible until the model happens to call one of its tools,
+ * because nothing in the repo references it.
+ *
+ * `home` is injectable so this is testable against a fixture tree.
+ */
+export function claudeEnvSignals(home: string): Signal[] {
+  const servers = new Set<string>();
+
+  const addFrom = (file: string): void => {
+    try {
+      const json = JSON.parse(readFileSync(file, "utf8"));
+      for (const key of Object.keys(json.mcpServers ?? json.servers ?? {})) servers.add(key);
+    } catch {
+      /* missing or malformed — this is best-effort enrichment, never fatal */
+    }
+  };
+
+  // Installed plugins: each install path may ship its own .mcp.json.
+  try {
+    const registry = JSON.parse(
+      readFileSync(path.join(home, ".claude/plugins/installed_plugins.json"), "utf8"),
+    );
+    for (const installs of Object.values(registry.plugins ?? {})) {
+      for (const install of installs as Array<{ installPath?: string }>) {
+        if (install?.installPath) addFrom(path.join(install.installPath, ".mcp.json"));
+      }
+    }
+  } catch {
+    /* no plugins installed */
+  }
+
+  // User-level servers configured directly.
+  addFrom(path.join(home, ".claude/settings.json"));
+  addFrom(path.join(home, ".claude.json"));
+
+  return [...servers].map((server) => ({ kind: "mcp.added", server }));
+}
+
 /** Claude Code skills live under .claude/skills/<name>/. */
 function skillSignals(files: string[]): Signal[] {
   const names = new Set<string>();

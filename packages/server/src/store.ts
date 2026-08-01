@@ -2,9 +2,30 @@ import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncT } from "node:sqlite";
 import { Signal } from "@learnmcp/schema";
 
-// Load via createRequire so bundlers (e.g. vitest/vite) don't try to pre-resolve the
-// newer `node:sqlite` builtin at transform time; the type-only import above keeps types.
-const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as typeof import("node:sqlite");
+/**
+ * Resolved lazily, on first SqliteStore construction — NOT at module load.
+ *
+ * `node:sqlite` only exists in Node 22.5+, but this module is reachable from the package
+ * entrypoint, which the hosted MCP server imports on Vercel. Loading it eagerly would
+ * crash the whole serverless function on an older runtime over a store it never uses.
+ *
+ * createRequire keeps bundlers (vitest/vite) from pre-resolving the builtin at transform
+ * time; the type-only import above preserves types.
+ */
+let DatabaseSync: typeof import("node:sqlite").DatabaseSync | undefined;
+
+function loadSqlite(): typeof import("node:sqlite").DatabaseSync {
+  if (DatabaseSync) return DatabaseSync;
+  try {
+    ({ DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as typeof import("node:sqlite"));
+  } catch (err) {
+    throw new Error(
+      `local progress storage needs Node 22.5+ for node:sqlite (${(err as Error).message}). ` +
+        "Upgrade Node, or use the hosted server instead of LEARNMCP_LOCAL=1.",
+    );
+  }
+  return DatabaseSync!;
+}
 
 /**
  * Persistent progress store backed by Node's built-in SQLite (no native dep).
@@ -56,7 +77,7 @@ export class SqliteStore implements ProgressStore {
   private now: () => number;
 
   constructor(opts: SqliteStoreOptions = {}) {
-    this.db = new DatabaseSync(opts.path ?? ":memory:");
+    this.db = new (loadSqlite())(opts.path ?? ":memory:");
     this.now = opts.now ?? (() => Date.now());
     this.db.exec("PRAGMA journal_mode = WAL;");
     this.migrate();

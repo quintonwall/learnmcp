@@ -10,3 +10,7 @@ export * from "./remote.js";
 export * from "./sync.js";
 export * from "./generate.js";
 export * from "./generate-anthropic.js";
+export * from "./github.js";
+export * from "./cloudStore.js";
+export * from "./identity.js";
+export * from "./remoteClient.js";

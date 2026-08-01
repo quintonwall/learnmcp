@@ -25,8 +25,11 @@ create or replace view cartridge_leaderboard as
 alter table cartridge_scores enable row level security;
 
 -- Public read (for the board); each user writes only their own scores.
+drop policy if exists cscores_read_all on cartridge_scores;
 create policy cscores_read_all on cartridge_scores for select using (true);
+drop policy if exists cscores_insert_own on cartridge_scores;
 create policy cscores_insert_own on cartridge_scores
   for insert with check (user_id = auth.uid());
+drop policy if exists cscores_update_own on cartridge_scores;
 create policy cscores_update_own on cartridge_scores
   for update using (user_id = auth.uid());

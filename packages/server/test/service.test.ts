@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { CartridgeRegistry } from "../src/registry.js";
 import { SqliteStore } from "../src/store.js";
 import { ProgressService } from "../src/service.js";
-import { scanProject } from "../src/scanner.js";
+import { scanProject, claudeEnvSignals } from "../src/scanner.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const bundledCartridges = path.resolve(here, "../../../cartridges");
@@ -45,7 +45,7 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
   it("counts non-idempotent activity signals and awards the gold threshold badge", () => {
     let last;
     for (let i = 0; i < 10; i++) {
-      last = service.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "run-collection" });
+      last = service.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "runCollection" });
     }
     expect(store.getSignals(SCOPE)).toHaveLength(10);
     const ids = store.getGrantedBadges(SCOPE).map((b) => b.badgeId);
@@ -75,7 +75,7 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
 
   it("accumulates points into a rank", () => {
     service.record(SCOPE, { kind: "mcp.added", server: "postman" });
-    service.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "generate-spec" });
+    service.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "createSpec" });
     const { points, rank } = service.listBadges(SCOPE);
     expect(points).toBeGreaterThanOrEqual(10);
     expect(rank.rank.name).not.toBe("Novice");
@@ -87,7 +87,7 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
     try {
       const s1 = new SqliteStore({ path: dbPath });
       const svc1 = new ProgressService(registry, s1);
-      svc1.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "generate-spec" });
+      svc1.record(SCOPE, { kind: "mcp_tool", server: "postman", tool: "createSpec" });
       s1.close();
 
       const s2 = new SqliteStore({ path: dbPath });
@@ -134,5 +134,52 @@ describe("scanProject", () => {
       expect.arrayContaining(["playwright", "postman"]),
     );
     store.close();
+  });
+});
+
+describe("claudeEnvSignals", () => {
+  let home: string;
+  beforeEach(async () => {
+    home = await mkdtemp(path.join(tmpdir(), "learnmcp-home-"));
+  });
+  afterEach(async () => rm(home, { recursive: true, force: true }));
+
+  it("finds MCP servers bundled by an installed plugin", async () => {
+    // A plugin like Postman's ships its own .mcp.json — nothing in the user's project
+    // ever mentions the server, so a project-only scan can't see it.
+    const install = path.join(home, "plugins-cache/postman/1.3.0");
+    await mkdir(install, { recursive: true });
+    await writeFile(
+      path.join(install, ".mcp.json"),
+      JSON.stringify({ mcpServers: { postman: { type: "http", url: "https://example" } } }),
+    );
+    await mkdir(path.join(home, ".claude/plugins"), { recursive: true });
+    await writeFile(
+      path.join(home, ".claude/plugins/installed_plugins.json"),
+      JSON.stringify({
+        version: 2,
+        plugins: { "postman@claude-plugins-official": [{ installPath: install }] },
+      }),
+    );
+
+    expect(claudeEnvSignals(home)).toEqual([{ kind: "mcp.added", server: "postman" }]);
+  });
+
+  it("finds user-level servers and de-duplicates across sources", async () => {
+    await mkdir(path.join(home, ".claude"), { recursive: true });
+    await writeFile(
+      path.join(home, ".claude/settings.json"),
+      JSON.stringify({ mcpServers: { exa: {}, postman: {} } }),
+    );
+    await writeFile(path.join(home, ".claude.json"), JSON.stringify({ mcpServers: { exa: {} } }));
+
+    const servers = claudeEnvSignals(home).map((s) => "server" in s && s.server).sort();
+    expect(servers).toEqual(["exa", "postman"]);
+  });
+
+  it("returns nothing rather than throwing when config is missing or malformed", async () => {
+    expect(claudeEnvSignals(home)).toEqual([]);
+    await writeFile(path.join(home, ".claude.json"), "{ not json");
+    expect(claudeEnvSignals(home)).toEqual([]);
   });
 });

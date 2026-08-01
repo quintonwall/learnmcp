@@ -1,0 +1,22 @@
+{
+  "name": "learnmcp",
+  "owner": {
+    "name": "Quinton Wall",
+    "url": "https://github.com/learnmcp/learnmcp"
+  },
+  "metadata": {
+    "description": "A dynamic, in-session learning system for building with LLMs.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "learnmcp",
+      "source": "./packages/plugin",
+      "description": "Watches what you build, suggests the next best practice, and rewards you with badges — driven by pluggable cartridges.",
+      "version": "0.1.0",
+      "author": { "name": "Quinton Wall" },
+      "homepage": "https://github.com/learnmcp/learnmcp",
+      "keywords": ["learning", "lms", "badges", "best-practices", "cartridges"]
+    }
+  ]
+}

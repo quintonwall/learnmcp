@@ -15,7 +15,7 @@ sessions, see the **Using it** section of the [README](README.md) instead.
 ```bash
 npm install
 npm run build   # compiles every workspace (schema, server, and the Next.js web app)
-npm test        # 60 tests: evaluator, ranks, registry hot-loading, store/service,
+npm test        # 77 tests: evaluator, ranks, registry hot-loading, store/service,
                 # hooks, sync, generation, and all 8 first-party cartridges
 ```
 
@@ -32,6 +32,12 @@ with env vars:
 | `LEARNMCP_PROJECT` | Project dir = progress scope | cwd |
 | `LEARNMCP_DB` | SQLite path | `~/.learnmcp/state.sqlite` |
 | `LEARNMCP_CARTRIDGES` | Extra cartridge dirs (`:`-separated, highest precedence) | — |
+| `LEARNMCP_SERVER_URL` | Supabase project URL — enables sync ([HOSTING.md](HOSTING.md)) | — |
+| `LEARNMCP_SERVER_KEY` | Access token for that project | — |
+| `LEARNMCP_USER_ID` | Your `auth.users` UUID | — |
+| `LEARNMCP_HANDLE` | Leaderboard display name | — |
+
+Sync is off unless the first three server vars are all set; everything else works offline.
 
 ```bash
 node packages/server/dist/bin.js
@@ -54,9 +60,14 @@ echo '{"hook_event_name":"SessionStart","cwd":"'$PWD'"}' | node packages/server/
 echo '{"tool_name":"Bash","tool_input":{"command":"npx playwright test"},"cwd":"'$PWD'"}' \
   | node packages/server/dist/cli.js post-tool-use
 
-# record a raw signal / scan a directory
+# user-prompt-submit: a slash command counts as a command signal
+echo '{"hook_event_name":"UserPromptSubmit","prompt":"/postman:mock","cwd":"'$PWD'"}' \
+  | node packages/server/dist/cli.js post-tool-use
+
+# record a raw signal / scan a directory / push to the server
 node packages/server/dist/cli.js record '{"kind":"mcp.added","server":"postman"}'
 node packages/server/dist/cli.js scan .
+node packages/server/dist/cli.js sync
 ```
 
 ## Generate a cartridge from a docs URL
@@ -73,32 +84,8 @@ hot-loaded. Also available as the `generate_cartridge` MCP tool.
 
 ## Supabase
 
-### 1. Apply the schema
-
-Run the migrations in order (Supabase **SQL Editor**, or `supabase link` + `supabase db push`):
-
-- [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) — cartridges +
-  versions, per-user profiles/badges, the `leaderboard` view, `increment_install`, and RLS.
-- [`supabase/migrations/0002_cartridge_leaderboard.sql`](supabase/migrations/0002_cartridge_leaderboard.sql)
-  — `cartridge_scores` + the per-cartridge `cartridge_leaderboard` view.
-
-### 2. Seed the first-party cartridges (optional)
-
-Publish the bundled cartridges into the registry so the live gallery shows them. Use the
-**service_role** key (bypasses RLS; keep it server-side, never in the web app or git):
-
-```bash
-# For each cartridge in cartridges/*/*.json, upsert into `cartridges` (approved=true,
-# official) + `cartridge_versions`. See the seed pattern in RemoteBackend.submitCartridge.
-```
-
-### 3. Keys
-
-- **Web app** → `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY` (anon key is
-  public by design and RLS-gated; safe in the browser).
-- **Server-side sync** → the `SyncService` takes a `RemoteBackend` built with the project
-  URL + a key. Use per-user JWTs for real users; the service_role key only for admin/seed
-  scripts, never shipped to clients.
+Applying the schema, seeding cartridges, connecting clients, and moderating the registry
+all live in **[HOSTING.md](HOSTING.md)**.
 
 ## The web app
 

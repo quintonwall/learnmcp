@@ -1,10 +1,18 @@
 #!/usr/bin/env node
 import { readFileSync, statSync } from "node:fs";
+import { homedir } from "node:os";
 import path from "node:path";
 import { Signal } from "@learnmcp/schema";
-import { buildRuntime, userCartridgesDir, type Runtime } from "./config.js";
+import {
+  buildRuntime,
+  buildSync,
+  userCartridgesDir,
+  registryCacheDir,
+  type Runtime,
+} from "./config.js";
 import { eventToSignals, type HookEvent } from "./hookAdapter.js";
-import { scanProject } from "./scanner.js";
+import { scanProject, claudeEnvSignals } from "./scanner.js";
+import { recordRemote, callRemoteTool, remoteUrl } from "./remoteClient.js";
 import { generateCartridge } from "./generate.js";
 import { httpFetchText, createAnthropicComplete } from "./generate-anthropic.js";
 import type { RecordResult } from "./service.js";
@@ -60,7 +68,35 @@ function recordSummary(r: RecordResult): string {
 
 async function sessionStart(rt: Runtime, event: HookEvent): Promise<void> {
   const dir = event.cwd || rt.scope;
-  for (const sig of scanProject(dir)) rt.service.record(rt.scope, sig);
+  const scanned = [...scanProject(dir), ...claudeEnvSignals(homedir())];
+
+  // Cloud first, so the session summary reflects progress from every machine.
+  if (remoteUrl()) {
+    await recordRemote(scanned);
+    const remoteProgress = (await callRemoteTool("progress", {})) as
+      | { activeCartridgeIds?: string[]; points?: number; rank?: { rank?: { name?: string } } }
+      | null;
+    const remoteNext = (await callRemoteTool("learn_next", {})) as
+      | { title?: string; cartridgeId?: string; why?: string }
+      | null;
+    if (remoteProgress) {
+      const tracks = (remoteProgress.activeCartridgeIds ?? []).join(", ");
+      const lines = [
+        `learnmcp is tracking your progress. Rank ${remoteProgress.rank?.rank?.name ?? "Novice"} · ${remoteProgress.points ?? 0} pts.`,
+        tracks ? `Active learning tracks: ${tracks}.` : "No cartridges active yet.",
+        remoteNext?.title
+          ? `Suggested next: ${remoteNext.title} (${remoteNext.cartridgeId}) — ${remoteNext.why ?? ""}`.trim()
+          : "",
+      ].filter(Boolean);
+      emit({
+        hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
+      });
+      return;
+    }
+    // Server unreachable — fall through to the local store below.
+  }
+
+  for (const sig of scanned) rt.service.record(rt.scope, sig);
 
   const prog = rt.service.progress(rt.scope);
   const next = rt.service.learnNext(rt.scope);
@@ -76,8 +112,31 @@ async function sessionStart(rt: Runtime, event: HookEvent): Promise<void> {
   });
 }
 
+/**
+ * Cloud is the default: signals go to the hosted server so progress follows you across
+ * machines and counts on the leaderboard. If it's unreachable — or LEARNMCP_LOCAL=1 —
+ * we fall through to the local store rather than dropping the activity.
+ */
+async function recordViaCloud(signals: Signal[]): Promise<string | null> {
+  if (!remoteUrl() || signals.length === 0) return null;
+  const res = await recordRemote(signals);
+  if (!res) return null;
+  if (!res.newBadges.length && !res.newObjectives.length) return "";
+  const parts = [
+    ...res.newBadges.map((b) => `🏅 ${b.name} (+${b.points})`),
+    ...res.newObjectives.map((o) => `✅ ${o.title}`),
+  ];
+  return `learnmcp — ${parts.join("  ·  ")}${res.message ? `  ·  ${res.message}` : ""}`;
+}
+
 async function postToolUse(rt: Runtime, event: HookEvent): Promise<void> {
   const signals = eventToSignals(event).map((s) => enrichFileContent(s, event.cwd));
+
+  const cloud = await recordViaCloud(signals);
+  if (cloud !== null) {
+    if (cloud) emit({ systemMessage: cloud });
+    return;
+  }
 
   // One tool use can emit several signals (e.g. an MCP call = mcp.added + mcp_tool);
   // aggregate the deltas across all of them so nothing earned this action is dropped.
@@ -144,11 +203,38 @@ async function main(): Promise<void> {
   if (cmd === "scan") {
     const dir = rest[0] || process.cwd();
     const rt = await buildRuntime({ project: dir });
-    const signals = scanProject(dir);
+    const signals = [...scanProject(dir), ...claudeEnvSignals(homedir())];
     for (const s of signals) rt.service.record(rt.scope, s);
     console.log(`scanned ${signals.length} signals; ${recordSummary(rt.service.recompute(rt.scope))}`);
     rt.store.close();
     await rt.registry.close();
+    return;
+  }
+
+  if (cmd === "sync") {
+    const rt = await buildRuntime();
+    const sync = buildSync(rt.service);
+    if (!sync) {
+      console.error(
+        "[learnmcp] sync is not configured — set LEARNMCP_SERVER_URL, LEARNMCP_SERVER_KEY, " +
+          "and LEARNMCP_USER_ID. See HOSTING.md.",
+      );
+      rt.store.close();
+      await rt.registry.close();
+      process.exit(1);
+    }
+    try {
+      const pushed = await sync.pushProgress(rt.scope);
+      const pulled = await sync.pullCartridges(registryCacheDir());
+      await rt.registry.reload();
+      console.log(
+        `pushed ${pushed.badges} badges · ${pushed.points} pts (${pushed.rank}); ` +
+          `pulled ${pulled.length} registry cartridge(s)`,
+      );
+    } finally {
+      rt.store.close();
+      await rt.registry.close();
+    }
     return;
   }
 
@@ -176,7 +262,7 @@ async function main(): Promise<void> {
   }
 
   console.error(
-    "usage: learnmcp <session-start|post-tool-use|record <json>|scan [dir]|generate <url>>",
+    "usage: learnmcp <session-start|post-tool-use|record <json>|scan [dir]|sync|generate <url>>",
   );
   process.exit(1);
 }

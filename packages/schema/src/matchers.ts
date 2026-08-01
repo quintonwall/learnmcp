@@ -64,6 +64,20 @@ export const SkillMatcher = z.object({
   exists: z.boolean().optional(),
 });
 
+/**
+ * A slash command or skill was invoked at least `gte` times (default 1). This is how a
+ * cartridge detects plugin usage that never touches an MCP tool: most plugin workflows
+ * are commands (`/postman:mock`), and some shell out rather than calling a tool at all.
+ *
+ * `name` is a regex so a cartridge can accept a family of commands in one matcher
+ * (`"postman:(mock|sync)"`), tested against the normalised `plugin:command` form.
+ */
+export const CommandMatcher = z.object({
+  type: z.literal("command"),
+  name: z.string(),
+  gte: z.number().int().positive().default(1),
+});
+
 /** An aggregate threshold over emitted signals of a given kind. */
 export const CountMatcher = z.object({
   type: z.literal("count"),
@@ -91,6 +105,7 @@ export const LeafMatcher = z.discriminatedUnion("type", [
   McpToolMatcher,
   EnvMatcher,
   SkillMatcher,
+  CommandMatcher,
   CountMatcher,
   LlmJudgeMatcher,
 ]);

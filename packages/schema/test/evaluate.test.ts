@@ -76,6 +76,26 @@ describe("leaf matchers", () => {
     expect(matched(m, [{ kind: "env", key: "POSTMAN_API_KEY", inGit: true }])).toBe(false);
     expect(matched(m, [])).toBe(false);
   });
+
+  it("command matches an invoked slash command", () => {
+    const m: Matcher = { type: "command", name: "postman:mock", gte: 1 };
+    expect(matched(m, [{ kind: "command", name: "postman:mock" }])).toBe(true);
+    expect(matched(m, [{ kind: "command", name: "postman:docs" }])).toBe(false);
+    expect(matched(m, [])).toBe(false);
+  });
+
+  it("command anchors, so a prefix can't satisfy it", () => {
+    const m: Matcher = { type: "command", name: "postman:mock", gte: 1 };
+    expect(matched(m, [{ kind: "command", name: "postman:mock-teardown" }])).toBe(false);
+  });
+
+  it("command accepts a family via alternation and sums their counts", () => {
+    const m: Matcher = { type: "command", name: "postman:(run-collection|test)", gte: 3 };
+    const run = { kind: "command", name: "postman:run-collection" } as const;
+    const test = { kind: "command", name: "postman:test" } as const;
+    expect(matched(m, [run, run])).toBe(false);
+    expect(matched(m, [run, test, run])).toBe(true);
+  });
 });
 
 describe("composite matchers", () => {

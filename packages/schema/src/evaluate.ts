@@ -94,6 +94,15 @@ function evaluateLeaf(m: LeafMatcherT, ctx: MatchContext): EvalResult {
     case "skill":
       if (m.name) return bool(ctx.skills.has(m.name));
       return bool(m.exists === false ? ctx.skills.size === 0 : ctx.skills.size > 0);
+    case "command": {
+      // Anchored so `postman:mock` can't be satisfied by `postman:mock-teardown`;
+      // authors opt into breadth explicitly with alternation or `.*`.
+      const re = safeRegExp(`^(?:${m.name})$`);
+      if (!re) return NO;
+      let hits = 0;
+      for (const [name, n] of ctx.commands) if (re.test(name)) hits += n;
+      return bool(hits >= m.gte);
+    }
     case "count":
       return bool((ctx.signalCounts.get(m.of as SignalKind) ?? 0) >= m.gte);
     case "llm_judge": {

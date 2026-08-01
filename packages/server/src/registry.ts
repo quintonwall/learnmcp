@@ -56,12 +56,19 @@ export class CartridgeRegistry extends EventEmitter {
         const id = loaded.cartridge.id;
         const existing = next.get(id);
         if (existing) {
-          // Lower sourceIndex wins; warn about the shadowed one.
-          if (existing.sourceIndex <= i) {
-            this.onWarn(`cartridge "${id}" at ${file} shadowed by ${existing.file}`);
-            continue;
+          const winner = existing.sourceIndex <= i ? existing : loaded;
+          const loser = existing.sourceIndex <= i ? loaded : existing;
+          // Only worth saying when the versions actually differ. The registry cache
+          // mirrors the same cartridges that ship bundled, so identical shadowing is the
+          // normal case — warning on it once per source per load is pure noise, and hooks
+          // run this on every tool use.
+          if (winner.cartridge.version !== loser.cartridge.version) {
+            this.onWarn(
+              `cartridge "${id}" v${loser.cartridge.version} at ${loser.file} shadowed by ` +
+                `v${winner.cartridge.version} at ${winner.file}`,
+            );
           }
-          this.onWarn(`cartridge "${id}" at ${existing.file} shadowed by ${file}`);
+          if (winner === existing) continue;
         }
         next.set(id, loaded);
       }

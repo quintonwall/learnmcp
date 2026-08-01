@@ -13,6 +13,7 @@ export interface MatchContext {
   mcpServers: Set<string>;
   mcpToolCalls: Map<string, number>; // key: `${server}:${tool}`
   skills: Set<string>;
+  commands: Map<string, number>; // key: normalised `plugin:command`, value: invocations
   env: Map<string, { inGit?: boolean }>;
   signalCounts: Map<SignalKind, number>;
   judgements: Map<string, { confidence: number }>;
@@ -26,6 +27,7 @@ export function emptyContext(): MatchContext {
     mcpServers: new Set(),
     mcpToolCalls: new Map(),
     skills: new Set(),
+    commands: new Map(),
     env: new Map(),
     signalCounts: new Map(),
     judgements: new Map(),
@@ -60,6 +62,9 @@ export function applySignal(ctx: MatchContext, s: Signal): MatchContext {
     }
     case "skill":
       ctx.skills.add(s.name);
+      break;
+    case "command":
+      ctx.commands.set(s.name, (ctx.commands.get(s.name) ?? 0) + 1);
       break;
     case "env":
       ctx.env.set(s.key, { inGit: s.inGit });

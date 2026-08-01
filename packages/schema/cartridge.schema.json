@@ -95,6 +95,10 @@
           "then": { "properties": { "type": {}, "name": { "type": "string" }, "exists": { "type": "boolean" } }, "additionalProperties": false }
         },
         {
+          "if": { "properties": { "type": { "const": "command" } } },
+          "then": { "required": ["name"], "properties": { "type": {}, "name": { "type": "string" }, "gte": { "type": "integer", "minimum": 1 } }, "additionalProperties": false }
+        },
+        {
           "if": { "properties": { "type": { "const": "count" } } },
           "then": { "required": ["of", "gte"], "properties": { "type": {}, "of": { "type": "string" }, "gte": { "type": "integer", "minimum": 1 } }, "additionalProperties": false }
         },

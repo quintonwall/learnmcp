@@ -40,6 +40,19 @@ export const SkillSignal = z.object({
   name: z.string(),
 });
 
+/**
+ * A slash command or skill was *invoked* (distinct from SkillSignal, which means a skill
+ * was authored). Plugins expose most of their value through commands rather than MCP
+ * tools — `/postman:mock` is a command, not an `mcp__postman__mock` call — so without
+ * this the whole plugin surface is invisible to detection.
+ *
+ * `name` is normalised to `plugin:command` with no leading slash and no arguments.
+ */
+export const CommandSignal = z.object({
+  kind: z.literal("command"),
+  name: z.string(),
+});
+
 export const EnvSignal = z.object({
   kind: z.literal("env"),
   key: z.string(),
@@ -54,6 +67,7 @@ export const Signal = z.discriminatedUnion("kind", [
   McpAddedSignal,
   McpToolSignal,
   SkillSignal,
+  CommandSignal,
   EnvSignal,
 ]);
 

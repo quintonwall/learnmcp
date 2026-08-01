@@ -32,10 +32,15 @@ as you work, while `/learn` and `/badges` surface progress to the model on deman
 - **`.mcp.json`** — bundles the `learnmcp` MCP server (`learn_next`, `record_activity`,
   `list_badges`, `progress`, `scan_project`, `reload_cartridges`, …).
 - **`hooks/hooks.json`** — the passive-monitoring layer:
-  - `SessionStart` → `learnmcp session-start`: scans the project and injects a progress
-    summary + next suggestion as session context.
-  - `PostToolUse` (Bash / Edit / Write / MCP tools) → `learnmcp post-tool-use`: records the
-    resulting signal and, when you earn something, surfaces it as a system message.
+  - `SessionStart` → `learnmcp session-start`: scans the project *and your installed
+    plugins* (a plugin-supplied MCP server is invisible to a project-only scan), then
+    injects a progress summary + next suggestion as session context.
+  - `UserPromptSubmit` → `learnmcp post-tool-use`: catches slash commands. Most plugins
+    expose their value as commands rather than MCP tools — `/postman:mock` is a command,
+    not an `mcp__postman__mock` call — so without this the whole surface is invisible.
+  - `PostToolUse` (Bash / Edit / Write / Skill / SlashCommand / MCP tools) →
+    `learnmcp post-tool-use`: records the resulting signal and, when you earn something,
+    surfaces it as a system message.
 - **`commands/`** — `/learn`, `/badges`, `/progress`, `/cartridge`.
 
 Both the hook commands and the MCP server come from `@learnmcp/server`'s compiled `dist/`,

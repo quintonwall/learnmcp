@@ -1,5 +1,5 @@
 ---
-description: List installed cartridges, or reload them (usage: /cartridge [list|reload])
+description: "List installed cartridges, or reload them (usage: /cartridge [list|reload])"
 argument-hint: "[list|reload]"
 ---
 

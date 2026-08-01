@@ -36,42 +36,42 @@ export interface CartridgeBoard {
 
 export const usingSupabase = (): boolean => getSupabase() !== null;
 
+/**
+ * The registry is the repo's own `cartridges/` directory — the same thing contributors
+ * PR into and the MCP server reads from GitHub. This app deploys from that repo, so
+ * reading it off disk *is* reading the registry; there's no separate table to keep in sync.
+ *
+ * Supabase only supplies popularity: how many distinct learners have earned from each one.
+ */
 export async function getCartridges(): Promise<CartridgeCard[]> {
+  const cards = bundledCartridges();
   const sb = getSupabase();
-  if (sb) {
-    const { data, error } = await sb
-      .from("cartridges")
-      .select("id,name,provider,icon,trust,install_count")
-      .eq("approved", true)
-      .order("install_count", { ascending: false });
-    // If the registry isn't migrated/seeded yet (error or empty), fall back to the
-    // bundled first-party cartridges so the gallery is never blank.
-    if (!error && data && data.length > 0) {
-      return data.map((c) => ({
-        id: c.id,
-        name: c.name,
-        icon: c.icon ?? undefined,
-        trust: c.trust,
-        objectives: 0, // objectives/badges counts live in cartridge_versions
-        badges: 0,
-        installs: c.install_count ?? 0,
-      }));
-    }
-  }
-  return bundledCartridges();
+  if (!sb) return cards;
+
+  const { data } = await sb
+    .from("cartridge_popularity")
+    .select("cartridge_id,learners");
+  if (!data?.length) return cards;
+
+  const learners = new Map(data.map((r) => [r.cartridge_id, r.learners as number]));
+  return cards
+    .map((c) => ({ ...c, installs: learners.get(c.id) ?? 0 }))
+    .sort((a, b) => (b.installs ?? 0) - (a.installs ?? 0) || a.name.localeCompare(b.name));
 }
 
 export async function getLeaderboard(): Promise<LeaderboardRow[]> {
   const sb = getSupabase();
   if (!sb) return [];
+  // `learner_leaderboard` is what the remote MCP writes into — it includes anonymous
+  // learners under a stable pseudonym, which is most of them by design.
   const { data } = await sb
-    .from("leaderboard")
-    .select("position,handle,points,rank")
-    .order("points", { ascending: false })
+    .from("learner_leaderboard")
+    .select("position,display_name,points,rank")
+    .order("position", { ascending: true })
     .limit(100);
   return (data ?? []).map((r) => ({
     position: r.position,
-    handle: r.handle ?? "anonymous",
+    handle: r.display_name ?? "anonymous",
     points: r.points,
     rank: r.rank ?? rankForPoints(r.points).rank.name,
   }));
@@ -82,8 +82,8 @@ export async function getCartridgeLeaders(perCartridge = 5): Promise<CartridgeBo
   const sb = getSupabase();
   if (!sb) return [];
   const { data, error } = await sb
-    .from("cartridge_leaderboard")
-    .select("cartridge_id,handle,points,position")
+    .from("learner_cartridge_leaderboard")
+    .select("cartridge_id,display_name,points,position")
     .lte("position", perCartridge)
     .order("cartridge_id", { ascending: true })
     .order("position", { ascending: true });
@@ -101,7 +101,7 @@ export async function getCartridgeLeaders(perCartridge = 5): Promise<CartridgeBo
       board = { cartridgeId: r.cartridge_id, name: m?.name ?? r.cartridge_id, icon: m?.icon, rows: [] };
       boards.set(r.cartridge_id, board);
     }
-    board.rows.push({ position: r.position, handle: r.handle ?? "anonymous", points: r.points });
+    board.rows.push({ position: r.position, handle: r.display_name ?? "anonymous", points: r.points });
   }
   return [...boards.values()];
 }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { CartridgeRegistry } from "../src/registry.js";
 import { SqliteStore } from "../src/store.js";
 import { ProgressService } from "../src/service.js";
+import { buildSync } from "../src/config.js";
 import { SyncService } from "../src/sync.js";
 import { SupabaseBackend } from "../src/remote.js";
 import type {
@@ -50,7 +51,7 @@ describe("SyncService", () => {
   afterEach(() => store.close());
 
   it("pushes earned badges + points/rank to the remote profile", async () => {
-    service.record("/proj", { kind: "mcp_tool", server: "postman", tool: "generate-spec" });
+    service.record("/proj", { kind: "mcp_tool", server: "postman", tool: "createSpec" });
     const remote = new FakeRemote();
     const sync = new SyncService(service, remote, { userId: "u1", handle: "quinton" });
 
@@ -116,5 +117,74 @@ describe("SupabaseBackend (PostgREST request building)", () => {
     const fetchImpl = async () => new Response("nope", { status: 403 });
     const be = new SupabaseBackend({ url: "https://x.supabase.co", key: "k", fetchImpl });
     await expect(be.incrementInstall("x")).rejects.toThrow(/403/);
+  });
+});
+
+describe("buildSync (env wiring)", () => {
+  const KEYS = [
+    "LEARNMCP_SERVER_URL",
+    "LEARNMCP_SERVER_KEY",
+    "LEARNMCP_USER_ID",
+    "LEARNMCP_HANDLE",
+  ];
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const k of KEYS) {
+      saved[k] = process.env[k];
+      delete process.env[k];
+    }
+  });
+  afterEach(() => {
+    for (const k of KEYS) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+
+  async function svc(): Promise<ProgressService> {
+    const registry = new CartridgeRegistry({ sources: [bundled] });
+    await registry.load();
+    return new ProgressService(registry, new SqliteStore({ path: ":memory:" }));
+  }
+
+  it("returns null unless url, key, and user id are all set", async () => {
+    const s = await svc();
+    expect(buildSync(s)).toBeNull();
+
+    process.env.LEARNMCP_SERVER_URL = "https://x.supabase.co";
+    expect(buildSync(s), "url alone is not enough").toBeNull();
+
+    process.env.LEARNMCP_SERVER_KEY = "anon-key";
+    expect(buildSync(s), "still missing a user id").toBeNull();
+
+    process.env.LEARNMCP_USER_ID = "u1";
+    expect(buildSync(s)).toBeInstanceOf(SyncService);
+  });
+
+  it("pushes under the configured identity", async () => {
+    process.env.LEARNMCP_SERVER_URL = "https://x.supabase.co";
+    process.env.LEARNMCP_SERVER_KEY = "anon-key";
+    process.env.LEARNMCP_USER_ID = "u42";
+    process.env.LEARNMCP_HANDLE = "quinton";
+
+    const service = await svc();
+    service.record("/proj", { kind: "mcp_tool", server: "postman", tool: "createSpec" });
+
+    const bodies: unknown[] = [];
+    const remote = new SupabaseBackend({
+      url: "https://x.supabase.co",
+      key: "anon-key",
+      fetchImpl: async (_url, init = {}) => {
+        bodies.push(JSON.parse((init.body as string) ?? "null"));
+        return new Response("[]", { status: 200 });
+      },
+    });
+    const res = await new SyncService(service, remote, {
+      userId: process.env.LEARNMCP_USER_ID!,
+      handle: process.env.LEARNMCP_HANDLE,
+    }).pushProgress("/proj");
+
+    expect(res.points).toBeGreaterThan(0);
+    expect(bodies[0]).toMatchObject({ user_id: "u42", handle: "quinton" });
   });
 });

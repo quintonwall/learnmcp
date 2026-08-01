@@ -1,6 +1,6 @@
 {
   "id": "postman",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "trust": "official",
   "provider": {
     "name": "Postman",
@@ -9,6 +9,7 @@
   },
   "detect": [
     { "type": "mcp", "server": "postman" },
+    { "type": "command", "name": "postman:.*" },
     { "type": "dependency", "name": "postman" },
     { "type": "file", "path": "**/postman_collection.json", "exists": true }
   ],
@@ -21,8 +22,24 @@
       "badge": "spec-author",
       "criteria": {
         "anyOf": [
-          { "type": "mcp_tool", "server": "postman", "tool": "generate-spec", "gte": 1 },
+          { "type": "command", "name": "postman:generate-spec" },
+          { "type": "mcp_tool", "server": "postman", "tool": "createSpec" },
           { "type": "file", "path": "**/openapi.{json,yaml,yml}", "exists": true }
+        ]
+      }
+    },
+    {
+      "id": "sync-collection",
+      "title": "Sync your spec to a Postman collection",
+      "docs": "https://learning.postman.com/docs/design-apis/specifications/overview/",
+      "why": "A collection generated from the spec keeps your requests and your contract from drifting apart.",
+      "badge": "in-sync",
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:sync" },
+          { "type": "mcp_tool", "server": "postman", "tool": "generateCollection" },
+          { "type": "mcp_tool", "server": "postman", "tool": "syncCollectionWithSpec" },
+          { "type": "mcp_tool", "server": "postman", "tool": "syncSpecWithCollection" }
         ]
       }
     },
@@ -32,7 +49,13 @@
       "docs": "https://learning.postman.com/docs/design-apis/mock-apis/overview/",
       "why": "Mocks let the frontend build against realistic responses before the API is done.",
       "badge": "mocker",
-      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "mock", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:mock" },
+          { "type": "mcp_tool", "server": "postman", "tool": "createMock" },
+          { "type": "mcp_tool", "server": "postman", "tool": "publishMock" }
+        ]
+      }
     },
     {
       "id": "run-collection",
@@ -40,7 +63,13 @@
       "docs": "https://learning.postman.com/docs/collections/running-collections/intro-to-collection-runs/",
       "why": "Running the collection turns your requests into a repeatable test suite.",
       "badge": "collection-runner",
-      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "run-collection", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:(run-collection|test)" },
+          { "type": "mcp_tool", "server": "postman", "tool": "runCollection" },
+          { "type": "bash", "matches": "postman\\s+collection\\s+run" }
+        ]
+      }
     },
     {
       "id": "security-audit",
@@ -48,7 +77,25 @@
       "docs": "https://learning.postman.com/docs/api-governance/api-definition/api-definition-warnings/",
       "why": "Catch the common API vulnerabilities before they ship.",
       "badge": "hardened",
-      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "security", "gte": 1 }
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:security" },
+          { "type": "bash", "matches": "postman\\s+api\\s+lint" }
+        ]
+      }
+    },
+    {
+      "id": "publish-docs",
+      "title": "Publish your API documentation",
+      "docs": "https://learning.postman.com/docs/publishing-your-api/documenting-your-api/",
+      "why": "Published docs are how anyone else — human or agent — discovers what your API can do.",
+      "badge": "documentarian",
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:docs" },
+          { "type": "mcp_tool", "server": "postman", "tool": "publishDocumentation" }
+        ]
+      }
     }
   ],
   "bestPractices": [
@@ -76,8 +123,10 @@
   ],
   "badges": [
     { "id": "spec-author", "name": "Spec Author", "tier": "bronze", "description": "Generated your first OpenAPI spec." },
+    { "id": "in-sync", "name": "Single Source", "tier": "bronze", "description": "Kept spec and collection in sync." },
     { "id": "mocker", "name": "Great Pretender", "tier": "bronze", "description": "Stood up your first mock server." },
     { "id": "collection-runner", "name": "Test Runner", "tier": "bronze", "description": "Ran a collection as tests." },
+    { "id": "documentarian", "name": "Documentarian", "tier": "bronze", "description": "Published your API documentation." },
     { "id": "hardened", "name": "Locked Down", "tier": "silver", "description": "Ran a security audit on your API." },
     { "id": "agent-ready", "name": "Agent-Ready", "tier": "gold", "description": "Your API is described well enough for agents to use." },
     {
@@ -85,7 +134,12 @@
       "name": "Marathoner",
       "tier": "gold",
       "description": "Ran collections 10 times.",
-      "criteria": { "type": "mcp_tool", "server": "postman", "tool": "run-collection", "gte": 10 }
+      "criteria": {
+        "anyOf": [
+          { "type": "command", "name": "postman:(run-collection|test)", "gte": 10 },
+          { "type": "mcp_tool", "server": "postman", "tool": "runCollection", "gte": 10 }
+        ]
+      }
     }
   ]
 }

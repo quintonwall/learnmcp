@@ -12,11 +12,34 @@ export interface HookEvent {
   hook_event_name?: string;
   tool_name?: string;
   tool_input?: Record<string, unknown>;
+  /** UserPromptSubmit only — the raw text the user submitted. */
+  prompt?: string;
   cwd?: string;
   source?: string;
 }
 
 const FILE_TOOLS = new Set(["Edit", "Write", "MultiEdit", "NotebookEdit"]);
+
+/**
+ * Normalise a slash command / skill reference to bare `plugin:command`: strip the leading
+ * slash, drop arguments, and drop a `(MCP)`-style suffix. Returns null if it doesn't look
+ * like a command name.
+ */
+export function normalizeCommandName(raw: string): string | null {
+  const token = raw.trim().replace(/^\/+/, "").split(/\s+/)[0] ?? "";
+  return /^[A-Za-z0-9][A-Za-z0-9:_-]*$/.test(token) ? token : null;
+}
+
+/**
+ * A submitted prompt counts as a command invocation only when the slash command is the
+ * very first thing in it — that's what Claude Code actually dispatches. Merely mentioning
+ * "/postman:mock" mid-sentence must not earn a badge.
+ */
+export function promptToSignals(prompt: string | undefined): Signal[] {
+  if (!prompt || !prompt.trimStart().startsWith("/")) return [];
+  const name = normalizeCommandName(prompt);
+  return name ? [{ kind: "command", name }] : [];
+}
 
 /** Parse an MCP tool name `mcp__<server>__<tool>` (server has no `__`, tool may). */
 export function parseMcpToolName(name: string): { server: string; tool: string } | null {
@@ -39,6 +62,8 @@ function relPath(filePath: string, cwd?: string): string {
  * (e.g. an MCP tool call implies the server is present *and* was invoked).
  */
 export function eventToSignals(event: HookEvent): Signal[] {
+  if (event.hook_event_name === "UserPromptSubmit") return promptToSignals(event.prompt);
+
   const tool = event.tool_name;
   if (!tool) return [];
   const input = event.tool_input ?? {};
@@ -55,6 +80,14 @@ export function eventToSignals(event: HookEvent): Signal[] {
     return typeof fp === "string" && fp
       ? [{ kind: "file", path: relPath(fp, event.cwd), event: "change" }]
       : [];
+  }
+
+  // The model invoking a skill directly, and the explicit slash-command tool. Both are
+  // command invocations; neither shows up as an `mcp__*` call.
+  if (tool === "Skill" || tool === "SlashCommand") {
+    const raw = (input.skill ?? input.command) as unknown;
+    const name = typeof raw === "string" ? normalizeCommandName(raw) : null;
+    return name ? [{ kind: "command", name }] : [];
   }
 
   const mcp = parseMcpToolName(tool);
