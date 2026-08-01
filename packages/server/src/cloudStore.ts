@@ -1,4 +1,4 @@
-import { Signal } from "@learnmcp/schema";
+import { Signal, rankForPoints } from "@learnmcp/schema";
 import type { ProgressStore, StoredBadge, StoredObjective } from "./store.js";
 import type { FetchLike } from "./remote.js";
 
@@ -167,11 +167,14 @@ export class CloudStore implements ProgressStore {
       );
     }
 
-    // Denormalised points/rank on the learner row are what the leaderboard orders by.
+    // Denormalised points/rank on the learner row are what the leaderboard reads. Rank
+    // has to be recomputed here too — leaving it at its 'Novice' default made the board
+    // disagree with what my_progress reported for the same learner.
     const points = this.badges.reduce((n, b) => n + b.points, 0);
     if (this.pendingBadges.length) {
       await this.req("PATCH", `/learners?id=eq.${learnerId}`, {
         points,
+        rank: rankForPoints(points).rank.name,
         last_seen_at: new Date(this.now()).toISOString(),
       });
     }

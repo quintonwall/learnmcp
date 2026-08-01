@@ -106,8 +106,12 @@ describe("CloudStore — hydrate, evaluate, flush", () => {
 
     const badgeWrite = fake.writes.find((w) => w.table.startsWith("learner_badges"))!;
     expect(badgeWrite.body).toMatchObject([{ learner_id: "learner-1", badge_id: "spec-author" }]);
-    // The denormalised total is what the leaderboard orders by.
-    expect(fake.writes.find((w) => w.method === "PATCH")!.body).toMatchObject({ points: 10 });
+    // The denormalised total is what the leaderboard orders by — and it must carry the
+    // rank too, or the board reports 'Novice' for someone my_progress calls 'Initiate'.
+    expect(fake.writes.find((w) => w.method === "PATCH")!.body).toMatchObject({
+      points: 10,
+      rank: "Initiate",
+    });
   });
 
   it("credits pre-existing badges from the database without re-granting them", async () => {

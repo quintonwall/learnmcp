@@ -99,7 +99,14 @@ async function handle(req: Request): Promise<Response> {
     cloud: { identity, learner, issuedToken, webUrl: WEB_URL },
   });
 
-  const transport = new WebStandardStreamableHTTPServerTransport({}); // stateless
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined, // stateless: no session to carry between invocations
+    // Return a complete JSON body instead of an SSE stream. On serverless the stream
+    // variant hands back a Response whose body is still being written, so tearing the
+    // server down after `handleRequest` resolves truncates it to nothing — a 200 with an
+    // empty body. JSON mode resolves only once the response is fully formed.
+    enableJsonResponse: true,
+  });
   await server.connect(transport);
 
   let response: Response;
