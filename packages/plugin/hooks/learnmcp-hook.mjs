@@ -293,13 +293,24 @@ async function main() {
     const progress = await callTool(url, "progress", {});
     if (!progress) return;
     const next = await callTool(url, "learn_next", {});
+    const rank = progress.rank?.rank?.name ?? "Novice";
+    const points = progress.points ?? 0;
     const tracks = (progress.activeCartridgeIds ?? []).join(", ");
     const lines = [
-      `learnmcp is tracking your progress. Rank ${progress.rank?.rank?.name ?? "Novice"} · ${progress.points ?? 0} pts.`,
+      `learnmcp is tracking your progress. Rank ${rank} · ${points} pts.`,
       tracks ? `Active learning tracks: ${tracks}.` : "No cartridges active yet.",
       next?.title ? `Suggested next: ${next.title} (${next.cartridgeId}) — ${next.why ?? ""}`.trim() : "",
     ].filter(Boolean);
-    emit({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") } });
+
+    // Two audiences, two channels. additionalContext is wrapped in a system reminder for
+    // the model and never rendered, so on its own the user sees nothing at all — which
+    // reads as learnmcp being broken. systemMessage is the only part they actually see.
+    emit({
+      systemMessage:
+        `learnmcp — ${rank} · ${points} pts` +
+        (next?.title ? `  ·  Next: ${next.title} (${next.cartridgeId})` : ""),
+      hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
+    });
     return;
   }
 
