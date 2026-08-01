@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24: the local progress store uses node:sqlite, which is still behind
+      # --experimental-sqlite on 22.x.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build every workspace
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+  cartridges:
+    # Every cartridge in the registry has to be valid — this repo IS the registry, so a
+    # bad PR here breaks detection for everyone.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace @learnmcp/schema
+      - name: Validate cartridges
+        run: npm test --workspace @learnmcp/server -- test/cartridges.test.ts

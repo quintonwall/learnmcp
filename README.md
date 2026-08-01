@@ -1,6 +1,20 @@
 # learnmcp 🎓
 
+[![status: beta](https://img.shields.io/badge/status-beta-orange?style=flat-square)](#beta)
+[![ci](https://img.shields.io/github/actions/workflow/status/quintonwall/learnmcp/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/quintonwall/learnmcp/actions/workflows/ci.yml)
+[![last commit](https://img.shields.io/github/last-commit/quintonwall/learnmcp?style=flat-square)](https://github.com/quintonwall/learnmcp/commits/main)
+[![cartridges](https://img.shields.io/github/directory-file-count/quintonwall/learnmcp/cartridges?type=dir&style=flat-square&label=cartridges&color=0b7285)](cartridges/)
+[![open issues](https://img.shields.io/github/issues/quintonwall/learnmcp?style=flat-square)](https://github.com/quintonwall/learnmcp/issues)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](cartridges/)
+[![MCP](https://img.shields.io/badge/MCP-remote-0b7285?style=flat-square)](https://modelcontextprotocol.io)
+
 **Add one plugin. Learn the tools you already use, as you use them.**
+
+<a id="beta"></a>
+> **🚧 Beta, and moving fast.** The learning loop works end to end, but expect breaking
+> changes: the cartridge schema may shift, and hosted progress could be reset while things
+> settle. Claiming a profile isn't wired up yet, so everyone is anonymous on the
+> leaderboard for now. Issues and cartridge PRs very welcome.
 
 learnmcp watches what you build, tells you the next best practice worth trying, and awards
 points and badges when you do it. No courses, no fixed path — your real work is the
