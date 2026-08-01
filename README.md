@@ -40,6 +40,9 @@ claude plugin install learnmcp@learnmcp
 
 Restart Claude Code. Under a minute, and you're done.
 
+The plugin talks to the hosted server at **[learnmcp.ai](https://learnmcp.ai)** — nothing
+to configure, and no key to paste.
+
 **No account required.** The first time learnmcp records anything it creates an anonymous
 learner for you and starts saving straight away — badges, points, rank. You only sign in if
 you want your *name* on the leaderboard instead of `learner-7f3c`:

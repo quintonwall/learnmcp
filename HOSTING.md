@@ -116,7 +116,7 @@ select id, points, handle, created_at from learners order by created_at desc lim
 
 ## 3. Point clients at it
 
-The plugin defaults to `https://learnmcp-chi.vercel.app/mcp`. For your own deployment, either:
+The plugin defaults to `https://learnmcp.ai/mcp`. For your own deployment, either:
 
 **Set `LEARNMCP_URL`** in `~/.claude/settings.json` — this reaches both the MCP client and
 the hooks:
@@ -181,5 +181,3 @@ concern is GitHub rate limits, which the token handles.
   tables predate the GitHub registry and the `learners` model. Nothing writes them now.
   They're kept because 0003 builds on the same `auth` setup; a later migration should drop
   the dead tables.
-- **No `/claim` page means nobody can be non-anonymous yet.** Everything else works; the
-  leaderboard just shows pseudonyms.

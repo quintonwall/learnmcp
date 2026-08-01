@@ -438,7 +438,7 @@ function registerCloudTools(
       if (learner.claimed) {
         return ok({ claimed: true, handle: learner.handle, message: "Already claimed." });
       }
-      const web = cloud.webUrl ?? "https://learnmcp-chi.vercel.app";
+      const web = cloud.webUrl ?? "https://learnmcp.ai";
       return ok({
         claimed: false,
         url: `${web.replace(/\/$/, "")}/claim?learner=${learner.id}`,

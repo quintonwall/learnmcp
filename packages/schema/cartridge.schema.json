@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://learnmcp.dev/cartridge.schema.json",
+  "$id": "https://learnmcp.ai/cartridge.schema.json",
   "title": "learnmcp cartridge",
   "description": "A pluggable, declarative learning cartridge. Contains no executable code — only matchers the engine evaluates.",
   "type": "object",
