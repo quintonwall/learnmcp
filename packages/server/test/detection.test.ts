@@ -130,10 +130,33 @@ describe("Postman cartridge — the walkthrough, executed", () => {
     expect(detectActive([c], [{ kind: "command", name: "git:status" }])).toEqual([]);
   });
 
-  it("recommends generating the OpenAPI spec first", async () => {
+  it("leads with an objective reachable in minutes, not the whole spec workflow", async () => {
     const c = await loadPostman();
     const state = evaluateProject([c], [{ kind: "mcp.added", server: "postman" }]);
-    expect(nextObjective(c, state)?.id).toBe("generate-openapi-spec");
+    expect(nextObjective(c, state)?.id).toBe("send-first-request");
+  });
+
+  it("covers the product broadly, not just the happy path", async () => {
+    const c = await loadPostman();
+    // A thin cartridge is the failure mode that makes learnmcp look inert: a developer
+    // uses the tool all day and earns nothing.
+    expect(c.objectives.length).toBeGreaterThanOrEqual(8);
+
+    const covered = new Set(c.objectives.map((o) => o.id));
+    for (const id of [
+      "send-first-request",
+      "generate-openapi-spec",
+      "sync-collection",
+      "create-mock-server",
+      "save-examples",
+      "use-environments",
+      "run-collection",
+      "security-audit",
+      "publish-docs",
+      "automate-with-flows",
+    ]) {
+      expect(covered, `missing objective: ${id}`).toContain(id);
+    }
   });
 
   it("grants Spec Author via the command, the MCP tool, or the file", async () => {

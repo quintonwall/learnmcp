@@ -36,6 +36,7 @@ Allowed matcher types (a cartridge may ONLY use these — never invent new ones,
 - { "type": "dependency", "name": "<pkg>", "manifest": "<file?>" }
 - { "type": "mcp", "server": "<name>" }                              an MCP server was added
 - { "type": "mcp_tool", "server": "<name>", "tool": "<tool>", "gte": <n?> }
+- { "type": "command", "name": "<regex>", "gte": <n?> }              a slash command or skill was invoked, e.g. "postman:mock"
 - { "type": "env", "key": "<VAR>", "absent_from": "git"? , "present": <bool?> }
 - { "type": "skill", "name": "<name?>", "exists": <bool?> }
 - { "type": "count", "of": "<signal-kind>", "gte": <n> }             e.g. of "mcp.added"
@@ -61,12 +62,34 @@ Return ONLY a single JSON object (no prose, no markdown fences) with this exact 
   "badges": [ { "id","name","tier"?: "bronze|silver|gold|platinum","description"?, "criteria"?: <matcher> }... ]
 }
 
+BE COMPREHENSIVE. This is the single most important rule. A cartridge that covers only the
+happy path leaves a developer using the product all day and earning nothing, which makes
+learnmcp look broken. Before writing any JSON, enumerate the product's full surface from the
+docs — every command, tool, and capability — then write an objective for each one that
+represents a genuine practice.
+
 Rules:
-- 4-6 objectives covering the core workflow, ordered from first-steps to advanced.
-- 2-3 bestPractices, including at least one security/hygiene item (e.g. keep API keys out of git via an "env" matcher with "absent_from": "git").
-- Every objective's "badge" must reference a badge id you define in "badges".
+- Cover the WHOLE product, not the core workflow: aim for 8-15 objectives, more for a large
+  surface. If the docs describe a capability and it can be detected, it deserves an objective.
+  Work through the lifecycle: first steps, authoring, testing, automation, collaboration,
+  publishing, governance, and any advanced or newer features.
+- Order objectives from first-run to advanced; the first should be reachable in minutes.
+- 2-4 bestPractices, including at least one security/hygiene item (e.g. keep API keys out of
+  git via an "env" matcher with "absent_from": "git").
+- Every objective's "badge" must reference a badge id you define in "badges". Spread tiers:
+  bronze for single actions, silver for things needing real effort, gold for mastery.
 - Include one gold "count"- or high-"gte"-based badge for sustained use.
-- Prefer concrete, detectable criteria (mcp_tool / file / dependency / bash). Use llm_judge only for genuinely subjective quality.
+- ONE ACTION, MANY SURFACES: the same thing is often reachable several ways — a slash command
+  (\`{"type":"command"}\`), the MCP tool underneath it (\`{"type":"mcp_tool"}\`), or a CLI
+  invocation (\`{"type":"bash"}\`). Accept all of them with "anyOf". Matching only one is the
+  most common reason a cartridge silently never fires.
+- Use the product's REAL identifiers. MCP tool names are usually camelCase API operations
+  (createMock), while slash commands are kebab-case (postman:mock) — they are different
+  names for the same action, so never guess one from the other. If the docs don't state a
+  tool name, prefer a command, file, or bash matcher you can be sure of.
+- Reads and lookups are not achievements. Reward doing something, not calling any tool.
+- Prefer concrete, detectable criteria (command / mcp_tool / file / dependency / bash). Use
+  llm_judge only for genuinely subjective quality.
 - Deep-link "docs" to the most relevant page you can infer.
 ${MATCHER_REFERENCE}
 

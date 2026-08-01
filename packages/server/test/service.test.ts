@@ -79,7 +79,7 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
     service.record(SCOPE, { kind: "mcp.added", server: "postman" });
     const rec = service.learnNext(SCOPE);
     expect(rec?.cartridgeId).toBe("postman");
-    expect(rec?.objectiveId).toBe("generate-openapi-spec");
+    expect(rec?.objectiveId).toBe("send-first-request");
     expect(rec?.docs).toBeTruthy();
   });
 
