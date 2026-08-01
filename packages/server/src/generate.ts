@@ -83,10 +83,15 @@ Rules:
   (\`{"type":"command"}\`), the MCP tool underneath it (\`{"type":"mcp_tool"}\`), or a CLI
   invocation (\`{"type":"bash"}\`). Accept all of them with "anyOf". Matching only one is the
   most common reason a cartridge silently never fires.
-- Use the product's REAL identifiers. MCP tool names are usually camelCase API operations
-  (createMock), while slash commands are kebab-case (postman:mock) — they are different
-  names for the same action, so never guess one from the other. If the docs don't state a
-  tool name, prefer a command, file, or bash matcher you can be sure of.
+- Use the product's REAL identifiers, and only ones the documentation actually states. MCP
+  tool names are usually camelCase API operations (createMock) while slash commands are
+  kebab-case (postman:mock) — different names for the same action, so never derive one from
+  the other.
+- NEVER GUESS AN IDENTIFIER. A misspelt tool name fails silently forever, which is worse
+  than omitting the objective: the cartridge looks complete and rewards nothing. If the docs
+  don't state a name, use a command, file, dependency or bash matcher you can be certain of,
+  or leave that objective out. `mcp_tool` accepts a regex, but that is for tolerating a
+  documented naming variation — not a licence to invent a plausible-looking name.
 - Reads and lookups are not achievements. Reward doing something, not calling any tool.
 - Prefer concrete, detectable criteria (command / mcp_tool / file / dependency / bash). Use
   llm_judge only for genuinely subjective quality.

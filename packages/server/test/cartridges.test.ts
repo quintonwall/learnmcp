@@ -27,8 +27,6 @@ describe("shipped cartridges", () => {
       "firebase",
       "general",
       "github",
-      "gitlab",
-      "linear",
       "playwright",
       "postman",
       "slack",
