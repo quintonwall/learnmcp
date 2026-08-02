@@ -24,6 +24,7 @@ describe("shipped cartridges", () => {
     expect(ids).toEqual([
       "context7",
       "exa",
+      "figma",
       "firebase",
       "general",
       "github",

@@ -1,0 +1,358 @@
+{
+  "id": "figma",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Figma",
+    "homepage": "https://figma.com",
+    "icon": "\ud83c\udfa8"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "figma"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "get-oriented",
+      "title": "See who you're connected as and what's available",
+      "why": "Knowing your identity and connected libraries up front avoids exporting from \u2014 or writing to \u2014 the wrong file.",
+      "badge": "oriented",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "whoami"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "get_libraries"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "get_metadata"
+          }
+        ]
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "extract-design-context",
+      "title": "Pull real design context instead of eyeballing a screenshot",
+      "why": "Colors, spacing and structure read straight from the file beat guessing them from a picture.",
+      "badge": "context-puller",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "get_design_context"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "use-design-tokens",
+      "title": "Use the file's actual variables instead of hardcoded values",
+      "why": "A hardcoded hex value drifts from the design the moment someone updates a token; reading the real variable never does.",
+      "badge": "token-user",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "get_variable_defs"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "verify-against-design",
+      "title": "Check your build against a visual snapshot of the design",
+      "why": "A screenshot comparison catches the pixel-level drift a code review never will.",
+      "badge": "verifier",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "get_screenshot"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "search-before-building",
+      "title": "Search the design system before building a new component",
+      "why": "The component you're about to hand-roll may already exist in a connected library.",
+      "badge": "scout",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "search_design_system"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "wire-up-code-connect",
+      "title": "Link a Figma component to its real code component",
+      "why": "Code Connect is what makes 'inspect this component' show your actual implementation instead of generic CSS.",
+      "badge": "connector",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "get_code_connect_suggestions"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "add_code_connect_map"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "send_code_connect_mappings"
+          }
+        ]
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "round-trip-to-figma",
+      "title": "Send your built UI back into Figma as real layers",
+      "why": "Closing the loop from code back to design keeps the file from silently going stale the moment implementation diverges.",
+      "badge": "round-tripper",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "generate_figma_design"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "create-a-file",
+      "title": "Create a new Figma file directly from your agent",
+      "why": "Starting the file from your session skips the context-switch of opening Figma just to create a blank canvas.",
+      "badge": "file-starter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "create_new_file"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "move-real-assets",
+      "title": "Move real exported assets between Figma and your codebase",
+      "why": "Exporting the actual asset beats re-creating it from scratch or screenshotting a preview.",
+      "badge": "asset-mover",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "download_assets"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "upload_assets"
+          }
+        ]
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "capture-motion",
+      "title": "Extract real animation timing instead of guessing it",
+      "why": "Keyframe data from the file is exact; eyeballing a prototype and typing a duration is not.",
+      "badge": "motion-capturer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "get_motion_context"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "build-a-diagram",
+      "title": "Turn a description into a FigJam diagram instead of a text wall",
+      "why": "A diagram a teammate can actually look at beats a paragraph describing the same flow.",
+      "badge": "diagrammer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "generate_diagram"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "reuse-a-shader",
+      "title": "Reuse a shader from your library instead of rebuilding one",
+      "why": "A shared shader effect is tested and consistent; a hand-rolled one-off usually isn't either.",
+      "badge": "shader-reuser",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "get_shader_effect"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "figma",
+            "tool": "get_shader_fill"
+          }
+        ]
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    },
+    {
+      "id": "edit-directly",
+      "title": "Create or edit Figma objects directly from your agent",
+      "why": "Making the edit in the same session as the code beats a manual round trip through the Figma UI.",
+      "badge": "editor",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "use_figma"
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "file-keys-not-hardcoded",
+      "title": "Don't hardcode Figma file keys or access tokens in source",
+      "why": "A file key or token committed to the repo is discoverable by anyone who can read the repo, including forks.",
+      "badge": "discreet",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/*.{ts,js,py}"
+        },
+        "rubric": "Does the code read Figma file keys and access tokens from environment variables or config, rather than hardcoding them as string literals?",
+        "confidence_gte": 0.8
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/",
+      "recommended": true
+    },
+    {
+      "id": "confirm-before-writing",
+      "title": "Require confirmation before an agent creates or edits Figma files",
+      "why": "use_figma, create_new_file and generate_figma_design write to a real file other people may have open \u2014 an unreviewed write there is not like an unreviewed local file edit.",
+      "badge": "careful-editor",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/{CLAUDE,AGENTS}.md"
+        },
+        "rubric": "Do the project rules require explicit human confirmation before an agent creates or modifies a real Figma file (via use_figma, create_new_file, or generate_figma_design)?",
+        "confidence_gte": 0.8
+      },
+      "docs": "https://developers.figma.com/docs/figma-mcp-server/tools-and-prompts/",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "oriented",
+      "name": "Oriented",
+      "tier": "bronze",
+      "description": "Saw your identity and connected libraries."
+    },
+    {
+      "id": "context-puller",
+      "name": "Context Puller",
+      "tier": "bronze",
+      "description": "Pulled real design context."
+    },
+    {
+      "id": "token-user",
+      "name": "Token User",
+      "tier": "silver",
+      "description": "Used the file's real variables."
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier",
+      "tier": "bronze",
+      "description": "Checked a build against a visual snapshot."
+    },
+    {
+      "id": "scout",
+      "name": "Scout",
+      "tier": "bronze",
+      "description": "Searched the design system before building."
+    },
+    {
+      "id": "connector",
+      "name": "Connector",
+      "tier": "silver",
+      "description": "Linked a component to its real code."
+    },
+    {
+      "id": "round-tripper",
+      "name": "Round Tripper",
+      "tier": "gold",
+      "description": "Sent built UI back into Figma as layers."
+    },
+    {
+      "id": "file-starter",
+      "name": "File Starter",
+      "tier": "bronze",
+      "description": "Created a new Figma file from an agent."
+    },
+    {
+      "id": "asset-mover",
+      "name": "Asset Mover",
+      "tier": "bronze",
+      "description": "Moved a real asset between Figma and code."
+    },
+    {
+      "id": "motion-capturer",
+      "name": "Motion Capturer",
+      "tier": "bronze",
+      "description": "Extracted real animation timing."
+    },
+    {
+      "id": "diagrammer",
+      "name": "Diagrammer",
+      "tier": "bronze",
+      "description": "Turned a description into a FigJam diagram."
+    },
+    {
+      "id": "shader-reuser",
+      "name": "Shader Reuser",
+      "tier": "bronze",
+      "description": "Reused a shader from the library."
+    },
+    {
+      "id": "editor",
+      "name": "Editor",
+      "tier": "bronze",
+      "description": "Edited a Figma object directly."
+    },
+    {
+      "id": "discreet",
+      "name": "Discreet",
+      "tier": "bronze",
+      "description": "Keeps file keys and tokens out of source."
+    },
+    {
+      "id": "careful-editor",
+      "name": "Careful Editor",
+      "tier": "gold",
+      "description": "Writes to Figma require confirmation."
+    },
+    {
+      "id": "figma-fluent",
+      "name": "Figma Fluent",
+      "tier": "gold",
+      "description": "Pulled design context 15 times.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "figma",
+        "tool": "get_design_context",
+        "gte": 15
+      }
+    }
+  ]
+}
