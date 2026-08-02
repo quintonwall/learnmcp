@@ -11,9 +11,19 @@
 
 **Add one plugin. Learn the tools you already use, as you use them.**
 
-learnmcp watches what you build, tells you the next best practice worth trying, and awards
-points and badges when you do it. No courses, no fixed path — your real work is the
-curriculum.
+learnmcp is [vibe learning](https://www.quintonwall.com/writing/learnmcp-vibe-learning) —
+learning that happens beside the work you're already doing, not instead of it. No
+dedicated session, no separate app to open: it watches what you build, tells you the next
+best practice worth trying, and awards points and badges when you do it. No courses, no
+fixed path — your real work is the curriculum.
+
+Two things make that possible:
+
+- **Passive.** Nothing to open, nothing to schedule — it notices what you did and teaches
+  you the next thing in that moment.
+- **Vendor-neutral.** Everything it knows about a tool lives in a
+  [cartridge](cartridges/) — a plain-JSON module for one MCP server, not tied to any
+  single platform. Missing yours? [Submit one](cartridges/).
 
 ---
 
@@ -84,8 +94,11 @@ under a token you overwrite is abandoned. There's also no recovery if a token is
 it's the only thing identifying you, by design.
 
 **Want to start over?** Delete the token — `rm ~/.learnmcp/token` — and the next thing
-you do mints a fresh learner with 0 points and no badges. If you'd claimed a handle,
-just claim it again; it belongs to the old learner, not the new one.
+you do mints a fresh learner with 0 points and no badges. **If you'd claimed a handle,
+you can't get it back this way.** It still belongs to the old, now-unreachable learner,
+and `claim_profile` will reject it as taken if you try to claim it again on the new one.
+There's no self-serve recovery — only whoever runs the database can reassign a handle
+by hand. Back up the token (see above) before deleting it if the handle matters to you.
 
 **Prefer to keep everything off the cloud?** `export LEARNMCP_LOCAL=1` opts out of
 tracking entirely — no leaderboard, no cartridge popularity, nothing sent. Want a fully

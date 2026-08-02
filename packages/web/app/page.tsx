@@ -9,13 +9,21 @@ export default async function HomePage() {
   const [cartridges, stats] = await Promise.all([getCartridges(), getPlatformStats()]);
   return (
     <>
-      <h1>A new kind of LMS — designed for the Agentic Era</h1>
+      <h1>Vibe learning for the Agentic Era</h1>
       <p className="lead">
         Free and fully open source, written by{" "}
-        <a href="https://quintonwall.com">Quinton Wall</a>. learnmcp lives inside your
-        Claude Code session, watches what you build, suggests the next best practice to
-        try, and rewards you with badges when you do it. No courses, no fixed path — your
-        real work is the curriculum.
+        <a href="https://quintonwall.com">Quinton Wall</a>. learnmcp is{" "}
+        <a href="https://www.quintonwall.com/writing/learnmcp-vibe-learning">vibe learning</a>{" "}
+        — learning that happens beside the work you&rsquo;re already doing, not instead of
+        it. It lives inside your Claude Code session, watches what you build, suggests the
+        next best practice to try, and rewards you with badges when you do it. No courses,
+        no fixed path — your real work is the curriculum.
+      </p>
+      <p className="lead">
+        Two things make that possible: it&rsquo;s <strong>passive</strong> — nothing to
+        open, nothing to schedule, it just notices what you did — and it&rsquo;s{" "}
+        <strong>vendor-neutral</strong>, because everything it knows about a tool lives in
+        a <Link href="/cartridges">cartridge</Link>, not a platform.
       </p>
 
       {stats && (stats.lessonsCompleted > 0 || stats.activeLearners > 0) && (

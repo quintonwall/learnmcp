@@ -4,8 +4,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "learnmcp — a new kind of LMS for the agentic era",
-  description: "A dynamic, in-session LMS for building with LLMs. Browse cartridges, climb the leaderboard, submit your own.",
+  title: "learnmcp — vibe learning for the agentic era",
+  description: "Vibe learning for the agentic era: a passive, vendor-neutral LMS built entirely on cartridges. Browse cartridges, climb the leaderboard, submit your own.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main className="wrap">{children}</main>
         <footer className="site">
           <div className="wrap">
-            learnmcp — observe → recommend → reward. Learn best practices as you build with LLMs.
+            learnmcp — vibe learning, passive and vendor-neutral: observe → recommend → reward.
           </div>
         </footer>
       </body>
