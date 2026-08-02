@@ -15,14 +15,6 @@ learnmcp watches what you build, tells you the next best practice worth trying, 
 points and badges when you do it. No courses, no fixed path — your real work is the
 curriculum.
 
-```
-You: Can you generate an OpenAPI spec for this codebase?
-
-🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
-              · Initiate · 10 pts (90 to Apprentice)
-              · Next: Sync your spec to a Postman collection
-```
-
 ---
 
 ## Get started
