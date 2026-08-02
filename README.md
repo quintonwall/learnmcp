@@ -81,6 +81,21 @@ starts saving immediately — nothing is lost by staying anonymous. Want your na
 leaderboard instead of `learner-7f3c`? Just say "claim the handle quinton" — no sign-in,
 the request itself proves it's your progress to name.
 
+**Using more than one machine?** Your identity is nothing but the token at
+`~/.learnmcp/token` — copy it to the second machine (before it earns anything of its own)
+and both resolve to the same learner from then on:
+
+```bash
+# on the machine with the progress you want to keep
+cat ~/.learnmcp/token
+# on the other machine
+echo '<paste>' > ~/.learnmcp/token && chmod 600 ~/.learnmcp/token
+```
+
+There's no merge — whichever token a machine ends up with wins, and any progress already
+under a token you overwrite is abandoned. There's also no recovery if a token is lost:
+it's the only thing identifying you, by design.
+
 **Prefer to keep everything off the cloud?** `export LEARNMCP_LOCAL=1` opts out of
 tracking entirely — no leaderboard, no cartridge popularity, nothing sent. Want a fully
 private leaderboard-free deployment instead of an opt-out? See [HOSTING.md](HOSTING.md).
