@@ -39,8 +39,9 @@ Create a project, then **SQL Editor** → run these in order:
 |---|---|
 | [`0001_init.sql`](supabase/migrations/0001_init.sql) | base tables + `auth` wiring |
 | [`0002_cartridge_leaderboard.sql`](supabase/migrations/0002_cartridge_leaderboard.sql) | per-cartridge scores |
-| [`0003_remote_mcp.sql`](supabase/migrations/0003_remote_mcp.sql) | **the one that matters** — `learners`, progress tables, leaderboard views, `claim_learner` |
-| [`0004_platform_stats.sql`](supabase/migrations/0004_platform_stats.sql) | `platform_stats` view — the homepage's total lessons/badges/learners row |
+| [`0003_remote_mcp.sql`](supabase/migrations/0003_remote_mcp.sql) | **the one that matters** — `learners`, progress tables, leaderboard views |
+| [`0004_platform_stats.sql`](supabase/migrations/0004_platform_stats.sql) | `platform_stats` view — the homepage's total lessons/learners row |
+| [`0005_handle_case_insensitive.sql`](supabase/migrations/0005_handle_case_insensitive.sql) | prevents `Quinton` and `quinton` both being claimed as distinct handles |
 
 Or with the CLI:
 
@@ -89,7 +90,6 @@ Set these in **Project Settings → Environment Variables**:
 | `NEXT_PUBLIC_SUPABASE_URL` | same URL | the web gallery |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | the anon key | the web gallery |
 | `GITHUB_TOKEN` | a fine-grained PAT, public-repo read | **see below** |
-| `NEXT_PUBLIC_WEB_URL` | `https://<you>.vercel.app` | used in the claim link |
 
 **`GITHUB_TOKEN` is not optional in practice.** Unauthenticated GitHub allows 60 requests
 per hour *per IP*, and every learner's cartridge refresh comes from your server's IP — so
@@ -154,9 +154,9 @@ select * from learner_leaderboard limit 20;
 -- which cartridges people actually use
 select * from cartridge_popularity order by learners desc;
 
--- how many have claimed vs stayed anonymous
-select count(*) filter (where user_id is not null) as claimed,
-       count(*) filter (where user_id is null)     as anonymous
+-- how many have claimed a handle vs stayed anonymous
+select count(*) filter (where handle is not null) as claimed,
+       count(*) filter (where handle is null)     as anonymous
 from learners;
 
 -- reset one learner
@@ -175,10 +175,6 @@ concern is GitHub rate limits, which the token handles.
 
 ## Known gaps
 
-- **The `/claim` page doesn't exist.** `claim_profile` returns a URL to
-  `<web>/claim?learner=<id>`, but nothing serves it. Claiming needs that page to sign the
-  user in with GitHub and call `claim_learner` with the service_role key. Until then
-  everyone stays anonymous — which works, they just show as `learner-7f3c`.
 - **Migrations 0001/0002 are partly vestigial.** Their `cartridges` and `user_profiles`
   tables predate the GitHub registry and the `learners` model. Nothing writes them now.
   They're kept because 0003 builds on the same `auth` setup; a later migration should drop

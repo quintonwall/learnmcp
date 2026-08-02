@@ -26,12 +26,23 @@ function fakeSupabase(seed: Record<string, unknown[]> = {}) {
 
   const fetchImpl = async (url: string, init: RequestInit = {}) => {
     const method = init.method ?? "GET";
-    const afterRest = url.split("/rest/v1/")[1] ?? "";
-    const table = afterRest.split("?")[0];
+    const [table, query = ""] = (url.split("/rest/v1/")[1] ?? "").split("?");
     const body = init.body ? JSON.parse(init.body as string) : undefined;
 
     if (method === "GET") {
       return new Response(JSON.stringify(tables[table] ?? []), { status: 200 });
+    }
+    if (table === "learners" && method === "PATCH") {
+      // Mirrors the real unique index: reject a handle already held by a DIFFERENT row.
+      const id = decodeURIComponent(query.match(/id=eq\.([^&]+)/)?.[1] ?? "");
+      const clash = (tables.learners as Array<Record<string, unknown>>).some(
+        (l) => l.id !== id && (l.handle as string | null)?.toLowerCase() === (body.handle as string)?.toLowerCase(),
+      );
+      if (clash) return new Response(JSON.stringify({ code: "23505" }), { status: 409 });
+      const row = (tables.learners as Array<Record<string, unknown>>).find((l) => l.id === id);
+      if (row) Object.assign(row, body);
+      writes.push({ method, table, body });
+      return new Response(null, { status: 204 });
     }
     writes.push({ method, table, body });
     if (table === "learners" && method === "POST") {
@@ -82,6 +93,45 @@ describe("identity — anonymous first", () => {
     const { learner, issued } = await store.resolve("lmcp_stale-token");
     expect(learner.id).toBe("learner-1");
     expect(issued).toBeTruthy();
+  });
+
+  it("claiming is just setting a handle — no account, no separate sign-in", async () => {
+    const { fetchImpl } = fakeSupabase({
+      learners: [{ id: "learner-1", handle: null, points: 0, rank: "Novice" }],
+    });
+    const store = new IdentityStore({ url: "https://x.supabase.co", key: "svc", fetchImpl });
+
+    const result = await store.setHandle("learner-1", "quinton");
+    expect(result).toEqual({ ok: true });
+
+    const after = (await fetchImpl("https://x.supabase.co/rest/v1/learners", {})
+      .then((r) => r.json())) as Array<{ id: string; handle: string }>;
+    expect(after.find((l) => l.id === "learner-1")?.handle).toBe("quinton");
+  });
+
+  it("rejects a handle someone else already holds", async () => {
+    const { fetchImpl } = fakeSupabase({
+      learners: [
+        { id: "learner-1", handle: null, points: 0, rank: "Novice" },
+        { id: "learner-2", handle: "quinton", points: 10, rank: "Initiate" },
+      ],
+    });
+    const store = new IdentityStore({ url: "https://x.supabase.co", key: "svc", fetchImpl });
+
+    const result = await store.setHandle("learner-1", "quinton");
+    expect(result).toEqual({ ok: false, reason: "taken" });
+  });
+
+  it("is claimed from handle alone — no user_id, no OAuth, involved at all", async () => {
+    const token = mintToken();
+    const { fetchImpl } = fakeSupabase({
+      // Deliberately no user_id anywhere in this fixture.
+      learners: [{ id: "learner-1", handle: "quinton", points: 0, rank: "Novice" }],
+    });
+    const store = new IdentityStore({ url: "https://x.supabase.co", key: "svc", fetchImpl });
+    const { learner } = await store.resolve(token);
+    expect(learner.claimed).toBe(true);
+    expect(learner.handle).toBe("quinton");
   });
 });
 

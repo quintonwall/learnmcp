@@ -19,8 +19,6 @@ export interface CloudContext {
   learner: Learner;
   /** Set only on the request that minted the learner — surfaced once so the client saves it. */
   issuedToken?: string;
-  /** Base URL of the web app, for the claim link. */
-  webUrl?: string;
 }
 
 export interface McpServerDeps {
@@ -501,26 +499,28 @@ function registerCloudTools(
   server.registerTool(
     "claim_profile",
     {
-      title: "Claim your profile",
+      title: "Claim your handle",
       description:
-        "Link your anonymous progress to a signed-in account so your handle appears on the leaderboard. Returns a URL to open; progress is already saved either way.",
-      inputSchema: {},
+        "Set your display name on the leaderboard, in place of learner-xxxx. No sign-in: the request itself, already authenticated by your bearer token, is the only proof of ownership this needs — that's also why there's nothing to link across devices. Fails with a clear message if the name is taken; ask the user for another rather than picking one for them.",
+      inputSchema: {
+        handle: z
+          .string()
+          .min(5, "at least 5 characters")
+          .max(20, "at most 20 characters")
+          .regex(/^[A-Za-z0-9_-]+$/, "letters, numbers, hyphens and underscores only"),
+      },
     },
-    async () => {
-      if (learner.claimed) {
-        return ok({ claimed: true, handle: learner.handle, message: "Already claimed." });
+    async ({ handle }) => {
+      if (learner.claimed && learner.handle === handle) {
+        return ok({ claimed: true, handle, message: "That's already your handle." });
       }
-      // Sign-in isn't built yet. Say so plainly rather than handing back a URL that 404s —
-      // the progress is real and saved either way, only the display name is missing.
-      return ok({
-        claimed: false,
-        available: false,
-        learnerId: learner.id,
-        displayName: `learner-${learner.id.slice(0, 4)}`,
-        message:
-          "Claiming isn't available yet — sign-in is still being built. Your progress is already saved against this machine's learner id and counts on the leaderboard; you currently appear as " +
-          `learner-${learner.id.slice(0, 4)}. Keep ~/.learnmcp/token safe and you'll be able to attach a handle to it later.`,
-      });
+      const result = await identity.setHandle(learner.id, handle);
+      if (!result.ok) {
+        return ok({ claimed: false, error: `"${handle}" is already taken — try another.` });
+      }
+      learner.handle = handle;
+      learner.claimed = true;
+      return ok({ claimed: true, handle, message: `You're "${handle}" on the leaderboard now.` });
     },
   );
 }

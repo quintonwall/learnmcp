@@ -114,11 +114,10 @@ export default async function HomePage() {
         <code>learner-7f3c</code>.
       </p>
       <div className="notice">
-        🚧 <strong>Claiming a handle isn&rsquo;t built yet.</strong> Signing in to attach
-        your name — and to carry progress across machines — is the next thing on the list.
-        Until then everyone is anonymous, which is why the board is full of pseudonyms.
-        Nothing is lost in the meantime; claiming will attach a name to progress you already
-        have.
+        <strong>Want your name on it instead?</strong> No sign-in — just say{" "}
+        <em>&ldquo;claim the handle quinton&rdquo;</em>. Your existing token is already proof
+        it&rsquo;s your progress to name; there&rsquo;s no account behind it, so it&rsquo;s
+        first-come-first-served on the name, the same as an arcade high-score list.
       </div>
 
       <h2>Add a tool it doesn&rsquo;t know yet</h2>

@@ -30,7 +30,6 @@ export const maxDuration = 30;
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL ?? "https://learnmcp.ai";
 
 /** Header the client reads once to persist its anonymous identity. */
 const TOKEN_HEADER = "x-learnmcp-token";
@@ -96,7 +95,7 @@ async function handle(req: Request): Promise<Response> {
     store,
     // Progress belongs to the learner, not a project path — that's what the board ranks.
     defaultScope: learner.id,
-    cloud: { identity, learner, issuedToken, webUrl: WEB_URL },
+    cloud: { identity, learner, issuedToken },
   });
 
   const transport = new WebStandardStreamableHTTPServerTransport({

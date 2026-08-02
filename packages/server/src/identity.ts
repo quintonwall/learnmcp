@@ -6,8 +6,12 @@ import type { FetchLike } from "./remote.js";
  *
  * Nobody creates an account to earn a badge. The first call with no token mints a learner
  * row and hands back a bearer token; the client stores it and sends it from then on.
- * Claiming links that same learner to a signed-in account so a real handle shows on the
- * leaderboard — the progress is already there, claiming just names it.
+ *
+ * There is no sign-in. Picking a handle needs the same proof as every other write already
+ * requires — the bearer token itself — so "claiming" is just setting `handle` on the
+ * learner that token resolves to. No OAuth, no account, no separate identity to link:
+ * the leaderboard is a name on a token, first-come-first-served on that name, the same way
+ * an arcade high-score list works. `claimed` means "has a handle," nothing more.
  *
  * Only a SHA-256 of the token is stored. A leaked database therefore can't be used to
  * impersonate learners, and a lost token is unrecoverable by design.
@@ -55,7 +59,14 @@ export class IdentityStore {
     if (!this.fetchImpl) throw new Error("no fetch implementation available");
   }
 
-  private async req(method: string, path: string, body?: unknown, prefer?: string): Promise<Response> {
+  /** `okStatuses` lets a caller handle an expected non-2xx (e.g. 409 on a duplicate handle) itself. */
+  private async req(
+    method: string,
+    path: string,
+    body?: unknown,
+    prefer?: string,
+    okStatuses?: number[],
+  ): Promise<Response> {
     const res = await this.fetchImpl(`${this.base}${path}`, {
       method,
       headers: {
@@ -66,19 +77,20 @@ export class IdentityStore {
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!res.ok) {
+    if (!res.ok && !okStatuses?.includes(res.status)) {
       throw new Error(`supabase ${method} ${path} → ${res.status} ${await res.text().catch(() => "")}`.trim());
     }
     return res;
   }
 
   private static toLearner(row: Record<string, unknown>): Learner {
+    const handle = (row.handle as string | null) ?? null;
     return {
       id: row.id as string,
-      handle: (row.handle as string | null) ?? null,
+      handle,
       points: (row.points as number) ?? 0,
       rank: (row.rank as string) ?? "Novice",
-      claimed: row.user_id != null,
+      claimed: handle != null,
     };
   }
 
@@ -99,7 +111,7 @@ export class IdentityStore {
   async byToken(token: string): Promise<Learner | null> {
     const res = await this.req(
       "GET",
-      `/learners?token_hash=eq.${hashToken(token)}&select=id,handle,points,rank,user_id&limit=1`,
+      `/learners?token_hash=eq.${hashToken(token)}&select=id,handle,points,rank&limit=1`,
     );
     const rows = (await res.json()) as Array<Record<string, unknown>>;
     return rows[0] ? IdentityStore.toLearner(rows[0]) : null;
@@ -120,17 +132,21 @@ export class IdentityStore {
   }
 
   /**
-   * Attach a learner to a signed-in account. Delegates to the `claim_learner` SQL
-   * function, which merges into an existing row if that account already has one (a second
-   * machine) rather than stranding progress on a duplicate identity.
+   * Set the handle for the learner a bearer token already resolves to — that request is
+   * the only proof of ownership this needs, so there is no separate sign-in step. Fails
+   * with `taken` on the DB's uniqueness constraint rather than throwing, since "pick
+   * another name" is an expected outcome, not an error.
    */
-  async claim(learnerId: string, userId: string, handle: string): Promise<string> {
-    const res = await this.req("POST", "/rpc/claim_learner", {
-      p_learner_id: learnerId,
-      p_user_id: userId,
-      p_handle: handle,
-    });
-    return ((await res.json()) as string) ?? learnerId;
+  async setHandle(learnerId: string, handle: string): Promise<{ ok: true } | { ok: false; reason: "taken" }> {
+    const res = await this.req(
+      "PATCH",
+      `/learners?id=eq.${learnerId}`,
+      { handle },
+      "return=minimal",
+      [409],
+    );
+    if (res.status === 409) return { ok: false, reason: "taken" };
+    return { ok: true };
   }
 
   async leaderboard(limit = 20): Promise<

@@ -14,8 +14,7 @@
 <a id="beta"></a>
 > **🚧 Beta, and moving fast.** The learning loop works end to end, but expect breaking
 > changes: the cartridge schema may shift, and hosted progress could be reset while things
-> settle. Claiming a profile isn't wired up yet, so everyone is anonymous on the
-> leaderboard for now. Issues and cartridge PRs very welcome.
+> settle. Issues and cartridge PRs very welcome.
 
 learnmcp watches what you build, tells you the next best practice worth trying, and awards
 points and badges when you do it. No courses, no fixed path — your real work is the
@@ -77,10 +76,10 @@ Or just ask, in plain language — *"what should I do next?"*, *"I just added Su
 where do I start?"*, *"where am I on the leaderboard?"*. In a terminal that supports
 clickable links, the "Next:" line goes straight to the docs.
 
-**No account, ever, unless you want your name on the leaderboard.** The first thing
-learnmcp records creates an anonymous learner and starts saving immediately — nothing is
-lost by staying anonymous, and you can say "claim my learnmcp profile" any time to attach
-a handle to progress you already have.
+**No account, ever.** The first thing learnmcp records creates an anonymous learner and
+starts saving immediately — nothing is lost by staying anonymous. Want your name on the
+leaderboard instead of `learner-7f3c`? Just say "claim the handle quinton" — no sign-in,
+the request itself proves it's your progress to name.
 
 **Prefer to keep everything off the cloud?** `export LEARNMCP_LOCAL=1` opts out of
 tracking entirely — no leaderboard, no cartridge popularity, nothing sent. Want a fully
@@ -236,7 +235,7 @@ database and the bandwidth behind it, and right now that's me.
 ### 💜 [Sponsor this project](https://github.com/sponsors/quintonwall)
 
 Sponsoring keeps the hosted instance running for everyone, and funds the next round of
-work: claimable profiles, more first-party cartridges, and a public gallery.
+work: more first-party cartridges and a public gallery.
 
 Not in a position to sponsor? [Contributing a cartridge](#contributing-a-cartridge),
 filing an issue, or telling someone about it all help just as much.
