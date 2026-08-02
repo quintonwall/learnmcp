@@ -395,7 +395,10 @@ async function main() {
         (s) => `🧭 No cartridge yet for "${s}" — ask me to generate one, or check the registry`,
       ),
     ];
-    const next = await callTool(url, "learn_next", {});
+    // `next` rides on the last record_activity response itself (server-computed from the
+    // exact state that call just wrote) rather than a second learn_next round-trip, so it
+    // can never suggest the objective this very message just awarded a badge for.
+    const next = last.next;
     const r = last.rank ?? {};
     const standing = r.next
       ? `${r.rank?.name} · ${last.points} pts (${r.pointsToNext} to ${r.next.name})`

@@ -117,7 +117,14 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
         "Ingest one observed signal (a bash command, file change, dependency, MCP server/tool use). Returns any newly-earned badges, completed objectives, and your current points/rank.",
       inputSchema: { signal: Signal, scope: z.string().optional() },
     },
-    async ({ signal, scope: s }) => ok(summarizeRecord(service.record(scope(s), signal))),
+    async ({ signal, scope: s }) => {
+      const sc = scope(s);
+      const result = service.record(sc, signal);
+      // Computed from the same in-memory state `record` just updated — a caller that reads
+      // `next` off this response can never see a suggestion for what it was just awarded,
+      // which a separate learn_next round-trip (a second hydrate from Supabase) could.
+      return ok({ ...summarizeRecord(result), next: service.learnNext(sc) });
+    },
   );
 
   server.registerTool(
@@ -185,7 +192,11 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       let last: RecordResult | null = null;
       for (const sig of signals) last = service.record(sc, sig);
       const result = last ?? service.recompute(sc);
-      return ok({ scannedSignals: signals.length, ...summarizeRecord(result) });
+      return ok({
+        scannedSignals: signals.length,
+        ...summarizeRecord(result),
+        next: service.learnNext(sc),
+      });
     },
   );
 
@@ -201,8 +212,11 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
         scope: z.string().optional(),
       },
     },
-    async ({ key, confidence, scope: s }) =>
-      ok(summarizeRecord(service.resolveJudgement(scope(s), key, confidence))),
+    async ({ key, confidence, scope: s }) => {
+      const sc = scope(s);
+      const result = service.resolveJudgement(sc, key, confidence);
+      return ok({ ...summarizeRecord(result), next: service.learnNext(sc) });
+    },
   );
 
   server.registerTool(
