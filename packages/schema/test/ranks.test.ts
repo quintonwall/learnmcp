@@ -16,12 +16,12 @@ describe("rankForPoints", () => {
     expect(rankForPoints(9).rank.name).toBe("Novice");
     expect(rankForPoints(10).rank.name).toBe("Initiate");
     expect(rankForPoints(100).rank.name).toBe("Apprentice");
-    expect(rankForPoints(500).rank.name).toBe("Journeyman");
-    expect(rankForPoints(1_000).rank.name).toBe("Adept");
-    expect(rankForPoints(10_000).rank.name).toBe("Expert");
-    expect(rankForPoints(100_000).rank.name).toBe("Master");
-    expect(rankForPoints(500_000).rank.name).toBe("Grandmaster");
-    expect(rankForPoints(1_000_000).rank.name).toBe("Legend");
+    expect(rankForPoints(300).rank.name).toBe("Journeyman");
+    expect(rankForPoints(750).rank.name).toBe("Adept");
+    expect(rankForPoints(1_500).rank.name).toBe("Expert");
+    expect(rankForPoints(3_500).rank.name).toBe("Master");
+    expect(rankForPoints(10_000).rank.name).toBe("Grandmaster");
+    expect(rankForPoints(20_000).rank.name).toBe("Legend");
     expect(rankForPoints(5_000_000).rank.name).toBe("Legend");
   });
 

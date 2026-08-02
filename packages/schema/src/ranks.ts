@@ -27,17 +27,26 @@ export interface Rank {
   name: string;
 }
 
-/** The rank ladder. Thresholds per product spec: 10 / 100 / 500 / 1k / 10k / 100k / 500k / 1M. */
+/**
+ * The rank ladder. Badges are one-time grants, so total points are capped by the
+ * cartridge catalog's size, not by how long anyone uses a tool — mastering every badge
+ * in every cartridge shipped today (16 of them) tops out at ~6,400 points. Thresholds
+ * are calibrated against an estimated ~50-cartridge catalog (~450 avg pts/cartridge
+ * fully mastered, a ~22k-point ceiling), with Legend set near that ceiling so it still
+ * requires broad, sustained use across most of the catalog rather than one tool
+ * mastered deeply. Revisit the top of the ladder as the catalog grows past that
+ * estimate.
+ */
 export const RANKS: Rank[] = [
   { threshold: 0, name: "Novice" },
   { threshold: 10, name: "Initiate" },
   { threshold: 100, name: "Apprentice" },
-  { threshold: 500, name: "Journeyman" },
-  { threshold: 1_000, name: "Adept" },
-  { threshold: 10_000, name: "Expert" },
-  { threshold: 100_000, name: "Master" },
-  { threshold: 500_000, name: "Grandmaster" },
-  { threshold: 1_000_000, name: "Legend" },
+  { threshold: 300, name: "Journeyman" },
+  { threshold: 750, name: "Adept" },
+  { threshold: 1_500, name: "Expert" },
+  { threshold: 3_500, name: "Master" },
+  { threshold: 10_000, name: "Grandmaster" },
+  { threshold: 20_000, name: "Legend" },
 ];
 
 export interface RankProgress {
