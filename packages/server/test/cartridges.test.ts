@@ -31,6 +31,7 @@ describe("shipped cartridges", () => {
       "postman",
       "slack",
       "supabase",
+      "vercel",
     ]);
   });
 

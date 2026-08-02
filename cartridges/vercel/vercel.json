@@ -1,0 +1,356 @@
+{
+  "id": "vercel",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Vercel",
+    "homepage": "https://vercel.com",
+    "icon": "\u25b2"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "vercel"
+    },
+    {
+      "type": "file",
+      "path": "**/vercel.json",
+      "exists": true
+    },
+    {
+      "type": "dependency",
+      "name": "vercel"
+    },
+    {
+      "type": "bash",
+      "matches": "^\\s*vercel\\s+"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "get-oriented",
+      "title": "See your teams and projects",
+      "why": "Knowing which team and project you're pointed at is what stops a deploy landing somewhere unexpected.",
+      "badge": "oriented",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "list_teams"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "list_projects"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "get_project"
+          }
+        ]
+      },
+      "docs": "https://vercel.com/docs/projects"
+    },
+    {
+      "id": "search-docs",
+      "title": "Search Vercel's own docs before guessing",
+      "why": "An answer pulled from current docs beats a remembered one that's since changed.",
+      "badge": "researcher",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "search_vercel_documentation"
+      },
+      "docs": "https://vercel.com/docs/agent-resources/vercel-mcp/tools#documentation-tools"
+    },
+    {
+      "id": "deploy",
+      "title": "Deploy to Vercel",
+      "why": "Shipping is the point \u2014 everything else is in service of getting a change live.",
+      "badge": "deployer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "deploy_to_vercel"
+          },
+          {
+            "type": "bash",
+            "matches": "vercel\\s+(deploy|--prod|promote)"
+          }
+        ]
+      },
+      "docs": "https://vercel.com/docs/deployments"
+    },
+    {
+      "id": "share-protected-preview",
+      "title": "Share a protected preview without disabling protection",
+      "why": "A shareable link gives a reviewer access without turning off protection for everyone else.",
+      "badge": "key-master",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "get_access_to_vercel_url"
+      },
+      "docs": "https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/sharable-links"
+    },
+    {
+      "id": "verify-deployment",
+      "title": "Verify your deployment actually works",
+      "why": "A deploy you didn't check is a deploy you'll hear about from users first.",
+      "badge": "verifier",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "web_fetch_vercel_url"
+      },
+      "docs": "https://vercel.com/docs/deployments"
+    },
+    {
+      "id": "investigate-runtime-errors",
+      "title": "Investigate a production error",
+      "why": "Runtime errors are silent until someone looks \u2014 start with the error clusters, then drill into individual log lines.",
+      "badge": "detective",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "get_runtime_errors"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "get_runtime_logs"
+          },
+          {
+            "type": "bash",
+            "matches": "vercel\\s+logs"
+          }
+        ]
+      },
+      "docs": "https://vercel.com/docs/functions"
+    },
+    {
+      "id": "check-build-logs",
+      "title": "Read the build logs on a failed deploy",
+      "why": "The failure is almost always in the last few lines \u2014 reading them beats guessing and redeploying.",
+      "badge": "log-reader",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "get_deployment_build_logs"
+      },
+      "docs": "https://vercel.com/docs/deployments"
+    },
+    {
+      "id": "web-analytics",
+      "title": "Check what your traffic actually looks like",
+      "why": "Guessing which pages matter is optional once you can just query the real numbers.",
+      "badge": "data-informed",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "get_web_analytics"
+      },
+      "docs": "https://vercel.com/docs/analytics/web-analytics-api"
+    },
+    {
+      "id": "resolve-feedback",
+      "title": "Close the loop on Toolbar feedback",
+      "why": "A comment thread nobody replies to or resolves might as well not exist.",
+      "badge": "closer",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "reply_to_toolbar_thread"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "change_toolbar_thread_resolve_status"
+          }
+        ]
+      },
+      "docs": "https://vercel.com/docs/comments"
+    },
+    {
+      "id": "import-design",
+      "title": "Ship a design straight from Claude Design",
+      "why": "Going from a design file to a live URL without a manual rebuild step is most of the point of building in the agentic era.",
+      "badge": "design-to-prod",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "import-claude-design-from-url"
+      },
+      "docs": "https://vercel.com/docs/agent-resources/vercel-mcp/tools#design-import-tools"
+    },
+    {
+      "id": "use-cli-directly",
+      "title": "Manage your project from the CLI",
+      "why": "env vars, domains, and links are often faster to manage from the terminal than any UI.",
+      "badge": "cli-fluent",
+      "criteria": {
+        "type": "bash",
+        "matches": "vercel\\s+(env|domains|link|pull|rollback)\\b"
+      },
+      "docs": "https://vercel.com/docs/cli"
+    },
+    {
+      "id": "check-domain-availability",
+      "title": "Check a domain before you commit to it",
+      "why": "Confirming availability and price first avoids designing around a name you can't actually get.",
+      "badge": "domain-scout",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "vercel",
+        "tool": "check_domain_availability_and_price"
+      },
+      "docs": "https://vercel.com/docs/domains"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "token-not-committed",
+      "title": "Keep your Vercel token out of git",
+      "why": "A committed token is deploy access to every project it can see.",
+      "badge": "token-guard",
+      "criteria": {
+        "type": "env",
+        "key": "VERCEL_TOKEN",
+        "absent_from": "git"
+      },
+      "docs": "https://vercel.com/docs/rest-api",
+      "recommended": true
+    },
+    {
+      "id": "confirm-before-purchase",
+      "title": "Require confirmation before any purchase tool runs",
+      "why": "buy_domain, buy_pro, buy_credits and buy_addon make real, non-refundable charges the moment confirm:true is sent.",
+      "badge": "careful-spender",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/{CLAUDE,AGENTS}.md"
+        },
+        "rubric": "Do the project rules require explicit human confirmation before any Vercel purchase tool (buy_domain, buy_pro, buy_credits, buy_addon) is called with confirm:true?",
+        "confidence_gte": 0.8
+      },
+      "docs": "https://vercel.com/docs/agent-resources/vercel-mcp/tools#purchase-tools",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "oriented",
+      "name": "Oriented",
+      "tier": "bronze",
+      "description": "Saw your teams and projects."
+    },
+    {
+      "id": "researcher",
+      "name": "Researcher",
+      "tier": "bronze",
+      "description": "Searched the docs before guessing."
+    },
+    {
+      "id": "deployer",
+      "name": "Deployer",
+      "tier": "silver",
+      "description": "Deployed to Vercel."
+    },
+    {
+      "id": "key-master",
+      "name": "Key Master",
+      "tier": "silver",
+      "description": "Shared a protected preview safely."
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier",
+      "tier": "bronze",
+      "description": "Verified a deployment actually works."
+    },
+    {
+      "id": "detective",
+      "name": "Detective",
+      "tier": "silver",
+      "description": "Investigated a production error."
+    },
+    {
+      "id": "log-reader",
+      "name": "Log Reader",
+      "tier": "bronze",
+      "description": "Read the build logs on a failed deploy."
+    },
+    {
+      "id": "data-informed",
+      "name": "Data-Informed",
+      "tier": "bronze",
+      "description": "Checked real traffic instead of guessing."
+    },
+    {
+      "id": "closer",
+      "name": "Closer",
+      "tier": "bronze",
+      "description": "Closed the loop on Toolbar feedback."
+    },
+    {
+      "id": "design-to-prod",
+      "name": "Design To Prod",
+      "tier": "gold",
+      "description": "Shipped a design straight from Claude Design."
+    },
+    {
+      "id": "cli-fluent",
+      "name": "CLI Fluent",
+      "tier": "bronze",
+      "description": "Managed the project from the terminal."
+    },
+    {
+      "id": "domain-scout",
+      "name": "Domain Scout",
+      "tier": "bronze",
+      "description": "Checked a domain before committing to it."
+    },
+    {
+      "id": "token-guard",
+      "name": "Token Guard",
+      "tier": "bronze",
+      "description": "Keeps the Vercel token out of git."
+    },
+    {
+      "id": "careful-spender",
+      "name": "Careful Spender",
+      "tier": "gold",
+      "description": "Purchases require explicit confirmation."
+    },
+    {
+      "id": "shipping-lane",
+      "name": "Shipping Lane",
+      "tier": "gold",
+      "description": "Deployed 10 times.",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "vercel",
+            "tool": "deploy_to_vercel",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "vercel\\s+(deploy|--prod)",
+            "gte": 10
+          }
+        ]
+      }
+    }
+  ]
+}
