@@ -22,6 +22,8 @@ describe("shipped cartridges", () => {
   it("ships the expected first-party cartridges", () => {
     const ids = files.map((f) => path.basename(f, ".json")).sort();
     expect(ids).toEqual([
+      "atlassian",
+      "chrome-devtools",
       "context7",
       "exa",
       "figma",
@@ -31,7 +33,9 @@ describe("shipped cartridges", () => {
       "notion",
       "playwright",
       "postman",
+      "serena",
       "slack",
+      "stripe",
       "supabase",
       "vercel",
     ]);

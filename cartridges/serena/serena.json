@@ -1,0 +1,271 @@
+{
+  "id": "serena",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Serena",
+    "homepage": "https://github.com/oraios/serena",
+    "icon": "🧠"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "serena"
+    },
+    {
+      "type": "bash",
+      "matches": "serena\\s+(start-mcp-server|init)"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "activate-project",
+      "title": "Point Serena at your project",
+      "why": "Every symbolic tool operates on whichever project is active — this is the first thing that has to happen.",
+      "badge": "activated",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "activate_project"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "onboard-project",
+      "title": "Let Serena onboard itself to a new codebase",
+      "why": "Onboarding builds Serena's understanding of the project once, up front, instead of re-deriving it every session.",
+      "badge": "onboarded",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "onboarding_tool"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "get-overview",
+      "title": "Get the lay of the land before diving in",
+      "why": "A symbol overview of a file or directory beats opening every file to see what's in it.",
+      "badge": "surveyor",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "get_symbols_overview"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "find-symbol",
+      "title": "Jump straight to a symbol instead of grepping for it",
+      "why": "Finding a symbol by name and kind is precise; text search over a common word like `run` or `get` returns noise.",
+      "badge": "navigator",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "find_symbol"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "find-references",
+      "title": "Find every caller before you change something",
+      "why": "Changing a function's behavior without knowing who calls it is how you break something three files away.",
+      "badge": "cautious",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "find_referencing_symbols"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "find-declaration",
+      "title": "Jump to where a symbol is actually defined",
+      "why": "The call site tells you how something is used; the declaration tells you what it actually does.",
+      "badge": "definer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "find_declaration"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "find-implementations",
+      "title": "Find every implementation of an interface",
+      "why": "An interface with five implementations means a change to its contract has five places to check.",
+      "badge": "cartographer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "find_implementations"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "edit-by-symbol",
+      "title": "Edit a function by its symbol, not by line number",
+      "why": "Replacing a symbol's body is stable across reformatting and unrelated edits — a line-number edit isn't.",
+      "badge": "precise-editor",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "replace_symbol_body"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "rename-symbol",
+      "title": "Rename a symbol across the whole codebase in one step",
+      "why": "A symbolic rename updates every reference consistently — a text find-and-replace risks renaming an unrelated match.",
+      "badge": "renamer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "rename_symbol"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "insert-relative-to-symbol",
+      "title": "Insert code relative to an existing symbol",
+      "why": "Anchoring a new function or import to a symbol survives the file changing shape around it.",
+      "badge": "inserter",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "serena", "tool": "insert_after_symbol" },
+          { "type": "mcp_tool", "server": "serena", "tool": "insert_before_symbol" }
+        ]
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "safe-delete",
+      "title": "Delete dead code with dependency checking",
+      "why": "Deleting a symbol that's still referenced somewhere else breaks the build; a safe delete checks first.",
+      "badge": "cleaner",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "safe_delete"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "pattern-search",
+      "title": "Fall back to regex search when symbols aren't enough",
+      "why": "Not everything is a symbol — config values, strings, and comments need pattern search instead.",
+      "badge": "pattern-matcher",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "search_for_pattern"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "check-diagnostics",
+      "title": "Check for errors before calling it done",
+      "why": "A change that looks right can still fail to typecheck or lint — diagnostics catch that before you move on.",
+      "badge": "checker",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "get_diagnostics_for_file"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    },
+    {
+      "id": "run-shell-command",
+      "title": "Run a command through Serena directly",
+      "why": "Running tests or a build through the same session that made the edit keeps the loop tight.",
+      "badge": "runner",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "execute_shell_command"
+      },
+      "docs": "https://github.com/oraios/serena#readme"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "check-references-before-changing",
+      "title": "Check references before renaming or deleting a symbol",
+      "why": "Renaming or deleting something without first seeing every place it's used is how a confident refactor breaks a caller you never looked at.",
+      "badge": "safe-refactorer",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "serena", "tool": "find_referencing_symbols" },
+          {
+            "anyOf": [
+              { "type": "mcp_tool", "server": "serena", "tool": "rename_symbol" },
+              { "type": "mcp_tool", "server": "serena", "tool": "safe_delete" }
+            ]
+          }
+        ]
+      },
+      "docs": "https://github.com/oraios/serena#readme",
+      "recommended": true
+    },
+    {
+      "id": "verify-after-editing",
+      "title": "Run diagnostics after an edit, not just before",
+      "why": "The edit you just made is exactly the one most likely to have introduced the next error — checking after is what catches it.",
+      "badge": "verifier",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "serena", "tool": "replace_symbol_body" },
+          { "type": "mcp_tool", "server": "serena", "tool": "get_diagnostics_for_file" }
+        ]
+      },
+      "docs": "https://github.com/oraios/serena#readme",
+      "recommended": true
+    },
+    {
+      "id": "onboard-before-editing",
+      "title": "Onboard before you start changing an unfamiliar project",
+      "why": "Editing a codebase Serena hasn't onboarded to yet means working from a worse map of what's actually there.",
+      "badge": "grounded",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "serena", "tool": "onboarding_tool" },
+          { "type": "mcp_tool", "server": "serena", "tool": "replace_symbol_body" }
+        ]
+      },
+      "docs": "https://github.com/oraios/serena#readme",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    { "id": "activated", "name": "Activated", "tier": "bronze", "description": "Pointed Serena at your project." },
+    { "id": "onboarded", "name": "Onboarded", "tier": "bronze", "description": "Ran onboarding on a new codebase." },
+    { "id": "surveyor", "name": "Surveyor", "tier": "bronze", "description": "Got a symbol overview before diving in." },
+    { "id": "navigator", "name": "Navigator", "tier": "bronze", "description": "Jumped straight to a symbol." },
+    { "id": "cautious", "name": "Cautious", "tier": "silver", "description": "Found every caller before changing something." },
+    { "id": "definer", "name": "Definer", "tier": "silver", "description": "Jumped to a symbol's actual definition." },
+    { "id": "cartographer", "name": "Cartographer", "tier": "silver", "description": "Found every implementation of an interface." },
+    { "id": "precise-editor", "name": "Precise Editor", "tier": "silver", "description": "Edited a function by its symbol." },
+    { "id": "renamer", "name": "Renamer", "tier": "silver", "description": "Renamed a symbol across the codebase." },
+    { "id": "inserter", "name": "Inserter", "tier": "silver", "description": "Inserted code relative to a symbol." },
+    { "id": "cleaner", "name": "Cleaner", "tier": "gold", "description": "Deleted dead code with dependency checking." },
+    { "id": "pattern-matcher", "name": "Pattern Matcher", "tier": "bronze", "description": "Fell back to regex search when symbols weren't enough." },
+    { "id": "checker", "name": "Checker", "tier": "silver", "description": "Checked for errors before calling it done." },
+    { "id": "runner", "name": "Runner", "tier": "bronze", "description": "Ran a command through Serena directly." },
+    { "id": "safe-refactorer", "name": "Safe Refactorer", "tier": "silver", "description": "Checks references before renaming or deleting." },
+    { "id": "verifier", "name": "Verifier", "tier": "silver", "description": "Runs diagnostics after an edit." },
+    { "id": "grounded", "name": "Grounded", "tier": "bronze", "description": "Onboards before editing an unfamiliar project." },
+    {
+      "id": "symbol-regular",
+      "name": "Symbol Regular",
+      "tier": "gold",
+      "description": "Found 25 symbols by name.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "serena",
+        "tool": "find_symbol",
+        "gte": 25
+      }
+    }
+  ]
+}

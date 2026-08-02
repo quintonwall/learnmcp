@@ -1,0 +1,248 @@
+{
+  "id": "atlassian",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Atlassian",
+    "homepage": "https://www.atlassian.com/platform/remote-mcp-server",
+    "icon": "🔷"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "atlassian"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "create-issue",
+      "title": "Create your first Jira issue",
+      "why": "Turning a task into a tracked issue is what makes it visible to everyone else on the project.",
+      "badge": "issue-opener",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "createJiraIssue"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "search-before-creating",
+      "title": "Search with JQL before opening a new issue",
+      "why": "A duplicate issue splits the conversation about the same work across two tickets.",
+      "badge": "searcher",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "searchJiraIssuesUsingJql"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "comment-on-issue",
+      "title": "Leave a comment for your teammates",
+      "why": "Context that lives only in your head is context nobody else can act on.",
+      "badge": "communicator",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "addCommentToJiraIssue"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "transition-issue",
+      "title": "Move an issue through its workflow",
+      "why": "An issue that never changes status might as well not be tracked.",
+      "badge": "mover",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "transitionJiraIssue"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "log-work",
+      "title": "Log time against real work",
+      "why": "Worklogs are what turn a sprint retro from a guess into a measurement.",
+      "badge": "timekeeper",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "addWorklogToJiraIssue"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "publish-page",
+      "title": "Publish a Confluence page",
+      "why": "Documentation that isn't published is just a draft nobody else can find.",
+      "badge": "publisher",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "createConfluencePage"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "search-docs-before-writing",
+      "title": "Search Confluence with CQL before writing a new page",
+      "why": "Half of 'we need docs for this' is actually 'we already have docs for this and can't find them.'",
+      "badge": "librarian",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "searchConfluenceUsingCql"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "keep-docs-current",
+      "title": "Update a page instead of leaving it stale",
+      "why": "A wrong doc is worse than no doc — people trust it and act on the wrong thing.",
+      "badge": "maintainer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "updateConfluencePage"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "comment-on-doc",
+      "title": "Leave feedback directly on a doc",
+      "why": "A comment tied to the exact paragraph gets resolved faster than one sent over chat.",
+      "badge": "reviewer",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "atlassian", "tool": "createConfluenceInlineComment" },
+          { "type": "mcp_tool", "server": "atlassian", "tool": "createConfluenceFooterComment" }
+        ]
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "work-a-pull-request",
+      "title": "Review or manage a Bitbucket pull request",
+      "why": "Code review is where most real collaboration happens — approving, commenting, or merging closes the loop.",
+      "badge": "code-reviewer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "bitbucketPullRequest"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "run-pipeline",
+      "title": "Trigger or inspect a Bitbucket pipeline",
+      "why": "Knowing a pipeline's status beats assuming your change built and deployed cleanly.",
+      "badge": "pipeline-runner",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "bitbucketPipeline"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "respond-to-alert",
+      "title": "Respond to an on-call alert",
+      "why": "Acknowledging, escalating, or closing an alert is the difference between an incident being handled and just sitting there.",
+      "badge": "responder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "updateJsmOpsAlert"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    },
+    {
+      "id": "catalog-a-service",
+      "title": "Catalog a service in Compass",
+      "why": "An uncatalogued service is invisible to ownership, on-call, and dependency tooling.",
+      "badge": "cataloguer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "createCompassComponent"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "resolve-account-id",
+      "title": "Look up the real account ID instead of guessing it",
+      "why": "Account IDs aren't derivable from a name or email — guessing one wrong means a comment or assignment silently goes to the wrong person, or fails outright.",
+      "badge": "precise",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "lookupJiraAccountId"
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/",
+      "recommended": true
+    },
+    {
+      "id": "check-transitions-first",
+      "title": "Check available transitions before moving an issue",
+      "why": "Workflows restrict which status changes are legal — checking first avoids a rejected transition or, worse, skipping a required step like review.",
+      "badge": "workflow-aware",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "atlassian", "tool": "getTransitionsForJiraIssue" },
+          { "type": "mcp_tool", "server": "atlassian", "tool": "transitionJiraIssue" }
+        ]
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/",
+      "recommended": true
+    },
+    {
+      "id": "check-fields-before-creating",
+      "title": "Check required fields before creating an issue",
+      "why": "Every project can require different fields per issue type — checking first avoids a failed create or a half-filled-in issue.",
+      "badge": "prepared",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "atlassian", "tool": "getJiraIssueTypeMetaWithFields" },
+          { "type": "mcp_tool", "server": "atlassian", "tool": "createJiraIssue" }
+        ]
+      },
+      "docs": "https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    { "id": "issue-opener", "name": "Issue Opener", "tier": "bronze", "description": "Created a Jira issue." },
+    { "id": "searcher", "name": "Searcher", "tier": "bronze", "description": "Searched issues with JQL before creating one." },
+    { "id": "communicator", "name": "Communicator", "tier": "bronze", "description": "Commented on a Jira issue." },
+    { "id": "mover", "name": "Mover", "tier": "silver", "description": "Moved an issue through its workflow." },
+    { "id": "timekeeper", "name": "Timekeeper", "tier": "silver", "description": "Logged time against real work." },
+    { "id": "publisher", "name": "Publisher", "tier": "bronze", "description": "Published a Confluence page." },
+    { "id": "librarian", "name": "Librarian", "tier": "silver", "description": "Searched Confluence with CQL before writing." },
+    { "id": "maintainer", "name": "Maintainer", "tier": "silver", "description": "Updated a page instead of leaving it stale." },
+    { "id": "reviewer", "name": "Reviewer", "tier": "silver", "description": "Left feedback directly on a doc." },
+    { "id": "code-reviewer", "name": "Code Reviewer", "tier": "silver", "description": "Reviewed or managed a pull request." },
+    { "id": "pipeline-runner", "name": "Pipeline Runner", "tier": "silver", "description": "Triggered or inspected a pipeline." },
+    { "id": "responder", "name": "Responder", "tier": "gold", "description": "Responded to an on-call alert." },
+    { "id": "cataloguer", "name": "Cataloguer", "tier": "silver", "description": "Catalogued a service in Compass." },
+    { "id": "precise", "name": "Precise", "tier": "bronze", "description": "Looked up the real account ID instead of guessing." },
+    { "id": "workflow-aware", "name": "Workflow-Aware", "tier": "silver", "description": "Checks transitions before moving an issue." },
+    { "id": "prepared", "name": "Prepared", "tier": "bronze", "description": "Checks required fields before creating an issue." },
+    {
+      "id": "backlog-regular",
+      "name": "Backlog Regular",
+      "tier": "gold",
+      "description": "Created 15 Jira issues.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "atlassian",
+        "tool": "createJiraIssue",
+        "gte": 15
+      }
+    }
+  ]
+}

@@ -1,0 +1,288 @@
+{
+  "id": "chrome-devtools",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Chrome DevTools MCP",
+    "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
+    "icon": "🔍"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "chrome-devtools"
+    },
+    {
+      "type": "dependency",
+      "name": "chrome-devtools-mcp"
+    },
+    {
+      "type": "bash",
+      "matches": "npx\\s+(-y\\s+)?chrome-devtools-mcp"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "first-navigate",
+      "title": "Open a page in the live browser",
+      "why": "Everything else — clicking, tracing, debugging — starts from a page the agent actually opened and can see.",
+      "badge": "driver",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "navigate_page"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "snapshot-before-acting",
+      "title": "Take a snapshot before interacting with the page",
+      "why": "A snapshot gives you stable element references (uids) to click and fill by — the alternative is guessing coordinates.",
+      "badge": "snapshotter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "take_snapshot"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "automate-input",
+      "title": "Drive the page — click, fill, or submit a form",
+      "why": "Automating real interaction is what turns this from a screenshot tool into a testing tool.",
+      "badge": "automator",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "click" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "fill" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "fill_form" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "handle-dialog",
+      "title": "Handle a browser dialog instead of getting stuck on it",
+      "why": "An unhandled alert or confirm() blocks every tool after it until something responds.",
+      "badge": "unblocker",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "handle_dialog"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "read-console",
+      "title": "Check the console for errors",
+      "why": "Half of what's wrong with a page never reaches the DOM — it's sitting in the console.",
+      "badge": "listener",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "list_console_messages" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "get_console_message" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "inspect-network",
+      "title": "Inspect a network request",
+      "why": "Seeing the actual request/response beats guessing why an API call failed.",
+      "badge": "inspector",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "list_network_requests" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "get_network_request" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "run-script",
+      "title": "Evaluate a script against the live page",
+      "why": "Sometimes the fastest way to check a value is to just ask the page for it.",
+      "badge": "scripter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "evaluate_script"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "capture-visual",
+      "title": "Capture a screenshot",
+      "why": "A screenshot is proof of what actually rendered, not what you expected to render.",
+      "badge": "photographer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "take_screenshot"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "emulate-conditions",
+      "title": "Emulate a device or network condition",
+      "why": "Most bugs users report only show up on a slower network or a smaller viewport — reproduce the condition instead of guessing.",
+      "badge": "emulator",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "emulate" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "resize_page" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "trace-performance",
+      "title": "Record a performance trace",
+      "why": "A trace shows you where the time actually went instead of where you assumed it went.",
+      "badge": "profiler",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "performance_start_trace" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "performance_stop_trace" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "analyze-insight",
+      "title": "Pull an optimization insight out of a trace",
+      "why": "A recorded trace is just data until something extracts what's actually slow.",
+      "badge": "analyst",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "performance_analyze_insight"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "run-lighthouse",
+      "title": "Run a Lighthouse audit",
+      "why": "Lighthouse turns 'is this page fast enough?' into a scored, comparable answer.",
+      "badge": "auditor",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "lighthouse_audit"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "profile-memory",
+      "title": "Take a heap snapshot",
+      "why": "A heap snapshot is the only way to see what's actually holding memory instead of guessing at a leak.",
+      "badge": "memory-hunter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "take_heapsnapshot"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "find-leak",
+      "title": "Compare two heap snapshots to find a leak",
+      "why": "A single snapshot shows a moment; comparing two shows what's growing between them.",
+      "badge": "leak-finder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "compare_heapsnapshots"
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "manage-tabs",
+      "title": "Work across multiple tabs",
+      "why": "Real flows — OAuth popups, opening a link in a new tab — need more than one page open at once.",
+      "badge": "multitasker",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "new_page" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "select_page" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    },
+    {
+      "id": "test-extension",
+      "title": "Load and test a Chrome extension",
+      "why": "Testing an extension for real means loading it into a real browser, not just reading its manifest.",
+      "badge": "extension-tester",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "install_extension" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "trigger_extension_action" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "close-pages-you-open",
+      "title": "Close the pages you open",
+      "why": "Every new_page leaves a browser tab running until something closes it — over a long session that's a pile of stale tabs holding memory and connections open.",
+      "badge": "tidy-driver",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "new_page" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "close_page" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools",
+      "recommended": true
+    },
+    {
+      "id": "release-heapsnapshots",
+      "title": "Release a heap snapshot once you're done with it",
+      "why": "A heap snapshot is held in memory until closed — forgetting to close it defeats the point of freeing memory up to look for a leak.",
+      "badge": "clean-profiler",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "take_heapsnapshot" },
+          { "type": "mcp_tool", "server": "chrome-devtools", "tool": "close_heapsnapshot" }
+        ]
+      },
+      "docs": "https://github.com/ChromeDevTools/chrome-devtools-mcp#tools",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    { "id": "driver", "name": "Driver", "tier": "bronze", "description": "Opened a page in the live browser." },
+    { "id": "snapshotter", "name": "Snapshotter", "tier": "bronze", "description": "Took a snapshot before interacting with the page." },
+    { "id": "automator", "name": "Automator", "tier": "silver", "description": "Drove the page — clicked, filled, or submitted." },
+    { "id": "unblocker", "name": "Unblocker", "tier": "bronze", "description": "Handled a browser dialog." },
+    { "id": "listener", "name": "Listener", "tier": "bronze", "description": "Checked the console for errors." },
+    { "id": "inspector", "name": "Inspector", "tier": "bronze", "description": "Inspected a network request." },
+    { "id": "scripter", "name": "Scripter", "tier": "bronze", "description": "Evaluated a script against the live page." },
+    { "id": "photographer", "name": "Photographer", "tier": "bronze", "description": "Captured a screenshot." },
+    { "id": "emulator", "name": "Emulator", "tier": "silver", "description": "Emulated a device or network condition." },
+    { "id": "profiler", "name": "Profiler", "tier": "silver", "description": "Recorded a performance trace." },
+    { "id": "analyst", "name": "Analyst", "tier": "silver", "description": "Pulled an optimization insight out of a trace." },
+    { "id": "auditor", "name": "Auditor", "tier": "silver", "description": "Ran a Lighthouse audit." },
+    { "id": "memory-hunter", "name": "Memory Hunter", "tier": "silver", "description": "Took a heap snapshot." },
+    { "id": "leak-finder", "name": "Leak Finder", "tier": "gold", "description": "Compared two heap snapshots to find a leak." },
+    { "id": "multitasker", "name": "Multitasker", "tier": "bronze", "description": "Worked across multiple tabs." },
+    { "id": "extension-tester", "name": "Extension Tester", "tier": "silver", "description": "Loaded and tested a Chrome extension." },
+    { "id": "tidy-driver", "name": "Tidy Driver", "tier": "bronze", "description": "Closes the pages it opens." },
+    { "id": "clean-profiler", "name": "Clean Profiler", "tier": "bronze", "description": "Releases heap snapshots once done." },
+    {
+      "id": "browser-regular",
+      "name": "Browser Regular",
+      "tier": "gold",
+      "description": "Navigated 20 pages in live sessions.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "chrome-devtools",
+        "tool": "navigate_page",
+        "gte": 20
+      }
+    }
+  ]
+}

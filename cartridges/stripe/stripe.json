@@ -1,0 +1,181 @@
+{
+  "id": "stripe",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Stripe",
+    "homepage": "https://docs.stripe.com/mcp",
+    "icon": "💳"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "stripe"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "plan-integration",
+      "title": "Plan your integration before writing code",
+      "why": "Stripe has more than one way to accept a payment or run billing — planning first avoids building the wrong shape of integration.",
+      "badge": "planner",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_implementation_planner"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "search-api-surface",
+      "title": "Search for the right API method instead of guessing",
+      "why": "Stripe's API surface is large — searching for the method that matches your intent beats guessing an endpoint name.",
+      "badge": "researcher",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_api_search"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "search-documentation",
+      "title": "Search Stripe's docs when the API isn't obvious",
+      "why": "An answer pulled from current docs beats a remembered one that's since changed.",
+      "badge": "reader",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "search_stripe_documentation"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "read-live-data",
+      "title": "Read live data through the API",
+      "why": "Pulling real account data beats assuming what's in it.",
+      "badge": "observer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_api_read"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "write-live-data",
+      "title": "Write data through the API",
+      "why": "Creating or updating a real Stripe object — a customer, a price, a subscription — is the integration actually doing something.",
+      "badge": "builder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_api_write"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "issue-refund",
+      "title": "Issue a refund",
+      "why": "Handling money going back out is as core to a payments integration as taking it in.",
+      "badge": "refunder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "create_refund"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "check-balance",
+      "title": "Check your balance across accounts",
+      "why": "Knowing what's actually settled and available beats assuming a charge means the money is there.",
+      "badge": "accountant",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "get_balance_summary"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "check-account-info",
+      "title": "Retrieve your account info",
+      "why": "Knowing which Stripe account you're pointed at is what stops a test charge landing in production.",
+      "badge": "oriented",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "get_stripe_account_info"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    },
+    {
+      "id": "generate-report",
+      "title": "Generate a Stripe report",
+      "why": "A report turns raw transactions into something you can actually reconcile or hand to finance.",
+      "badge": "reporter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_report"
+      },
+      "docs": "https://docs.stripe.com/mcp"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "use-restricted-keys",
+      "title": "Use a restricted key, not your full secret key",
+      "why": "Stripe explicitly recommends restricted API keys for agent use — a full secret key gives write access to your entire account the moment it's connected, whereas a restricted key limits the blast radius to exactly what the integration needs.",
+      "badge": "scoped-access",
+      "criteria": {
+        "anyOf": [
+          { "type": "mcp_tool", "server": "stripe", "tool": "stripe_api_write" },
+          { "type": "mcp_tool", "server": "stripe", "tool": "create_refund" }
+        ]
+      },
+      "docs": "https://docs.stripe.com/keys/restricted-api-keys",
+      "recommended": true
+    },
+    {
+      "id": "check-params-before-writing",
+      "title": "Check a method's parameters before calling it",
+      "why": "Looking up the exact parameters a write method expects avoids a rejected call or, worse, a call that succeeds with the wrong values.",
+      "badge": "careful-writer",
+      "criteria": {
+        "allOf": [
+          { "type": "mcp_tool", "server": "stripe", "tool": "stripe_api_details" },
+          { "type": "mcp_tool", "server": "stripe", "tool": "stripe_api_write" }
+        ]
+      },
+      "docs": "https://docs.stripe.com/mcp",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    { "id": "planner", "name": "Planner", "tier": "bronze", "description": "Planned an integration before writing code." },
+    { "id": "researcher", "name": "Researcher", "tier": "bronze", "description": "Searched for the right API method." },
+    { "id": "reader", "name": "Reader", "tier": "bronze", "description": "Searched Stripe's documentation." },
+    { "id": "observer", "name": "Observer", "tier": "silver", "description": "Read live data through the API." },
+    { "id": "builder", "name": "Builder", "tier": "silver", "description": "Wrote data through the API." },
+    { "id": "refunder", "name": "Refunder", "tier": "silver", "description": "Issued a refund." },
+    { "id": "accountant", "name": "Accountant", "tier": "bronze", "description": "Checked the balance across accounts." },
+    { "id": "oriented", "name": "Oriented", "tier": "bronze", "description": "Retrieved account info." },
+    { "id": "reporter", "name": "Reporter", "tier": "gold", "description": "Generated a Stripe report." },
+    { "id": "scoped-access", "name": "Scoped Access", "tier": "silver", "description": "Reminded to use a restricted key for write access." },
+    { "id": "careful-writer", "name": "Careful Writer", "tier": "bronze", "description": "Checks parameters before writing data." },
+    {
+      "id": "integration-regular",
+      "name": "Integration Regular",
+      "tier": "gold",
+      "description": "Wrote data through the API 15 times.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "stripe",
+        "tool": "stripe_api_write",
+        "gte": 15
+      }
+    }
+  ]
+}
