@@ -13,7 +13,7 @@
       "name": "learnmcp",
       "source": "./packages/plugin",
       "description": "Watches what you build, suggests the next best practice, and rewards you with badges \u2014 driven by pluggable cartridges.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Quinton Wall"
       },
