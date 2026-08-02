@@ -24,7 +24,7 @@ export default async function HomePage() {
       )}
 
       <pre>
-        <span className="prompt">You: </span>Can you generate an OpenAPI spec for this codebase?{"\n\n"}
+        <span className="prompt">You: </span>Can you generate an OpenAPI spec in Postman for this codebase?{"\n\n"}
         <span className="out">
           learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
           {"\n"}           · Initiate · 10 pts (90 to Apprentice)
