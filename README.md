@@ -38,7 +38,7 @@ You don't do anything differently. Just work, and when you touch a tool learnmcp
 it rewards you for the good stuff:
 
 ```
-You: Can you generate an OpenAPI spec for this codebase?
+You: Can you generate an OpenAPI spec in Postman for this codebase?
 
 🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
               · Initiate · 10 pts (90 to Apprentice)
