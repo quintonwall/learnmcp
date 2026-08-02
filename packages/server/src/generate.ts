@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { validateCartridge, type Cartridge } from "@learnmcp/schema";
+import { validateCartridge, isComposite, type Cartridge, type Matcher } from "@learnmcp/schema";
 
 /**
  * Dynamic cartridge generation: point at a docs URL, get a validated cartridge.
@@ -87,11 +87,15 @@ Rules:
   tool names are usually camelCase API operations (createMock) while slash commands are
   kebab-case (postman:mock) — different names for the same action, so never derive one from
   the other.
-- NEVER GUESS AN IDENTIFIER. A misspelt tool name fails silently forever, which is worse
-  than omitting the objective: the cartridge looks complete and rewards nothing. If the docs
-  don't state a name, use a command, file, dependency or bash matcher you can be certain of,
-  or leave that objective out. \`mcp_tool\` accepts a regex, but that is for tolerating a
-  documented naming variation — not a licence to invent a plausible-looking name.
+- NEVER GUESS AN IDENTIFIER. This is enforced, not a style preference: every \`mcp_tool\`
+  "tool" value you output is checked against the documentation extract below, and if it
+  doesn't appear there verbatim, generation FAILS outright — there is no partial credit for
+  an otherwise-good cartridge with one invented name. A misspelt tool name fails silently
+  forever in production, which is worse than omitting the objective. If the docs don't
+  literally state a tool's name, use a command, file, dependency or bash matcher you can be
+  certain of instead, or leave that objective out entirely. \`mcp_tool\` accepts a regex,
+  but that is for tolerating a documented naming variation — not a licence to invent a
+  plausible-looking name and hope.
 - Reads and lookups are not achievements. Reward doing something, not calling any tool.
 - Prefer concrete, detectable criteria (command / mcp_tool / file / dependency / bash). Use
   llm_judge only for genuinely subjective quality.
@@ -106,6 +110,36 @@ Documentation extract:
 """
 ${docs.slice(0, 40000)}
 """`;
+}
+
+/** Every `mcp_tool` name referenced anywhere in a cartridge — detect, objectives, badges. */
+function collectMcpToolNames(c: Cartridge): string[] {
+  const names = new Set<string>();
+  const walk = (m: Matcher): void => {
+    if (isComposite(m)) {
+      for (const x of "not" in m ? [m.not] : "allOf" in m ? m.allOf : m.anyOf) walk(x);
+      return;
+    }
+    if (m.type === "mcp_tool") names.add(m.tool);
+  };
+  for (const m of c.detect) walk(m);
+  for (const o of [...c.objectives, ...c.bestPractices]) walk(o.criteria);
+  for (const b of c.badges) if (b.criteria) walk(b.criteria);
+  return [...names];
+}
+
+/**
+ * Hard gate, not a prompt suggestion: every `mcp_tool` name the model used must be a name
+ * it could actually have read, i.e. a literal match in the fetched documentation. An
+ * invented tool name fails silently forever once shipped — the objective just never
+ * fires, and looks complete in the gallery the whole time — which is worse than refusing
+ * to generate. Backslashes are stripped from both sides before comparing since markdown
+ * sources commonly escape underscores (`resolve\_library\_id`) in a way that would
+ * otherwise cause a false rejection of a name the model read correctly.
+ */
+function unverifiedToolNames(c: Cartridge, docs: string): string[] {
+  const haystack = docs.replace(/\\_/g, "_").replace(/\\-/g, "-");
+  return collectMcpToolNames(c).filter((tool) => !haystack.includes(tool));
 }
 
 /** Pull a JSON object out of an LLM response that may be fenced or prefixed. */
@@ -151,6 +185,17 @@ export async function generateCartridge(opts: GenerateOptions): Promise<Generate
     parsed.trust = "generated"; // never auto-trust a generated cartridge
     const result = validateCartridge(parsed);
     if (!result.ok) return { ok: false, error: result.error, raw };
+
+    const unverified = unverifiedToolNames(result.cartridge, docs);
+    if (unverified.length) {
+      return {
+        ok: false,
+        error:
+          `invented mcp_tool name(s) not present in the source documentation: ${unverified.join(", ")}` +
+          ` — use a command/bash/file matcher instead, or drop the objective if nothing else detects it`,
+        raw,
+      };
+    }
 
     let outPath: string | undefined;
     if (opts.outDir) {

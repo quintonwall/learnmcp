@@ -100,4 +100,72 @@ describe("generateCartridge", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toMatch(/no readable content/);
   });
+
+  it("rejects an mcp_tool name the docs never mention", async () => {
+    const withInventedTool = {
+      ...VALID_CARTRIDGE,
+      objectives: [
+        { ...VALID_CARTRIDGE.objectives[0], criteria: { type: "mcp_tool", server: "vercel", tool: "totally_made_up_tool" } },
+      ],
+    };
+    const complete = async () => JSON.stringify(withInventedTool);
+    const res = await generateCartridge({
+      url: "https://vercel.com/docs",
+      fetchText: fakeFetch, // "Run `vercel deploy`." — never mentions this tool name
+      complete,
+    });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error).toMatch(/totally_made_up_tool/);
+  });
+
+  it("accepts an mcp_tool name that literally appears in the fetched docs", async () => {
+    const docs = "Call resolve_library_id to look up a package, then get_library_docs.";
+    const withRealTool = {
+      ...VALID_CARTRIDGE,
+      objectives: [
+        { ...VALID_CARTRIDGE.objectives[0], criteria: { type: "mcp_tool", server: "context7", tool: "resolve_library_id" } },
+      ],
+    };
+    const res = await generateCartridge({
+      url: "https://example.com/docs",
+      fetchText: async () => docs,
+      complete: async () => JSON.stringify(withRealTool),
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("tolerates markdown-escaped underscores in the source when matching a tool name", async () => {
+    // Markdown docs commonly render as `resolve\_library\_id` — a name the model read
+    // correctly must not be rejected just because of the source's own escaping.
+    const docs = "### resolve\\_library\\_id\nLooks up a package by name.";
+    const withRealTool = {
+      ...VALID_CARTRIDGE,
+      objectives: [
+        { ...VALID_CARTRIDGE.objectives[0], criteria: { type: "mcp_tool", server: "context7", tool: "resolve_library_id" } },
+      ],
+    };
+    const res = await generateCartridge({
+      url: "https://example.com/docs",
+      fetchText: async () => docs,
+      complete: async () => JSON.stringify(withRealTool),
+    });
+    expect(res.ok).toBe(true);
+  });
+
+  it("repairs an invented tool name into a verified one", async () => {
+    const invented = {
+      ...VALID_CARTRIDGE,
+      objectives: [
+        { ...VALID_CARTRIDGE.objectives[0], criteria: { type: "mcp_tool", server: "vercel", tool: "not_a_real_tool" } },
+      ],
+    };
+    let calls = 0;
+    const complete = async () => {
+      calls++;
+      return calls === 1 ? JSON.stringify(invented) : JSON.stringify(VALID_CARTRIDGE);
+    };
+    const res = await generateCartridge({ url: "https://vercel.com/docs", fetchText: fakeFetch, complete, repair: true });
+    expect(calls).toBe(2);
+    expect(res.ok).toBe(true);
+  });
 });
