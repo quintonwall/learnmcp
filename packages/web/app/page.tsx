@@ -16,21 +16,11 @@ export default async function HomePage() {
         no fixed path — your real work is the curriculum.
       </p>
 
-      {stats && (stats.lessonsCompleted > 0 || stats.badgesEarned > 0) && (
-        <div className="grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", maxWidth: 480 }}>
-          <div className="card">
-            <div className="name">{stats.lessonsCompleted.toLocaleString()}</div>
-            <div className="meta">lessons learned</div>
-          </div>
-          <div className="card">
-            <div className="name">{stats.badgesEarned.toLocaleString()}</div>
-            <div className="meta">badges earned</div>
-          </div>
-          <div className="card">
-            <div className="name">{stats.activeLearners.toLocaleString()}</div>
-            <div className="meta">learners</div>
-          </div>
-        </div>
+      {stats && (stats.lessonsCompleted > 0 || stats.activeLearners > 0) && (
+        <p className="stat-banner">
+          <strong>{stats.activeLearners.toLocaleString()}</strong> developers have completed{" "}
+          <strong>{stats.lessonsCompleted.toLocaleString()}</strong> lessons.
+        </p>
       )}
 
       <pre>
