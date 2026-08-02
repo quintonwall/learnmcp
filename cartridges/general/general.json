@@ -1,6 +1,6 @@
 {
   "id": "general",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "trust": "official",
   "provider": {
     "name": "AI Dev Fundamentals",
@@ -130,6 +130,17 @@
       "docs": "https://git-scm.com/docs/git-branch"
     },
     {
+      "id": "push-your-work",
+      "title": "Push your work to a remote",
+      "why": "A commit that only exists on your machine isn't backed up and isn't visible to anyone else.",
+      "badge": "pusher",
+      "criteria": {
+        "type": "bash",
+        "matches": "git\\s+push"
+      },
+      "docs": "https://git-scm.com/docs/git-push"
+    },
+    {
       "id": "run-tests",
       "title": "Run your tests",
       "why": "Tests you don't run are documentation, and out-of-date documentation at that.",
@@ -238,6 +249,12 @@
       "name": "Brancher",
       "tier": "bronze",
       "description": "Worked on a branch."
+    },
+    {
+      "id": "pusher",
+      "name": "Pusher",
+      "tier": "bronze",
+      "description": "Pushed work to a remote."
     },
     {
       "id": "tester",
