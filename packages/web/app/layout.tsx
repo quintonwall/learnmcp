@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "learnmcp — learn as you build",
+  title: "learnmcp — a new kind of LMS for the agentic era",
   description: "A dynamic, in-session LMS for building with LLMs. Browse cartridges, climb the leaderboard, submit your own.",
 };
 
@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <Link href="/cartridges">Cartridges</Link>
               <Link href="/leaderboard">Leaderboard</Link>
               <Link href="/submit">Contribute</Link>
+              <a href="https://github.com/sponsors/quintonwall">Sponsor</a>
             </nav>
           </div>
         </header>

@@ -9,11 +9,13 @@ export default async function HomePage() {
   const [cartridges, stats] = await Promise.all([getCartridges(), getPlatformStats()]);
   return (
     <>
-      <h1>Learn best practices as you build.</h1>
+      <h1>A new kind of LMS — designed for the Agentic Era</h1>
       <p className="lead">
-        learnmcp lives inside your Claude Code session, watches what you build, suggests the
-        next best practice to try, and rewards you with badges when you do it. No courses,
-        no fixed path — your real work is the curriculum.
+        Free and fully open source, written by{" "}
+        <a href="https://quintonwall.com">Quinton Wall</a>. learnmcp lives inside your
+        Claude Code session, watches what you build, suggests the next best practice to
+        try, and rewards you with badges when you do it. No courses, no fixed path — your
+        real work is the curriculum.
       </p>
 
       {stats && (stats.lessonsCompleted > 0 || stats.activeLearners > 0) && (
