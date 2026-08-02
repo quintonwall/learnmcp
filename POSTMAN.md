@@ -40,88 +40,51 @@ your first MCP server.
 
 ## 2. Work the track
 
-Each step is a Postman command. Run it, and the badge fires on its own — in roughly the
-order learnmcp suggests them, first-run to advanced:
+You don't run commands — you just ask for what you want, the way you'd ask a colleague.
+Claude decides whether that means running a `/postman:…` command or calling an MCP tool
+directly; learnmcp catches it either way, so the badge fires regardless of which one it
+picked. Roughly first-run to advanced:
 
-### Send a request → **First Contact** 🥉
+### "Can you send a GET request to /users and show me the response?" → **First Contact** 🥉
 
-```
-/postman:send-request
-```
-
-### Generate a spec → **Spec Author** 🥉
-
-```
-/postman:generate-spec
-```
+### "Generate an OpenAPI spec for this codebase" → **Spec Author** 🥉
 
 > learnmcp — 🏅 **Spec Author** (+10) · ✅ Generate an OpenAPI spec from your codebase
 > · Initiate · 20 pts (80 to Apprentice) · Next: **Search for an existing API before
 > building your own**
 
-### Search before you build → **Scout** 🥉
-
-```
-/postman:search
-```
+### "Is there already a Stripe collection I can use instead of building this myself?" → **Scout** 🥉
 
 The integration you're about to hand-roll may already exist as a maintained collection.
 
-### Sync it to a collection → **Single Source** 🥉
-
-```
-/postman:sync
-```
+### "Turn that spec into a Postman collection" → **Single Source** 🥉
 
 Keeps the spec and your requests from drifting apart.
 
-### Stand up a mock → **Great Pretender** 🥉
+### "Spin up a mock server for this API so the frontend team can start building" → **Great Pretender** 🥉
 
-```
-/postman:mock
-```
+### "Save an example response on this request" → **Exemplary** 🥉
 
-The frontend can now build against realistic responses before the API exists.
+There's no `/postman:` command for this one — Claude just calls the `createCollectionResponse`
+tool directly. Examples are what your mock server returns and what your published docs
+show, so without them both are empty shells.
 
-### Save example responses → **Exemplary** 🥉
+### "Move the base URL and API key into an environment instead of hardcoding them" → **Environmentalist** 🥈
 
-Save an example on a request or response. Examples are what your mock server returns and
-what your published docs show — without them both are empty shells.
+Also MCP-only, no slash command behind it. Hardcoded hosts and tokens in requests leak into
+git and make the same collection unusable against staging.
 
-### Move config into an environment → **Environmentalist** 🥈
-
-Silver: hardcoded hosts and tokens in requests leak into git and make the same collection
-unusable against staging.
-
-### Run it as tests → **Test Runner** 🥉
-
-```
-/postman:run-collection
-```
+### "Run my collection as a test suite" → **Test Runner** 🥉
 
 Do this ten times over the life of the project and it upgrades to **Marathoner** 🥇.
 
-### Audit it → **Locked Down** 🥈
+### "Audit this API against the OWASP API Top 10" → **Locked Down** 🥈
 
-```
-/postman:security
-```
+### "Publish documentation for this API" → **Documentarian** 🥉
 
-Checks against the OWASP API Top 10.
+### "Trigger my onboarding Flow" → **Flow State** 🥇
 
-### Publish the docs → **Documentarian** 🥉
-
-```
-/postman:docs
-```
-
-### Automate with Flows → **Flow State** 🥇
-
-```
-/postman:trigger-flow
-```
-
-Gold: chaining calls in a Flow beats a scratch script nobody else can run or debug.
+Chaining calls in a Flow beats a scratch script nobody else can run or debug.
 
 ### The gold one → **Agent-Ready** 🥇
 
@@ -156,7 +119,8 @@ if it ever shows up in a committed file.
 ## How the detection actually works
 
 Worth understanding if you're writing your own cartridge, because Postman is a good example
-of a tool that can't be tracked one single way.
+of a tool that can't be tracked one single way — and it's *why* asking naturally in §2 above
+works at all rather than requiring you to memorize command names.
 
 **A plugin's commands and its MCP tools are different names for the same action.**
 `/postman:mock` is a slash command; underneath it calls the MCP tool `createMock`. Match
