@@ -149,7 +149,7 @@ p code, li code, td code {
 .stat-banner strong {
   font-size: 42px;
   font-weight: 800;
-  color: var(--gold);
+  color: var(--accent);
   letter-spacing: -0.02em;
 }
 @media (max-width: 480px) {
