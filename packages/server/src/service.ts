@@ -1,8 +1,10 @@
 import {
   rankForPoints,
+  isComposite,
   type Signal,
   type JudgeRequest,
   type RankProgress,
+  type Matcher,
 } from "@learnmcp/schema";
 import type { CartridgeRegistry } from "./registry.js";
 import type { ProgressStore, StoredBadge } from "./store.js";
@@ -28,10 +30,27 @@ export interface RecordResult {
    * happening at all.
    */
   newCartridges: Array<{ id: string; name: string; objectives: number }>;
+  /**
+   * Set when this signal was the first sighting of an MCP server with no cartridge
+   * detecting on it. Without this, adding a tool learnmcp doesn't know is silent — the
+   * same silence a missing cartridge would produce, but here there's something concrete
+   * to suggest: generate one, or check whether the registry already has it under review.
+   */
+  newMcpServerWithoutCartridge?: string;
   points: number;
   rank: RankProgress;
   /** Subjective checks awaiting an LLM verdict; resolve with resolveJudgement(). */
   pending: JudgeRequest[];
+}
+
+/** Does this detect matcher (searched recursively through allOf/anyOf/not) name this MCP server? */
+function matcherReferencesMcpServer(m: Matcher, server: string): boolean {
+  if (isComposite(m)) {
+    if ("not" in m) return matcherReferencesMcpServer(m.not, server);
+    const list = "allOf" in m ? m.allOf : m.anyOf;
+    return list.some((x) => matcherReferencesMcpServer(x, server));
+  }
+  return (m.type === "mcp" || m.type === "mcp_tool") && m.server === server;
 }
 
 export interface Recommendation {
@@ -57,15 +76,13 @@ export class ProgressService {
 
   /** Ingest a signal, persist any newly-earned badges/objectives, return the deltas. */
   record(scope: string, signal: Signal): RecordResult {
+    const beforeSignals = this.store.getSignals(scope);
     // Snapshot which tracks were already known so we can tell the difference between
     // "postman track just activated" and "postman was already active". Evaluation is pure
     // and in-memory, so the extra pass is cheap.
     const before = new Set(
-      evaluateProject(
-        this.registry.list(),
-        this.store.getSignals(scope),
-        this.store.getJudgements(scope),
-      ).activeCartridgeIds,
+      evaluateProject(this.registry.list(), beforeSignals, this.store.getJudgements(scope))
+        .activeCartridgeIds,
     );
 
     this.store.recordSignal(scope, signal);
@@ -82,6 +99,17 @@ export class ProgressService {
           objectives: (c?.objectives.length ?? 0) + (c?.bestPractices.length ?? 0),
         };
       });
+
+    if (signal.kind === "mcp.added") {
+      const seenBefore = beforeSignals.some(
+        (s) => s.kind === "mcp.added" && s.server === signal.server,
+      );
+      const hasCartridge = this.registry
+        .list()
+        .some((c) => c.detect.some((m) => matcherReferencesMcpServer(m, signal.server)));
+      if (!seenBefore && !hasCartridge) result.newMcpServerWithoutCartridge = signal.server;
+    }
+
     return result;
   }
 
@@ -121,20 +149,28 @@ export class ProgressService {
   }
 
   /**
-   * The next thing to try — one recommendation, to avoid nagging. Prefers active
-   * cartridges (their `detect` matched this project) with an unfinished objective.
+   * The next thing to try. With no `cartridgeId`, one recommendation across everything —
+   * active cartridges first, to avoid nagging about tools you haven't touched.
+   *
+   * With a `cartridgeId`, answers "what's next for X" / "I just added X, what should I do
+   * first" for that cartridge specifically — regardless of whether it's active yet. That
+   * matters because activation needs a recorded signal, and someone asking this question
+   * in chat often hasn't triggered one: they installed the tool and are asking before
+   * they've used it.
    */
-  learnNext(scope: string): Recommendation | null {
+  learnNext(scope: string, cartridgeId?: string): Recommendation | null {
     const signals = this.store.getSignals(scope);
     const judgements = this.store.getJudgements(scope);
     const cartridges = this.registry.list();
     const state = evaluateProject(cartridges, signals, judgements);
 
-    const active = state.activeCartridgeIds.length
-      ? state.activeCartridgeIds
-      : cartridges.map((c) => c.id);
+    const order = cartridgeId
+      ? [cartridgeId]
+      : state.activeCartridgeIds.length
+        ? state.activeCartridgeIds
+        : cartridges.map((c) => c.id);
 
-    for (const id of active) {
+    for (const id of order) {
       const cartridge = cartridges.find((c) => c.id === id);
       if (!cartridge) continue;
       const obj = nextObjective(cartridge, {
@@ -151,6 +187,9 @@ export class ProgressService {
           badge: obj.badge,
         };
       }
+      // An explicit ask for one cartridge stops here — falling through to "any other
+      // cartridge" would silently answer a different question than the one asked.
+      if (cartridgeId) return null;
     }
     return null;
   }

@@ -113,15 +113,25 @@ You never told learnmcp you did anything. Running the command *is* the signal.
 
 | | |
 |---|---|
-| `/learn` | the next thing worth doing |
+| `/learn [tool]` | the next thing worth doing — for everything, or one tool by name |
 | `/badges` | what you've earned |
 | `/progress` | your points, rank, and standing |
-| `/cartridge` | what it can teach; refresh from the registry |
+| `/cartridges` | what learnmcp can teach, and what's already active for you |
+| `/cartridge` | refresh from the registry |
 
-Or just ask in plain language — *"where am I on the leaderboard?"*, *"what can learnmcp
-teach me?"*, *"claim my profile"*. The tools behind those are `my_progress`, `my_badges`,
+Or just ask in plain language — *"where am I on the leaderboard?"*, *"I just added
+Supabase, what should I try first?"*, *"tell me more about what's next for Postman"*,
+*"claim my profile"*. The tools behind those are `my_progress`, `my_badges`,
 `leaderboard`, `cartridge_popularity`, `claim_profile`, `learn_next`, `list_cartridges`,
-`add_cartridge`, and `generate_cartridge`.
+`add_cartridge`, and `generate_cartridge`. `learn_next` answers for a specific tool even
+before you've used it, and if the objective's docs link is worth reading in full, the
+model will fetch and summarize it rather than just repeating the title.
+
+The "Next:" line in the terminal is a real link in terminals that support clickable
+text (OSC 8) — click straight through to the docs.
+
+Add a tool learnmcp has never seen and there's no cartridge for it yet, it says so and
+offers to draft one rather than staying silent.
 
 Points are bronze 10, silver 25, gold 100, accumulating across every tool into one rank:
 Novice → Initiate → Apprentice → Journeyman → Adept → Expert → Master → Grandmaster →

@@ -83,6 +83,38 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
     expect(rec?.docs).toBeTruthy();
   });
 
+  it("answers learnNext for a named cartridge even before it's active", () => {
+    // "I just installed X, what should I do first" — asked before any signal has fired,
+    // so the cartridge isn't active yet. It should still answer for that cartridge.
+    expect(service.progress(SCOPE).activeCartridgeIds).not.toContain("supabase");
+    const rec = service.learnNext(SCOPE, "supabase");
+    expect(rec?.cartridgeId).toBe("supabase");
+    expect(rec?.objectiveId).toBeTruthy();
+  });
+
+  it("stops at a named cartridge rather than falling through to another", () => {
+    // An unknown id must not silently answer for some other cartridge.
+    expect(service.learnNext(SCOPE, "not-a-real-cartridge")).toBeNull();
+  });
+
+  it("flags an MCP server with no matching cartridge, exactly once", () => {
+    const first = service.record(SCOPE, { kind: "mcp.added", server: "totally-unknown-tool" });
+    expect(first.newMcpServerWithoutCartridge).toBe("totally-unknown-tool");
+
+    // Same server again — already flagged, must not repeat.
+    const second = service.record(SCOPE, {
+      kind: "mcp_tool",
+      server: "totally-unknown-tool",
+      tool: "doThing",
+    });
+    expect(second.newMcpServerWithoutCartridge).toBeUndefined();
+  });
+
+  it("does not flag an MCP server a cartridge already detects on", () => {
+    const res = service.record(SCOPE, { kind: "mcp.added", server: "postman" });
+    expect(res.newMcpServerWithoutCartridge).toBeUndefined();
+  });
+
   it("holds an llm_judge badge until a verdict is resolved", () => {
     const rec = service.record(SCOPE, { kind: "file", path: "api/openapi.yaml", content: "openapi: 3.0.0" });
     const judge = rec.pending.find((p) => p.files.some((f) => f.path === "api/openapi.yaml"));

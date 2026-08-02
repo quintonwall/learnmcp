@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { getCartridges } from "@/lib/data";
+import { getCartridges, getPlatformStats } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 const REPO = "https://github.com/quintonwall/learnmcp";
 
 export default async function HomePage() {
-  const cartridges = await getCartridges();
+  const [cartridges, stats] = await Promise.all([getCartridges(), getPlatformStats()]);
   return (
     <>
       <h1>Learn best practices as you build.</h1>
@@ -15,6 +15,23 @@ export default async function HomePage() {
         next best practice to try, and rewards you with badges when you do it. No courses,
         no fixed path — your real work is the curriculum.
       </p>
+
+      {stats && (stats.lessonsCompleted > 0 || stats.badgesEarned > 0) && (
+        <div className="grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", maxWidth: 480 }}>
+          <div className="card">
+            <div className="name">{stats.lessonsCompleted.toLocaleString()}</div>
+            <div className="meta">lessons learned</div>
+          </div>
+          <div className="card">
+            <div className="name">{stats.badgesEarned.toLocaleString()}</div>
+            <div className="meta">badges earned</div>
+          </div>
+          <div className="card">
+            <div className="name">{stats.activeLearners.toLocaleString()}</div>
+            <div className="meta">learners</div>
+          </div>
+        </div>
+      )}
 
       <pre>
         <span className="prompt">You: </span>/postman:generate-spec{"\n\n"}

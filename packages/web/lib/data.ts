@@ -36,6 +36,28 @@ export interface CartridgeBoard {
 
 export const usingSupabase = (): boolean => getSupabase() !== null;
 
+export interface PlatformStats {
+  lessonsCompleted: number;
+  badgesEarned: number;
+  activeLearners: number;
+}
+
+/** The headline numbers for the homepage: how much learning has actually happened here. */
+export async function getPlatformStats(): Promise<PlatformStats | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb
+    .from("platform_stats")
+    .select("lessons_completed,badges_earned,active_learners")
+    .single();
+  if (error || !data) return null;
+  return {
+    lessonsCompleted: data.lessons_completed ?? 0,
+    badgesEarned: data.badges_earned ?? 0,
+    activeLearners: data.active_learners ?? 0,
+  };
+}
+
 /**
  * The registry is the repo's own `cartridges/` directory — the same thing contributors
  * PR into and the MCP server reads from GitHub. This app deploys from that repo, so

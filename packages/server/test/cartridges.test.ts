@@ -82,20 +82,15 @@ describe("shipped cartridges", () => {
     expect(tiers.size, `${c.id} badges are all one tier`).toBeGreaterThan(1);
   });
 
-  it("badge display names are unique across all cartridges", () => {
-    // Two distinct badges sharing a name renders as "🏅 Plugged In · 🏅 Plugged In",
-    // which reads as a double-award bug even though both are legitimate.
-    const seen = new Map<string, string>();
-    const clashes: string[] = [];
-    for (const file of files) {
-      const res = validateCartridge(JSON.parse(readFileSync(file, "utf8")));
-      if (!res.ok) continue;
-      for (const b of res.cartridge.badges) {
-        const prev = seen.get(b.name);
-        if (prev && prev !== res.cartridge.id) clashes.push(`"${b.name}" in ${prev} and ${res.cartridge.id}`);
-        seen.set(b.name, res.cartridge.id);
-      }
-    }
-    expect(clashes).toEqual([]);
+  it.each(files)("%s doesn't repeat a badge name against itself", (file) => {
+    // Two of a cartridge's OWN badges sharing a name is genuinely ambiguous — which one
+    // did you just earn? Two different cartridges reusing a name (e.g. "Vault") is fine:
+    // the cartridge id disambiguates them, and community authors shouldn't have to check
+    // every other cartridge's badge list before picking a name.
+    const res = validateCartridge(JSON.parse(readFileSync(file, "utf8")));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    const names = res.cartridge.badges.map((b) => b.name);
+    expect(new Set(names).size, `${res.cartridge.id} repeats a badge name`).toBe(names.length);
   });
 });

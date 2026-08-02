@@ -64,13 +64,31 @@ function describeMatcher(m: unknown): string {
   }
 }
 
+/**
+ * Badge names only have to be unique within their own cartridge — "Vault" can exist in
+ * both `exa` and `supabase`. That's ambiguous only at the moment two of them are earned
+ * in the very same message ("🏅 Vault · 🏅 Vault"), so disambiguate there and nowhere
+ * else: tag a name with its cartridge only when this batch actually collides on it.
+ */
+function disambiguate<T extends { name: string; cartridgeId: string }>(badges: T[]): string[] {
+  const counts = new Map<string, number>();
+  for (const b of badges) counts.set(b.name, (counts.get(b.name) ?? 0) + 1);
+  return badges.map((b) => ((counts.get(b.name) ?? 0) > 1 ? `${b.name} (${b.cartridgeId})` : b.name));
+}
+
 function summarizeRecord(r: RecordResult): RecordResult & { message: string } {
   const parts: string[] = [];
   for (const c of r.newCartridges ?? []) {
     parts.push(`🧩 ${c.name} track activated (0/${c.objectives})`);
   }
-  for (const b of r.newBadges) parts.push(`🏅 ${b.name} (+${b.points})`);
+  const badgeNames = disambiguate(r.newBadges);
+  r.newBadges.forEach((b, i) => parts.push(`🏅 ${badgeNames[i]} (+${b.points})`));
   for (const o of r.newObjectives) parts.push(`✅ ${o.title}`);
+  if (r.newMcpServerWithoutCartridge) {
+    parts.push(
+      `🧭 No cartridge yet for "${r.newMcpServerWithoutCartridge}" — try generate_cartridge with its docs URL`,
+    );
+  }
   if (r.rank.next) {
     parts.push(`${r.rank.rank.name} · ${r.points} pts (${r.rank.pointsToNext} to ${r.rank.next.name})`);
   } else {
@@ -109,12 +127,26 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     {
       title: "What to learn next",
       description:
-        "Return the single best next objective for this project — a best practice or feature to try, with why it matters and a docs link.",
-      inputSchema: { scope: z.string().optional() },
+        "Return the single best next objective — a best practice or feature to try, with why it matters and a docs link. " +
+        "With no `cartridge`, one recommendation across everything already active. " +
+        "Pass `cartridge` (its id from list_cartridges) when the user names a specific tool: " +
+        '"what\'s next for postman", "I just added supabase, what should I do first", "tell me more about learning X" ' +
+        "— this answers for that cartridge even if it hasn't been used yet, so it works right after installing a tool " +
+        "and before any signal has fired. If the returned `docs` link exists and the user wants more depth, fetch it " +
+        "and summarize rather than just repeating the title.",
+      inputSchema: {
+        scope: z.string().optional(),
+        cartridge: z.string().optional().describe("A cartridge id to scope the recommendation to."),
+      },
     },
-    async ({ scope: s }) => {
-      const rec = service.learnNext(scope(s));
-      return ok(rec ?? { message: "Nothing suggested yet — add a cartridge or start building." });
+    async ({ scope: s, cartridge }) => {
+      const rec = service.learnNext(scope(s), cartridge);
+      if (rec) return ok(rec);
+      return ok({
+        message: cartridge
+          ? `Nothing left to suggest for "${cartridge}" — either it's fully complete or that id doesn't exist. Check list_cartridges.`
+          : "Nothing suggested yet — add a cartridge or start building.",
+      });
     },
   );
 

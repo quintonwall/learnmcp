@@ -46,6 +46,27 @@ function block(headline, ...rest) {
   return [`${BRAND} ${headline}`, ...rest.filter(Boolean).map((l) => `${INDENT}${dim("·")} ${l}`)].join("\n");
 }
 
+/**
+ * OSC 8 terminal hyperlink — the same escape-code family as the ANSI colour codes above,
+ * so any terminal that already renders the colour (which, per screenshot, this one does)
+ * renders this too: the text becomes clickable, opening `url`, with no visible markup.
+ * Skipped under NO_COLOR for the same reason colour is: some renderers show raw escapes.
+ */
+function link(url, text) {
+  return COLOR && url ? `\x1b]8;;${url}\x07${text}\x1b]8;;\x07` : text;
+}
+
+/**
+ * Badge names are unique within a cartridge, not across all of them — "Vault" can be
+ * earned from more than one. Ambiguous only when two land in the very same message, so
+ * disambiguate here, not by forcing every cartridge author into a global namespace.
+ */
+function disambiguateBadges(badges) {
+  const counts = new Map();
+  for (const b of badges) counts.set(b.name, (counts.get(b.name) ?? 0) + 1);
+  return badges.map((b) => ((counts.get(b.name) ?? 0) > 1 ? `${b.name} (${b.cartridgeId})` : b.name));
+}
+
 const tokenPath = () => path.join(os.homedir(), ".learnmcp", "token");
 
 function loadToken() {
@@ -333,7 +354,9 @@ async function main() {
     emit({
       systemMessage: block(
         gold(`${rank} · ${points} pts`),
-        next?.title ? `${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : null,
+        next?.title
+          ? `${orange(link(next.docs, `Next: ${next.title}`))} ${dim(`(${next.cartridgeId})`)}`
+          : null,
       ),
       hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
     });
@@ -347,6 +370,7 @@ async function main() {
   const badges = [];
   const objectives = [];
   const tracks = [];
+  const bareMcpServers = new Set();
   let last = null;
   for (const signal of signals) {
     const res = await callTool(url, "record_activity", { signal });
@@ -355,16 +379,21 @@ async function main() {
     badges.push(...(res.newBadges ?? []));
     objectives.push(...(res.newObjectives ?? []));
     tracks.push(...(res.newCartridges ?? []));
+    if (res.newMcpServerWithoutCartridge) bareMcpServers.add(res.newMcpServerWithoutCartridge);
   }
 
-  // Speak up when something is earned, or when a track activates for the first time.
-  // Activation is the one other moment worth interrupting for: it's the difference
-  // between "learnmcp knows this tool" and apparent silence.
-  if (last && (badges.length || objectives.length || tracks.length)) {
+  // Speak up when something is earned, a track activates for the first time, or a new MCP
+  // server shows up that no cartridge knows about — three distinct "learnmcp noticed
+  // something" moments, as opposed to the ordinary silence of an already-known action.
+  if (last && (badges.length || objectives.length || tracks.length || bareMcpServers.size)) {
+    const badgeNames = disambiguateBadges(badges);
     const parts = [
       ...tracks.map((c) => cyan(`🧩 ${c.name} track activated`) + dim(` (0/${c.objectives})`)),
-      ...badges.map((b) => gold(`🏅 ${b.name} (+${b.points})`)),
+      ...badges.map((b, i) => gold(`🏅 ${badgeNames[i]} (+${b.points})`)),
       ...objectives.map((o) => green(`✅ ${o.title}`)),
+      ...[...bareMcpServers].map(
+        (s) => `🧭 No cartridge yet for "${s}" — ask me to generate one, or check the registry`,
+      ),
     ];
     const next = await callTool(url, "learn_next", {});
     const r = last.rank ?? {};
@@ -375,7 +404,9 @@ async function main() {
       systemMessage: block(
         parts.join(` ${dim("·")} `),
         gold(standing),
-        next?.title ? `${orange(`Next: ${next.title}`)} ${dim(`(${next.cartridgeId})`)}` : null,
+        next?.title
+          ? `${orange(link(next.docs, `Next: ${next.title}`))} ${dim(`(${next.cartridgeId})`)}`
+          : null,
       ),
     });
   }
