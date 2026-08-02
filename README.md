@@ -115,6 +115,58 @@ real limitations, both because the plugin's hooks are what paper over them:
   headers — if it does, call any tool once, grab the token from the `x-learnmcp-token`
   response header, and hardcode it.
 
+### What that actually looks like, with GitHub as the example
+
+Say you're on Cursor (no hooks) and you open a pull request using the GitHub MCP server:
+
+```
+You: Open a PR for this branch
+Cursor calls mcp__github__create_pull_request …
+```
+
+Silence. No badge, no message — nothing told learnmcp it happened, because there's no
+hook watching. You have to say so:
+
+```
+You: Log that with learnmcp
+```
+
+which calls `record_activity` with the same signal shape a hook would have sent for you:
+
+```jsonc
+// tool call
+{ "signal": { "kind": "mcp_tool", "server": "github", "tool": "create_pull_request" } }
+```
+
+```jsonc
+// response
+{
+  "newBadges": [{ "name": "Collaborator", "points": 25, "cartridgeId": "github" }],
+  "newObjectives": [{ "title": "Open a pull request", "cartridgeId": "github" }],
+  "points": 25,
+  "rank": { "rank": { "name": "Initiate" }, "next": { "name": "Apprentice" }, "pointsToNext": 75 }
+}
+```
+
+Same badge, same points, same cartridge as the plugin would have given you — it just
+needed asking instead of noticing. Ask what's next the same way:
+
+```
+You: What should I do next?
+```
+
+```jsonc
+// learn_next → the same recommendation the plugin's session-start summary would show
+{
+  "title": "Review someone's pull request",
+  "cartridgeId": "github",
+  "why": "Review is where defects get cheap to fix and knowledge actually spreads."
+}
+```
+
+That's the entire gap: real progress, real badges, real leaderboard — just manual instead
+of automatic.
+
 **Or run the engine locally** — real SQLite, scoped to your project, no cloud and no token
 to manage. Not published to npm yet, so it means building from source:
 
