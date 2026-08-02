@@ -1,9 +1,10 @@
 {
   "name": "learnmcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A dynamic, in-session LMS for building with LLMs. Watches what you build, suggests the next best practice, and rewards you with badges \u2014 driven by pluggable cartridges.",
   "author": {
-    "name": "learnmcp"
+    "name": "Quinton Wall",
+    "url": "https://github.com/quintonwall"
   },
   "homepage": "https://github.com/quintonwall/learnmcp",
   "keywords": [
