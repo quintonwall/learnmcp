@@ -83,6 +83,10 @@ There's no merge — whichever token a machine ends up with wins, and any progre
 under a token you overwrite is abandoned. There's also no recovery if a token is lost:
 it's the only thing identifying you, by design.
 
+**Want to start over?** Delete the token — `rm ~/.learnmcp/token` — and the next thing
+you do mints a fresh learner with 0 points and no badges. If you'd claimed a handle,
+just claim it again; it belongs to the old learner, not the new one.
+
 **Prefer to keep everything off the cloud?** `export LEARNMCP_LOCAL=1` opts out of
 tracking entirely — no leaderboard, no cartridge popularity, nothing sent. Want a fully
 private leaderboard-free deployment instead of an opt-out? See [HOSTING.md](HOSTING.md).
