@@ -22,7 +22,7 @@ points and badges when you do it. No courses, no fixed path — your real work i
 curriculum.
 
 ```
-You: /postman:generate-spec
+You: Can you generate an OpenAPI spec for this codebase?
 
 🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
               · Initiate · 10 pts (90 to Apprentice)
@@ -52,7 +52,7 @@ You don't do anything differently. Just work, and when you touch a tool learnmcp
 it rewards you for the good stuff:
 
 ```
-You: /postman:generate-spec
+You: Can you generate an OpenAPI spec for this codebase?
 
 🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
               · Initiate · 10 pts (90 to Apprentice)
