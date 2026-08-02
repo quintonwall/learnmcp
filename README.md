@@ -31,124 +31,60 @@ You: /postman:generate-spec
 
 ---
 
-## Install
+## Get started
+
+Two commands:
 
 ```bash
 claude plugin marketplace add quintonwall/learnmcp
 claude plugin install learnmcp@quintonwall
 ```
 
-Restart Claude Code. Under a minute, and you're done.
-
-The plugin talks to the hosted server at **[learnmcp.ai](https://learnmcp.ai)** — nothing
-to configure, and no key to paste.
-
-**No account required.** The first time learnmcp records anything it creates an anonymous
-learner for you and starts saving straight away — badges, points, rank. You only sign in if
-you want your *name* on the leaderboard instead of `learner-7f3c`:
-
-```
-Claim my learnmcp profile
-```
-
-Nothing is lost either way; claiming just puts a handle on progress you already have.
-
-The plugin gives you two things: a **remote MCP server** that holds the curriculum and your
-progress, and **hooks** that notice what you do. The hooks are the reason it's a plugin
-rather than a bare MCP — they're what let badges land passively instead of only when the
-model thinks to look.
+Restart Claude Code. That's it — no account, no API key, nothing to configure. The plugin
+talks to the hosted server at **[learnmcp.ai](https://learnmcp.ai)**, and the moment it
+sees you do something worth rewarding, it starts tracking you automatically.
 
 ---
 
-## Using it
+## Use it
 
-Just work. When you use a tool learnmcp knows, the matching track activates on its own and
-you'll see the next suggestion at session start.
-
-### A first session, start to finish
-
-Say you have the [Postman plugin](https://github.com/Postman-Devrel/postman-claude-code-plugin)
-installed. Open Claude Code in any project:
-
-> learnmcp is tracking your progress. Rank Novice · 0 pts.
-> Active learning tracks: **postman**.
-> Suggested next: **Generate an OpenAPI spec from your codebase** — A spec makes your API
-> documented, mockable, and testable.
-
-You didn't configure anything; it saw the Postman MCP and loaded the matching track. Follow
-the suggestion using Postman's own command:
+You don't do anything differently. Just work, and when you touch a tool learnmcp knows,
+it rewards you for the good stuff:
 
 ```
-/postman:generate-spec
-```
+You: /postman:generate-spec
 
-```
 🎓 learnmcp — 🏅 Spec Author (+10) · ✅ Generate an OpenAPI spec from your codebase
               · Initiate · 10 pts (90 to Apprentice)
               · Next: Sync your spec to a Postman collection
 ```
 
-Keep going and it compounds — `/postman:security` is worth silver:
+That's the whole loop. You never tell learnmcp what you did — running the command,
+calling the tool, or the file simply appearing all count as the signal. Keep going and
+it compounds: bronze badges are worth 10 points, silver 25, gold 100, adding up across
+every tool into one rank from Novice all the way to Legend.
 
-```
-🎓 learnmcp — 🏅 Locked Down (+25) · ✅ Security-audit your API (OWASP API Top 10)
-              · Initiate · 35 pts (65 to Apprentice)
-```
-
-Then check where you stand:
-
-```
-/progress
-```
-
-```json
-{ "points": 35, "rank": "Initiate", "nextRank": "Apprentice",
-  "pointsToNextRank": 65, "badges": 2, "leaderboardPosition": 1,
-  "claimed": false }
-```
-
-You never told learnmcp you did anything. Running the command *is* the signal.
-
-### Commands
+Check in anytime:
 
 | | |
 |---|---|
 | `/learn [tool]` | the next thing worth doing — for everything, or one tool by name |
 | `/badges` | what you've earned |
 | `/progress` | your points, rank, and standing |
-| `/cartridges` | what learnmcp can teach, and what's already active for you |
-| `/cartridge` | refresh from the registry |
+| `/cartridges` | everything learnmcp can teach, and what's active for you |
 
-Or just ask in plain language — *"where am I on the leaderboard?"*, *"I just added
-Supabase, what should I try first?"*, *"tell me more about what's next for Postman"*,
-*"claim my profile"*. The tools behind those are `my_progress`, `my_badges`,
-`leaderboard`, `cartridge_popularity`, `claim_profile`, `learn_next`, `list_cartridges`,
-`add_cartridge`, and `generate_cartridge`. `learn_next` answers for a specific tool even
-before you've used it, and if the objective's docs link is worth reading in full, the
-model will fetch and summarize it rather than just repeating the title.
+Or just ask, in plain language — *"what should I do next?"*, *"I just added Supabase,
+where do I start?"*, *"where am I on the leaderboard?"*. In a terminal that supports
+clickable links, the "Next:" line goes straight to the docs.
 
-The "Next:" line in the terminal is a real link in terminals that support clickable
-text (OSC 8) — click straight through to the docs.
+**No account, ever, unless you want your name on the leaderboard.** The first thing
+learnmcp records creates an anonymous learner and starts saving immediately — nothing is
+lost by staying anonymous, and you can say "claim my learnmcp profile" any time to attach
+a handle to progress you already have.
 
-Add a tool learnmcp has never seen and there's no cartridge for it yet, it says so and
-offers to draft one rather than staying silent.
-
-Points are bronze 10, silver 25, gold 100, accumulating across every tool into one rank:
-Novice → Initiate → Apprentice → Journeyman → Adept → Expert → Master → Grandmaster →
-Legend. There's a global leaderboard and a per-cartridge one.
-
-### Keeping progress local instead
-
-Progress goes to the cloud by default, which is what makes leaderboards and cartridge
-popularity work. To keep everything on your machine in `~/.learnmcp/state.sqlite` and send
-nothing:
-
-```bash
-export LEARNMCP_LOCAL=1
-```
-
-Self-hosting the server instead? Point `LEARNMCP_URL` at your deployment — see
-[HOSTING.md](HOSTING.md).
+**Prefer to keep everything off the cloud?** `export LEARNMCP_LOCAL=1` opts out of
+tracking entirely — no leaderboard, no cartridge popularity, nothing sent. Want a fully
+private leaderboard-free deployment instead of an opt-out? See [HOSTING.md](HOSTING.md).
 
 ---
 

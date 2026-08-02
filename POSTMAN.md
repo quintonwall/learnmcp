@@ -1,7 +1,7 @@
 # Walkthrough: learning Postman with learnmcp
 
 The full loop, start to finish, using the official **Postman Claude Code plugin**. Twenty
-minutes gets you eight badges and a working API.
+minutes gets you a dozen badges and a working API.
 
 New to learnmcp? Install it first — see the [README](README.md).
 
@@ -26,9 +26,9 @@ Restart Claude Code, then authenticate:
 Start a session in the project you're working on. Before you do anything Postman-related:
 
 > learnmcp is tracking this project. Rank Initiate · 10 pts · 1 badges.
-> Active learning tracks: **postman (0/8)**.
-> Suggested next: **Generate an OpenAPI spec from your codebase** — A spec makes your API
-> documented, mockable, and testable.
+> Active learning tracks: **postman (0/13)**.
+> Suggested next: **Send a request against your API** — Seeing a real response is the
+> fastest way to find out your API doesn't behave the way the spec claims.
 
 It read your installed plugins, saw Postman's MCP server, and loaded the matching
 cartridge. Nothing in your repo mentions Postman and you configured nothing.
@@ -40,7 +40,14 @@ your first MCP server.
 
 ## 2. Work the track
 
-Each step is a Postman command. Run it, and the badge fires on its own.
+Each step is a Postman command. Run it, and the badge fires on its own — in roughly the
+order learnmcp suggests them, first-run to advanced:
+
+### Send a request → **First Contact** 🥉
+
+```
+/postman:send-request
+```
 
 ### Generate a spec → **Spec Author** 🥉
 
@@ -49,7 +56,16 @@ Each step is a Postman command. Run it, and the badge fires on its own.
 ```
 
 > learnmcp — 🏅 **Spec Author** (+10) · ✅ Generate an OpenAPI spec from your codebase
-> · Initiate · 10 pts (90 to Apprentice) · Next: **Sync your spec to a Postman collection**
+> · Initiate · 20 pts (80 to Apprentice) · Next: **Search for an existing API before
+> building your own**
+
+### Search before you build → **Scout** 🥉
+
+```
+/postman:search
+```
+
+The integration you're about to hand-roll may already exist as a maintained collection.
 
 ### Sync it to a collection → **Single Source** 🥉
 
@@ -67,6 +83,16 @@ Keeps the spec and your requests from drifting apart.
 
 The frontend can now build against realistic responses before the API exists.
 
+### Save example responses → **Exemplary** 🥉
+
+Save an example on a request or response. Examples are what your mock server returns and
+what your published docs show — without them both are empty shells.
+
+### Move config into an environment → **Environmentalist** 🥈
+
+Silver: hardcoded hosts and tokens in requests leak into git and make the same collection
+unusable against staging.
+
 ### Run it as tests → **Test Runner** 🥉
 
 ```
@@ -75,19 +101,27 @@ The frontend can now build against realistic responses before the API exists.
 
 Do this ten times over the life of the project and it upgrades to **Marathoner** 🥇.
 
-### Publish the docs → **Documentarian** 🥉
-
-```
-/postman:docs
-```
-
 ### Audit it → **Locked Down** 🥈
 
 ```
 /postman:security
 ```
 
-Checks against the OWASP API Top 10. Silver, because it's worth more than the rest.
+Checks against the OWASP API Top 10.
+
+### Publish the docs → **Documentarian** 🥉
+
+```
+/postman:docs
+```
+
+### Automate with Flows → **Flow State** 🥇
+
+```
+/postman:trigger-flow
+```
+
+Gold: chaining calls in a Flow beats a scratch script nobody else can run or debug.
 
 ### The gold one → **Agent-Ready** 🥇
 
@@ -159,23 +193,26 @@ including a guard that every tool name it references is one the Postman MCP real
 
 ## Try it without touching Postman
 
-You can drive the hooks directly to see detection work:
+The installed plugin's hook is a plain script — you can drive it directly to see
+detection work, against your real hosted progress:
 
 ```bash
-export LEARNMCP_DB=/tmp/learnmcp-demo.sqlite
+cd ~/.claude/plugins/cache/quintonwall/learnmcp/*/
 
 # a slash command
-echo '{"hook_event_name":"UserPromptSubmit","prompt":"/postman:mock","cwd":"'$PWD'"}' \
-  | node packages/server/dist/cli.js post-tool-use
+echo '{"hook_event_name":"UserPromptSubmit","prompt":"/postman:mock"}' \
+  | node hooks/learnmcp-hook.mjs post-tool-use
 
 # the MCP tool underneath it
-echo '{"tool_name":"mcp__postman__createMock","tool_input":{},"cwd":"'$PWD'"}' \
-  | node packages/server/dist/cli.js post-tool-use
+echo '{"tool_name":"mcp__postman__createMock","tool_input":{}}' \
+  | node hooks/learnmcp-hook.mjs post-tool-use
 
 # the CLI path
-echo '{"tool_name":"Bash","tool_input":{"command":"postman collection run abc"},"cwd":"'$PWD'"}' \
-  | node packages/server/dist/cli.js post-tool-use
+echo '{"tool_name":"Bash","tool_input":{"command":"postman collection run abc"}}' \
+  | node hooks/learnmcp-hook.mjs post-tool-use
 ```
 
-Each prints the JSON the hook feeds back to Claude Code. Clean up with
-`rm $LEARNMCP_DB*`, or `rm ~/.learnmcp/state.sqlite` to reset your real progress.
+Each prints the JSON the hook feeds back to Claude Code — a `systemMessage` when
+something is newly earned, nothing when it's already been credited. Since this talks to
+your real hosted learner, use a throwaway `HOME` to try things without touching your
+actual progress: prefix any of the above with `HOME=$(mktemp -d)`.

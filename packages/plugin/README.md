@@ -1,62 +1,78 @@
 # learnmcp — Claude Code plugin
 
-This plugin is what makes learnmcp **live in your session**. It wraps the portable
-[`@learnmcp/server`](../server) MCP server with the one thing MCP alone can't do —
-**hooks for passive monitoring** — plus slash commands.
+This plugin is what makes learnmcp **live in your session**. It's two small,
+dependency-free scripts plus four slash commands — no build step, no sibling package,
+because a marketplace install only ever ships this directory.
 
 ## How it fits together
 
 ```
 Claude Code
   │
-  ├─ hooks (this plugin) ───────────────┐   writes signals
-  │    SessionStart  → learnmcp scan     │
-  │    PostToolUse   → learnmcp record   ▼
-  │                                  ┌──────────────┐
-  │                                  │  SQLite store│  (~/.learnmcp/state.sqlite, WAL)
-  │                                  └──────────────┘
-  ├─ MCP server (this plugin) ───────────▲   reads for the model
-  │    learn_next / list_badges / progress / …
+  ├─ hooks/learnmcp-hook.mjs ───── POST signals ────┐
+  │    SessionStart      → scan the project          │
+  │    UserPromptSubmit  → catch slash commands       ▼
+  │    PostToolUse       → catch tool calls    https://learnmcp.ai/mcp
+  │                                                    ▲
+  ├─ hooks/mcp-proxy.mjs ───────── tools/call ─────────┘
+  │    (this is what .mcp.json actually spawns)
   │
-  └─ slash commands → call those MCP tools
+  └─ commands/ → /learn /badges /progress /cartridges /cartridge
+       (call the tools mcp-proxy exposes)
 ```
 
-The key idea: **hooks write, MCP tools read.** Hooks are short-lived processes and can't
-call MCP tools, so they translate Claude Code events into signals and write them straight
-to the same SQLite store the MCP server reads. That's how badges get earned *passively*
-as you work, while `/learn` and `/badges` surface progress to the model on demand.
+Progress lives entirely on the hosted server, not on this machine. Both scripts share one
+identity: the first call mints an anonymous learner and saves a bearer token to
+`~/.learnmcp/token`; every call after that sends it. That file is the only local state
+this plugin keeps.
+
+**Why two scripts instead of one.** Claude Code's actual MCP client — the thing the model
+calls tools through — has no way to attach a custom header to a `type: "http"` server
+declaration, and no way to persist a token the server hands back. So `mcp-proxy.mjs` exists
+purely to bridge that gap: it's a local stdio MCP server that reads the same token file and
+forwards every request over HTTP with the right `Authorization` header. Without it,
+interactive tool calls (you asking "what's my progress?") and passive hook-driven signals
+would be two different, disconnected identities.
 
 ## What's in here
 
 - **`.claude-plugin/plugin.json`** — the plugin manifest.
-- **`.mcp.json`** — bundles the `learnmcp` MCP server (`learn_next`, `record_activity`,
-  `list_badges`, `progress`, `scan_project`, `reload_cartridges`, …).
-- **`hooks/hooks.json`** — the passive-monitoring layer:
-  - `SessionStart` → `learnmcp session-start`: scans the project *and your installed
-    plugins* (a plugin-supplied MCP server is invisible to a project-only scan), then
-    injects a progress summary + next suggestion as session context.
-  - `UserPromptSubmit` → `learnmcp post-tool-use`: catches slash commands. Most plugins
-    expose their value as commands rather than MCP tools — `/postman:mock` is a command,
-    not an `mcp__postman__mock` call — so without this the whole surface is invisible.
-  - `PostToolUse` (Bash / Edit / Write / Skill / SlashCommand / MCP tools) →
-    `learnmcp post-tool-use`: records the resulting signal and, when you earn something,
-    surfaces it as a system message.
-- **`commands/`** — `/learn`, `/badges`, `/progress`, `/cartridge`.
+- **`.mcp.json`** — spawns `hooks/mcp-proxy.mjs` as the `learnmcp` MCP server (`learn_next`,
+  `record_activity`, `list_badges`, `progress`, `my_progress`, `leaderboard`,
+  `list_cartridges`, `add_cartridge`, `generate_cartridge`, `claim_profile`, …).
+- **`hooks/hooks.json`** — the passive-monitoring layer, all running `learnmcp-hook.mjs`:
+  - `SessionStart` → scans the project *and your installed plugins* (a plugin-supplied MCP
+    server is invisible to a project-only scan), then shows a one-line progress summary.
+  - `UserPromptSubmit` → catches slash commands. Most plugins expose their value as
+    commands rather than MCP tools — `/postman:mock` is a command, not an
+    `mcp__postman__mock` call — so without this the whole surface is invisible.
+  - `PostToolUse` (Bash / Edit / Write / Skill / SlashCommand / MCP tools) → records the
+    resulting signal and, when you earn something, prints it.
+- **`commands/`** — `/learn`, `/badges`, `/progress`, `/cartridges`, `/cartridge`.
 
-Both the hook commands and the MCP server come from `@learnmcp/server`'s compiled `dist/`,
-referenced via `${CLAUDE_PLUGIN_ROOT}/../server/dist/…`. Build it first:
+Neither script imports anything beyond Node built-ins, and neither depends on
+`@learnmcp/server` — that package is the portable core used by the *hosted* server and by
+anyone running learnmcp from source (see [RUNNING.md](../../RUNNING.md)), but this plugin
+doesn't need it installed to work.
+
+## Install
 
 ```bash
-npm run build   # from the repo root — compiles @learnmcp/server
+claude plugin marketplace add quintonwall/learnmcp
+claude plugin install learnmcp@quintonwall
 ```
 
-## Install (local / dev)
+Restart Claude Code. On the next session start you'll see learnmcp check in; use a tool it
+knows (add an MCP server, run `npx playwright test`, run a Postman command, …) and watch
+the badges roll in. `/badges` and `/progress` any time.
 
-From the repo root, add this directory as a plugin (via a marketplace entry or a local
-plugin path in your Claude Code settings), then restart Claude Code. On the next session
-start you'll see learnmcp pick up your project; use a tool it knows (add the Postman MCP,
-run `npx playwright test`, edit `.gitignore`, …) and watch the badges roll in. Check
-`/badges` and `/progress` anytime.
+By default it talks to `https://learnmcp.ai`. Point `LEARNMCP_URL` at a self-hosted
+deployment instead, or set `LEARNMCP_LOCAL=1` to opt out of sending anything — see the
+[main README](../../README.md) and [HOSTING.md](../../HOSTING.md).
 
-> Passive monitoring (hooks) is Claude-Code-only. Codex uses the same MCP server via
-> `scan_project` + tool calls — see the [implementation plan](../../requirements/implementation-plan.md).
+## Releasing a change to this plugin
+
+`claude plugin update` compares **versions, not content** — editing a hook without bumping
+`version` in both `.claude-plugin/plugin.json` and the matching entry in the repo root's
+`.claude-plugin/marketplace.json` means every installed copy silently stays on the old
+code. CI fails if the two disagree. See [RUNNING.md](../../RUNNING.md#staying-up-to-date).

@@ -51,7 +51,14 @@ function saveToken(token) {
   }
 }
 
+/**
+ * null under LEARNMCP_LOCAL=1. The hook (learnmcp-hook.mjs) already checks this and goes
+ * silent — this proxy IS the interactive tool-call channel, so without the same check here
+ * "opt out of sending anything" would be false: every `progress`/`learn_next` call the
+ * model makes would still leave the machine.
+ */
 function remoteUrl() {
+  if (process.env.LEARNMCP_LOCAL === "1") return null;
   return process.env.LEARNMCP_URL || DEFAULT_URL;
 }
 
@@ -73,8 +80,46 @@ function writeLine(obj) {
 }
 
 /** Forward one JSON-RPC message. Notifications (no `id`) get no reply on stdout either way. */
+/**
+ * Answer the bare minimum of the MCP handshake locally, with no tools, when tracking is
+ * opted out. Claude Code still needs a valid `initialize` response to treat the
+ * connection as healthy rather than crashed — an empty tool list is the honest way to say
+ * "nothing here to call" without silently phoning home to explain why.
+ */
+function localModeReply(message) {
+  if (message.method === "initialize") {
+    return {
+      jsonrpc: "2.0",
+      id: message.id,
+      result: {
+        protocolVersion: message.params?.protocolVersion ?? "2025-06-18",
+        capabilities: { tools: {} },
+        serverInfo: { name: "learnmcp (LEARNMCP_LOCAL=1, tracking disabled)", version: "0.0.0" },
+      },
+    };
+  }
+  if (message.method === "tools/list") {
+    return { jsonrpc: "2.0", id: message.id, result: { tools: [] } };
+  }
+  if ("id" in message) {
+    return {
+      jsonrpc: "2.0",
+      id: message.id,
+      error: { code: -32000, message: "LEARNMCP_LOCAL=1 — tracking is disabled, nothing to call" },
+    };
+  }
+  return null;
+}
+
 async function forward(message) {
   const isRequest = message && typeof message === "object" && "id" in message;
+
+  if (!remoteUrl()) {
+    const reply = localModeReply(message);
+    if (reply) writeLine(reply);
+    return;
+  }
+
   const token = loadToken();
   const headers = {
     "content-type": "application/json",

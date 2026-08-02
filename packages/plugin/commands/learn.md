@@ -1,5 +1,5 @@
 ---
-description: Show the next best practice or feature to try in this project
+description: Show the next best practice or feature to try
 argument-hint: "[tool name]"
 ---
 

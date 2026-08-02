@@ -4,7 +4,8 @@ Standing up your own learnmcp: a Supabase database for progress, and a Vercel de
 serves both the remote MCP endpoint and the web gallery.
 
 You don't need this to *use* learnmcp — the plugin points at the hosted instance by
-default, and `LEARNMCP_LOCAL=1` keeps everything on your own machine.
+default, and `LEARNMCP_LOCAL=1` opts out of tracking entirely (no leaderboard, no
+cartridge popularity, nothing sent) for anyone using the marketplace-installed plugin.
 
 ---
 
@@ -39,6 +40,7 @@ Create a project, then **SQL Editor** → run these in order:
 | [`0001_init.sql`](supabase/migrations/0001_init.sql) | base tables + `auth` wiring |
 | [`0002_cartridge_leaderboard.sql`](supabase/migrations/0002_cartridge_leaderboard.sql) | per-cartridge scores |
 | [`0003_remote_mcp.sql`](supabase/migrations/0003_remote_mcp.sql) | **the one that matters** — `learners`, progress tables, leaderboard views, `claim_learner` |
+| [`0004_platform_stats.sql`](supabase/migrations/0004_platform_stats.sql) | `platform_stats` view — the homepage's total lessons/badges/learners row |
 
 Or with the CLI:
 

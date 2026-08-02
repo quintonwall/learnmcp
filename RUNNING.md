@@ -48,8 +48,9 @@ files that live inside the plugin directory.
 ```bash
 npm install
 npm run build   # compiles every workspace (schema, server, and the Next.js web app)
-npm test        # 77 tests: evaluator, ranks, registry hot-loading, store/service,
-                # hooks, sync, generation, and all 8 first-party cartridges
+npm test        # 150 tests: evaluator, ranks, registry hot-loading, store/service,
+                # hooks, cloud store, GitHub registry, sync, generation, and
+                # every first-party cartridge
 ```
 
 `@learnmcp/server` depends on the compiled `@learnmcp/schema`, so build schema first if you
@@ -82,8 +83,16 @@ watcher hot-reloads any of them without a restart.
 
 ## The hook CLI
 
-The Claude Code plugin's hooks shell out to `packages/server/dist/cli.js`. You can drive it
-directly:
+This is `@learnmcp/server`'s own hook adapter — for running the engine from source with a
+**local** SQLite store (`node:sqlite`, no native deps). It's what a self-hosted dev setup
+uses, and what the local `LEARNMCP_LOCAL` fallback in `cli.ts` talks to.
+
+**The marketplace-shipped plugin does not use this.** Its hooks
+([`packages/plugin/hooks/`](packages/plugin/hooks/)) are self-contained scripts that talk
+to the remote server over plain HTTP and need nothing built — see the
+[plugin README](packages/plugin/README.md). This CLI matters if you're developing the
+engine itself, want a real local SQLite store instead of the cloud opt-out's "track
+nothing," or are debugging detection logic directly. You can drive it by hand:
 
 ```bash
 # session-start: scan a project, emit the progress summary + next suggestion
@@ -122,13 +131,16 @@ all live in **[HOSTING.md](HOSTING.md)**.
 
 ## The web app
 
+This package is two things: the public gallery/leaderboard **and** the hosted remote MCP
+server (`app/mcp/route.ts`) — the same thing `learnmcp.ai` runs.
+
 ```bash
-cp packages/web/.env.example packages/web/.env.local   # add the Supabase URL + anon key
+cp packages/web/.env.example packages/web/.env.local   # see the file for what each var does
 npm run dev   --workspace @learnmcp/web                 # http://localhost:3000
 npm run build --workspace @learnmcp/web && npm run start --workspace @learnmcp/web
 ```
 
-Without Supabase env vars the gallery falls back to the bundled cartridges and the
-leaderboard shows a "connect Supabase" notice — so it runs with zero backend. Deploy to
-Vercel (or any Node host); set the two `NEXT_PUBLIC_SUPABASE_*` vars in the host's
-environment.
+With no env vars set: the gallery falls back to the repo's bundled `cartridges/`, the
+leaderboard shows a "connect Supabase" notice, and `/mcp` returns a 503 — so the site runs
+with zero backend, but the MCP endpoint needs one. Full variable list, what each requires,
+and deploying to Vercel: **[HOSTING.md](HOSTING.md)**.
