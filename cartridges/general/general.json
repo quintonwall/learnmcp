@@ -164,7 +164,8 @@
         "matches": "git\\s+commit",
         "gte": 10
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://git-scm.com/docs/git-commit"
     },
     {
       "id": "no-secrets-in-code",
@@ -179,7 +180,8 @@
         "rubric": "Does the code read secrets from environment variables or a secret store, rather than containing hardcoded API keys, tokens or passwords?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://12factor.net/config"
     }
   ],
   "badges": [

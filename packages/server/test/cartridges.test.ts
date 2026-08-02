@@ -93,4 +93,17 @@ describe("shipped cartridges", () => {
     const names = res.cartridge.badges.map((b) => b.name);
     expect(new Set(names).size, `${res.cartridge.id} repeats a badge name`).toBe(names.length);
   });
+
+  it.each(files)("%s: every objective has a why and a docs link", (file) => {
+    // `why` is what the model says when asked "what's next"; `docs` is what a clickable
+    // Next: link points at and what generate_cartridge/WebFetch reads for "tell me more".
+    // Either missing silently degrades those features for just that one objective.
+    const res = validateCartridge(JSON.parse(readFileSync(file, "utf8")));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    for (const o of [...res.cartridge.objectives, ...res.cartridge.bestPractices]) {
+      expect(o.why, `${res.cartridge.id}:${o.id} has no "why"`).toBeTruthy();
+      expect(o.docs, `${res.cartridge.id}:${o.id} has no "docs"`).toBeTruthy();
+    }
+  });
 });

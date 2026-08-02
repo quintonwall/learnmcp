@@ -105,7 +105,8 @@
         "key": "CONTEXT7_API_KEY",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://context7.com"
     },
     {
       "id": "fetch-before-code",
@@ -120,7 +121,8 @@
         "rubric": "Do the project rules instruct the agent to look up current documentation before writing code against an unfamiliar library?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.claude.com/en/docs/claude-code/memory"
     }
   ],
   "badges": [

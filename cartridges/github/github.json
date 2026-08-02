@@ -235,7 +235,8 @@
         "key": "GITHUB_PERSONAL_ACCESS_TOKEN",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
     },
     {
       "id": "define-codeowners",
@@ -247,7 +248,8 @@
         "path": "**/{.github/,}CODEOWNERS",
         "exists": true
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners"
     },
     {
       "id": "readable-readme",
@@ -262,7 +264,8 @@
         "rubric": "Does the README explain what the project is, how to install it, and how to run it, well enough for a newcomer to get started?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-readmes"
     }
   ],
   "badges": [

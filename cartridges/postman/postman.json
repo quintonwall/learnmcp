@@ -273,7 +273,8 @@
         "type": "env",
         "key": "POSTMAN_API_KEY",
         "absent_from": "git"
-      }
+      },
+      "docs": "https://learning.postman.com/docs/developer/postman-api/authentication/"
     },
     {
       "id": "agent-ready-descriptions",

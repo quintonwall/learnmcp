@@ -95,7 +95,11 @@ Rules:
 - Reads and lookups are not achievements. Reward doing something, not calling any tool.
 - Prefer concrete, detectable criteria (command / mcp_tool / file / dependency / bash). Use
   llm_judge only for genuinely subjective quality.
-- Deep-link "docs" to the most relevant page you can infer.
+- "why" and "docs" are REQUIRED on every objective and bestPractice, not optional. "why" is
+  what learnmcp says out loud when recommending it; "docs" is what a clickable next-step
+  link points at and what gets read for "tell me more" — either missing silently breaks
+  that one objective's experience while looking complete everywhere else. Deep-link "docs"
+  to the single most relevant page for that specific action, not the product's homepage.
 ${MATCHER_REFERENCE}
 
 Documentation extract:

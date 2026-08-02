@@ -119,7 +119,8 @@
         "key": "SLACK_BOT_TOKEN",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://api.slack.com/authentication/best-practices"
     },
     {
       "id": "be-a-good-citizen",
@@ -134,7 +135,8 @@
         "rubric": "Does the Slack integration reply in threads and avoid posting a separate top-level message for every event?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://api.slack.com/messaging/composing"
     }
   ],
   "badges": [

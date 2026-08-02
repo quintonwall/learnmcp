@@ -119,7 +119,8 @@
         "key": "EXA_API_KEY",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.exa.ai"
     },
     {
       "id": "ground-answers-with-citations",
@@ -134,7 +135,8 @@
         "rubric": "Does the code feed Exa search results into the model's context and surface the source URLs, rather than searching and discarding the results?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://docs.exa.ai/reference/answer"
     }
   ],
   "badges": [

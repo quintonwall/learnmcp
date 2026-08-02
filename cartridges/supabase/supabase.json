@@ -239,7 +239,8 @@
         "key": "SUPABASE_SERVICE_ROLE_KEY",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://supabase.com/docs/guides/api/api-keys"
     },
     {
       "id": "enable-rls",
@@ -254,7 +255,8 @@
         "rubric": "Do the migrations enable row level security on the tables they create, and define policies rather than leaving them open?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://supabase.com/docs/guides/database/postgres/row-level-security"
     },
     {
       "id": "migrations-in-git",
@@ -266,7 +268,8 @@
         "path": "**/supabase/migrations/*.sql",
         "exists": true
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://supabase.com/docs/guides/deployment/database-migrations"
     }
   ],
   "badges": [

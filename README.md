@@ -162,6 +162,16 @@ directory in this repo:
 Adding support for a new service means opening a PR there. Once it merges, every learnmcp
 instance picks it up on its next refresh — nothing is rebuilt, redeployed, or restarted.
 
+**Fastest way to a first draft:** ask learnmcp itself.
+
+```
+Generate a cartridge from https://vercel.com/docs
+```
+
+That calls the `generate_cartridge` tool, which reads the docs and drafts objectives,
+badges, and matchers for you (`trust: "generated"`) — review it, then PR it. The rest of
+this section is for writing one by hand, or fixing up what it generated.
+
 Copy an existing cartridge as a starting point. The shape:
 
 ```json
@@ -232,10 +242,9 @@ LEARNMCP_CARTRIDGES=./cartridges # makes your local copy outrank the published r
 Validate against
 [`packages/schema/cartridge.schema.json`](packages/schema/cartridge.schema.json), and add a
 case to [`packages/server/test/cartridges.test.ts`](packages/server/test/cartridges.test.ts).
-
-**Don't want to write it by hand?** Ask learnmcp to
-`generate a cartridge from https://vercel.com/docs` — it reads the docs and drafts the
-track. Review it, then PR it.
+This applies whether you wrote the cartridge by hand or started from `generate_cartridge` —
+a generated one still needs its matchers checked against the product's real tool names
+before it's PR-ready.
 
 ---
 

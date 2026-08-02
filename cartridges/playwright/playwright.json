@@ -227,7 +227,8 @@
         "tool": "browser_snapshot",
         "gte": 3
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://playwright.dev/docs/aria-snapshots"
     },
     {
       "id": "no-hardcoded-waits",
@@ -250,7 +251,8 @@
           }
         ]
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://playwright.dev/docs/best-practices"
     },
     {
       "id": "test-isolation",
@@ -271,7 +273,8 @@
           }
         ]
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://playwright.dev/docs/browser-contexts"
     }
   ],
   "badges": [

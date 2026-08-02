@@ -248,7 +248,8 @@
         "rubric": "Do the security rules restrict access based on auth state or ownership, rather than allowing unrestricted read/write?",
         "confidence_gte": 0.8
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://firebase.google.com/docs/rules/basics"
     },
     {
       "id": "service-account-not-committed",
@@ -260,7 +261,8 @@
         "key": "GOOGLE_APPLICATION_CREDENTIALS",
         "absent_from": "git"
       },
-      "recommended": true
+      "recommended": true,
+      "docs": "https://firebase.google.com/support/guides/security-checklist"
     }
   ],
   "badges": [
