@@ -1,0 +1,313 @@
+{
+  "id": "notion",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Notion",
+    "homepage": "https://notion.so",
+    "icon": "\ud83d\udcd3"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "notion"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "get-oriented",
+      "title": "See what's in the workspace before you start",
+      "why": "Knowing what pages, teams and people already exist avoids creating a duplicate of something that's already there.",
+      "badge": "oriented",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-search"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-fetch"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-get-teams"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-get-users"
+          }
+        ]
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "create-a-page",
+      "title": "Create a page directly from your agent",
+      "why": "Writing it down where the team already looks beats a note that only lives in your chat history.",
+      "badge": "page-creator",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-create-pages"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "update-a-page",
+      "title": "Keep an existing page current instead of leaving it stale",
+      "why": "A page nobody updates becomes a page nobody trusts, and then nobody reads.",
+      "badge": "updater",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-update-page"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "organize-pages",
+      "title": "Keep the workspace organized by moving pages to where they belong",
+      "why": "A page under the wrong parent is a page nobody else will ever find again.",
+      "badge": "organizer",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-move-pages"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "duplicate-a-template",
+      "title": "Duplicate a page instead of rebuilding it from scratch",
+      "why": "Starting from a working template beats re-creating its structure by hand every time.",
+      "badge": "duplicator",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-duplicate-page"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "create-a-database",
+      "title": "Structure information as a database instead of a loose page",
+      "why": "A database gives you filters, views and properties a wall of text never will.",
+      "badge": "database-builder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-create-database"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "evolve-a-schema",
+      "title": "Evolve a database's schema as requirements change",
+      "why": "Updating properties as needs change beats working around a schema that no longer fits.",
+      "badge": "schema-evolver",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-update-data-source"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "manage-views",
+      "title": "Build the right view for the audience, not just the default table",
+      "why": "A board for the team standup and a calendar for deadlines both beat forcing everyone through one raw table.",
+      "badge": "view-builder",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-create-view"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-update-view"
+          }
+        ]
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "query-your-data",
+      "title": "Query your data instead of scrolling to find it",
+      "why": "A structured query answers the question directly; scrolling a database just delays finding out you were looking in the wrong place.",
+      "badge": "querier",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-query-data-sources"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "notion",
+            "tool": "notion-query-database-view"
+          }
+        ]
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "search-meeting-notes",
+      "title": "Search your own meeting notes instead of trying to remember what was said",
+      "why": "The notes already have the answer; memory is the unreliable fallback, not the first move.",
+      "badge": "note-finder",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-query-meeting-notes"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    },
+    {
+      "id": "leave-a-comment",
+      "title": "Leave feedback where the work actually is",
+      "why": "A comment on the page survives; the same feedback in a DM gets lost the moment the thread scrolls.",
+      "badge": "commenter",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-create-comment"
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "secrets-not-hardcoded",
+      "title": "Don't hardcode Notion page/database IDs or integration tokens in source",
+      "why": "An integration token committed to the repo is workspace access for anyone who can read the repo, including forks.",
+      "badge": "discreet",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/*.{ts,js,py}"
+        },
+        "rubric": "Does the code read Notion integration tokens and database/page IDs from environment variables or config, rather than hardcoding them as string literals?",
+        "confidence_gte": 0.8
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools",
+      "recommended": true
+    },
+    {
+      "id": "confirm-before-writing",
+      "title": "Require confirmation before an agent moves, duplicates, or bulk-edits pages",
+      "why": "notion-move-pages and notion-update-page act on a real, shared workspace other people may be looking at right now \u2014 an unreviewed bulk move is not like an unreviewed local file edit.",
+      "badge": "careful-editor",
+      "criteria": {
+        "type": "llm_judge",
+        "over": {
+          "file": "**/{CLAUDE,AGENTS}.md"
+        },
+        "rubric": "Do the project rules require explicit human confirmation before an agent moves, duplicates, or bulk-modifies pages in the Notion workspace?",
+        "confidence_gte": 0.8
+      },
+      "docs": "https://developers.notion.com/guides/mcp/mcp-supported-tools",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "oriented",
+      "name": "Oriented",
+      "tier": "bronze",
+      "description": "Saw what's already in the workspace."
+    },
+    {
+      "id": "page-creator",
+      "name": "Page Creator",
+      "tier": "bronze",
+      "description": "Created a page directly from an agent."
+    },
+    {
+      "id": "updater",
+      "name": "Updater",
+      "tier": "bronze",
+      "description": "Kept a page current."
+    },
+    {
+      "id": "organizer",
+      "name": "Organizer",
+      "tier": "bronze",
+      "description": "Moved pages to where they belong."
+    },
+    {
+      "id": "duplicator",
+      "name": "Duplicator",
+      "tier": "bronze",
+      "description": "Duplicated a page instead of rebuilding it."
+    },
+    {
+      "id": "database-builder",
+      "name": "Database Builder",
+      "tier": "silver",
+      "description": "Structured information as a database."
+    },
+    {
+      "id": "schema-evolver",
+      "name": "Schema Evolver",
+      "tier": "bronze",
+      "description": "Evolved a database's schema."
+    },
+    {
+      "id": "view-builder",
+      "name": "View Builder",
+      "tier": "bronze",
+      "description": "Built the right view for the audience."
+    },
+    {
+      "id": "querier",
+      "name": "Querier",
+      "tier": "silver",
+      "description": "Queried data instead of scrolling for it."
+    },
+    {
+      "id": "note-finder",
+      "name": "Note Finder",
+      "tier": "bronze",
+      "description": "Searched their own meeting notes."
+    },
+    {
+      "id": "commenter",
+      "name": "Commenter",
+      "tier": "bronze",
+      "description": "Left feedback where the work is."
+    },
+    {
+      "id": "discreet",
+      "name": "Discreet",
+      "tier": "bronze",
+      "description": "Keeps tokens and IDs out of source."
+    },
+    {
+      "id": "careful-editor",
+      "name": "Careful Editor",
+      "tier": "gold",
+      "description": "Bulk writes to the workspace require confirmation."
+    },
+    {
+      "id": "power-user",
+      "name": "Power User",
+      "tier": "gold",
+      "description": "Created 10 pages.",
+      "criteria": {
+        "type": "mcp_tool",
+        "server": "notion",
+        "tool": "notion-create-pages",
+        "gte": 10
+      }
+    }
+  ]
+}
