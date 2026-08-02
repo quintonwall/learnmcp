@@ -88,6 +88,50 @@ private leaderboard-free deployment instead of an opt-out? See [HOSTING.md](HOST
 
 ---
 
+## Not on Claude Code?
+
+Everything above is the **plugin** — Claude Code specifically, hooks and all. learnmcp is
+also a plain MCP server, so anything that speaks MCP can use it (Codex, Cursor, Windsurf,
+your own agent). Two ways to connect, and each gives up something:
+
+**Point at the hosted server directly** — no plugin, just the MCP config:
+
+```jsonc
+{ "mcpServers": { "learnmcp": { "type": "http", "url": "https://learnmcp.ai/mcp" } } }
+```
+
+This gets you every tool — `learn_next`, `list_cartridges`, the leaderboard — with two
+real limitations, both because the plugin's hooks are what paper over them:
+
+- **No passive detection.** Nothing is watching your session, so nothing is recorded
+  automatically. The model has to explicitly call `record_activity` after doing something,
+  or `scan_project` at the start of a session — tell it to, or it won't happen.
+- **No persistent identity, unless your client can hold a header.** The server hands back
+  an anonymous learner's token on first contact; the plugin's hooks save and resend it
+  automatically, but a generic MCP client has no reason to. If yours can't be configured
+  with a static `Authorization: Bearer <token>` header, every session mints a fresh learner
+  and progress won't accumulate. Check whether your client's MCP config supports custom
+  headers — if it does, call any tool once, grab the token from the `x-learnmcp-token`
+  response header, and hardcode it.
+
+**Or run the engine locally** — real SQLite, scoped to your project, no cloud and no token
+to manage. Not published to npm yet, so it means building from source:
+
+```bash
+git clone https://github.com/quintonwall/learnmcp && cd learnmcp
+npm install && npm run build
+```
+
+```jsonc
+{ "mcpServers": { "learnmcp": { "command": "node", "args": ["/path/to/learnmcp/packages/server/dist/bin.js"] } } }
+```
+
+Same caveat applies: no hooks means no passive detection here either — call `scan_project`
+at session start and lean on `record_activity`. Full env var reference in
+[RUNNING.md](RUNNING.md#run-the-mcp-server-stdio).
+
+---
+
 ## Contributing a cartridge
 
 A **cartridge** is what teaches one service — plain JSON, no code. The registry is a

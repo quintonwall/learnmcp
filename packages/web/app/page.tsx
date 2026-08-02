@@ -91,9 +91,18 @@ export default async function HomePage() {
       </pre>
 
       <div className="notice">
-        <strong>Prefer to keep it local?</strong> Set <code>LEARNMCP_LOCAL=1</code> and
-        progress stays in <code>~/.learnmcp/state.sqlite</code> on your machine — nothing is
-        sent anywhere. You lose the leaderboard; that&rsquo;s the only difference.
+        <strong>Prefer to keep it off the cloud?</strong> Set <code>LEARNMCP_LOCAL=1</code>{" "}
+        and it opts out of tracking entirely — no leaderboard, no cartridge popularity,
+        nothing sent anywhere.
+      </div>
+
+      <div className="notice">
+        <strong>Not on Claude Code?</strong> learnmcp is a plain MCP server — point Codex,
+        Cursor, or your own client at <code>https://learnmcp.ai/mcp</code> directly. You
+        lose passive detection (no hooks means the model has to call{" "}
+        <code>record_activity</code> itself) and, unless your client can hold a static auth
+        header, persistent identity too. Full details in{" "}
+        <a href={`${REPO}#not-on-claude-code`}>the README</a>.
       </div>
 
       <h2>Your profile</h2>
