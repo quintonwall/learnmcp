@@ -127,6 +127,45 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     },
   );
 
+  /**
+   * Shared by scan_project and record_activities: record every signal in order, aggregating
+   * what each one earned rather than keeping only the last — a session-start scan spans many
+   * signals and dropping all but the final one's badges would silently swallow the rest.
+   */
+  function recordAll(sc: string, signals: Signal[]): RecordResult {
+    let last: RecordResult | null = null;
+    const newBadges: RecordResult["newBadges"] = [];
+    const newObjectives: RecordResult["newObjectives"] = [];
+    const newCartridges: RecordResult["newCartridges"] = [];
+    let newMcpServerWithoutCartridge: string | undefined;
+    for (const sig of signals) {
+      last = service.record(sc, sig);
+      newBadges.push(...last.newBadges);
+      newObjectives.push(...last.newObjectives);
+      newCartridges.push(...last.newCartridges);
+      if (last.newMcpServerWithoutCartridge) newMcpServerWithoutCartridge = last.newMcpServerWithoutCartridge;
+    }
+    const result = last ?? service.recompute(sc);
+    return { ...result, newBadges, newObjectives, newCartridges, newMcpServerWithoutCartridge };
+  }
+
+  server.registerTool(
+    "record_activities",
+    {
+      title: "Record several session activities in one call",
+      description:
+        "Batch version of record_activity — ingest many observed signals (e.g. a session-start project scan) in a " +
+        "single round trip instead of one per signal. Returns the same shape as record_activity, aggregated across " +
+        "every signal in the batch.",
+      inputSchema: { signals: z.array(Signal), scope: z.string().optional() },
+    },
+    async ({ signals, scope: s }) => {
+      const sc = scope(s);
+      const result = recordAll(sc, signals);
+      return ok({ ...summarizeRecord(result), next: service.learnNext(sc) });
+    },
+  );
+
   server.registerTool(
     "learn_next",
     {
@@ -189,9 +228,7 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       // Plugin/user-level MCP servers too — on Codex (no hooks) this scan is the only
       // chance to notice them, and the project itself never references them.
       const signals = [...scanProject(dir), ...claudeEnvSignals(homedir())];
-      let last: RecordResult | null = null;
-      for (const sig of signals) last = service.record(sc, sig);
-      const result = last ?? service.recompute(sc);
+      const result = recordAll(sc, signals);
       return ok({
         scannedSignals: signals.length,
         ...summarizeRecord(result),

@@ -333,12 +333,14 @@ async function main() {
 
   if (cmd === "session-start") {
     const dir = event.cwd || process.cwd();
-    for (const signal of [...scanProject(dir), ...claudeEnvSignals(os.homedir())]) {
-      await callTool(url, "record_activity", { signal });
-    }
-    const progress = await callTool(url, "progress", {});
+    const signals = [...scanProject(dir), ...claudeEnvSignals(os.homedir())];
+    // One round trip for the whole scan, not one per file/dependency/MCP server — a real
+    // project can produce hundreds of signals, and awaiting them one at a time made
+    // session start as slow as the project is large (slow enough to blow past a host's
+    // own startup watchdog, e.g. the VS Code extension's subprocess-init timeout).
+    const progress = await callTool(url, "record_activities", { signals });
     if (!progress) return;
-    const next = await callTool(url, "learn_next", {});
+    const next = progress.next;
     const rank = progress.rank?.rank?.name ?? "Novice";
     const points = progress.points ?? 0;
     const tracks = (progress.activeCartridgeIds ?? []).join(", ");

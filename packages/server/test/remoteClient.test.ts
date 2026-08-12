@@ -89,27 +89,43 @@ describe("callRemoteTool", () => {
 });
 
 describe("recordRemote", () => {
-  it("aggregates badges across a batch of signals", async () => {
-    const replies = [
-      { newBadges: [{ name: "Spec Author", points: 10 }], newObjectives: [], points: 10 },
-      { newBadges: [], newObjectives: [{ title: "Run your collection" }], points: 10 },
-      { newBadges: [{ name: "Locked Down", points: 25 }], newObjectives: [], points: 35 },
+  it("sends every signal in a single record_activities call", async () => {
+    let sent: any;
+    const fetchImpl = async (_u: string, init: RequestInit = {}) => {
+      sent = JSON.parse(init.body as string);
+      return toolResult({
+        newBadges: [
+          { name: "Spec Author", points: 10 },
+          { name: "Locked Down", points: 25 },
+        ],
+        newObjectives: [{ title: "Run your collection" }],
+        points: 35,
+      });
+    };
+
+    const signals = [
+      { kind: "command", name: "postman:generate-spec" },
+      { kind: "command", name: "postman:run-collection" },
+      { kind: "command", name: "postman:security" },
     ];
-    let i = 0;
-    const fetchImpl = async () => toolResult(replies[i++]);
+    const res = await recordRemote(signals, { url: URL_, fetchImpl });
 
-    const res = await recordRemote(
-      [
-        { kind: "command", name: "postman:generate-spec" },
-        { kind: "command", name: "postman:run-collection" },
-        { kind: "command", name: "postman:security" },
-      ],
-      { url: URL_, fetchImpl },
-    );
-
+    expect(sent).toMatchObject({
+      params: { name: "record_activities", arguments: { signals } },
+    });
     expect(res!.newBadges.map((b) => b.name)).toEqual(["Spec Author", "Locked Down"]);
     expect(res!.newObjectives.map((o) => o.title)).toEqual(["Run your collection"]);
     expect(res!.points).toBe(35);
+  });
+
+  it("returns null without a call when there are no signals", async () => {
+    let called = false;
+    const fetchImpl = async () => {
+      called = true;
+      return toolResult({});
+    };
+    expect(await recordRemote([], { url: URL_, fetchImpl })).toBeNull();
+    expect(called).toBe(false);
   });
 
   it("returns null when nothing could be sent", async () => {

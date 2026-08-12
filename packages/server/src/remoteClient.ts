@@ -131,22 +131,16 @@ export interface RemoteRecordResult {
   message?: string;
 }
 
-/** Send a batch of observed signals, returning the aggregate of what they earned. */
+/**
+ * Send a batch of observed signals in one round trip, returning the aggregate of what they
+ * earned. A session-start scan can produce one signal per file in the project — looping
+ * record_activity one signal at a time made every session start as slow as the project is
+ * large, sequential network round trip by sequential network round trip.
+ */
 export async function recordRemote(
   signals: Signal[],
   opts: RemoteCallOptions = {},
 ): Promise<RemoteRecordResult | null> {
-  let last: RemoteRecordResult | null = null;
-  const badges: RemoteRecordResult["newBadges"] = [];
-  const objectives: RemoteRecordResult["newObjectives"] = [];
-
-  for (const signal of signals) {
-    const res = (await callRemoteTool("record_activity", { signal }, opts)) as RemoteRecordResult | null;
-    if (!res) continue;
-    last = res;
-    badges.push(...(res.newBadges ?? []));
-    objectives.push(...(res.newObjectives ?? []));
-  }
-
-  return last ? { ...last, newBadges: badges, newObjectives: objectives } : null;
+  if (!signals.length) return null;
+  return (await callRemoteTool("record_activities", { signals }, opts)) as RemoteRecordResult | null;
 }
