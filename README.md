@@ -68,6 +68,24 @@ Check in anytime:
 | `/badges` | what you've earned |
 | `/progress` | your points, rank, and standing |
 | `/cartridges` | everything learnmcp can teach, and what's active for you |
+| `/learnmcp-hud` | hide or show the progress band |
+
+### The progress band
+
+Your progress also sits just above the prompt in a compact band, at most three lines tall:
+
+![The learnmcp progress band above the Claude Code prompt](packages/web/public/progress-band.svg)
+
+- **Rank, bar and points:** your rank (each has its own emoji and colour, from 🌱 Novice
+  to 👑 Legend), a bar toward the next rank, your total points, and what you've earned
+  this session in green.
+- **Cartridges:** each active track's bar, shading from red to green as you complete it,
+  with the ones you've progressed furthest first and `+N more` when they don't all fit.
+- **Next:** the objective worth doing next, and the badge it awards.
+
+It refreshes after every turn and is part of the plugin, so there's nothing extra to
+install. It needs a recent Claude Code (`claude update`). `/learnmcp-hud` hides it for
+the session, and it stays off under `LEARNMCP_LOCAL=1`.
 
 Or just ask, in plain language — *"what should I do next?"*, *"I just added Supabase,
 where do I start?"*, *"where am I on the leaderboard?"*. In a terminal that supports

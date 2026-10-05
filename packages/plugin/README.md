@@ -17,8 +17,11 @@ Claude Code
   ├─ hooks/mcp-proxy.mjs ───────── tools/call ─────────┘
   │    (this is what .mcp.json actually spawns)
   │
-  └─ commands/ → /learn /badges /progress /cartridges /cartridge
-       (call the tools mcp-proxy exposes)
+  ├─ commands/ → /learn /badges /progress /cartridges /cartridge
+  │    (call the tools mcp-proxy exposes)
+  │
+  └─ hooks/register.tsx ───────── progress, learn_next ──→ https://learnmcp.ai/mcp
+       (the band above the prompt; refreshes after each turn)
 ```
 
 Progress lives entirely on the hosted server, not on this machine. Both scripts share one
@@ -49,6 +52,12 @@ would be two different, disconnected identities.
   - `PostToolUse` (Bash / Edit / Write / Skill / SlashCommand / MCP tools) → records the
     resulting signal and, when you earn something, prints it.
 - **`commands/`** — `/learn`, `/badges`, `/progress`, `/cartridges`, `/cartridge`.
+- **`hooks/register.tsx`** — the progress band above the prompt, named under `modules` in
+  `hooks.json`. Unlike the two scripts it's a Claude Code hooks module: it runs inside
+  Claude Code (no Node), reads `~/.learnmcp/token` and calls `progress` and `learn_next`
+  after each turn. It never calls without a token, so it can't mint a learner of its own.
+  Its session values are declared in `types/index.d.ts`; `claude plugin test .` runs
+  `tests/hud.test.tsx`, and `claude plugin validate .` checks both.
 
 Neither script imports anything beyond Node built-ins, and neither depends on
 `@learnmcp/server` — that package is the portable core used by the *hosted* server and by

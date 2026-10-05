@@ -100,6 +100,21 @@ export default async function HomePage() {
         <span className="prompt">/cartridge</span>  what it can teach; refresh the registry
       </pre>
 
+      <h2>Your progress, always in view</h2>
+      <p className="lead">
+        A compact band above the prompt keeps your rank, points, every active cartridge and
+        the next objective in sight, never more than three lines. Bars shade from red to
+        green as you close in, and each rank has its own emoji, from 🌱 Novice to 👑
+        Legend. It comes with the plugin; <code>/learnmcp-hud</code> hides it.
+      </p>
+      <img
+        className="band"
+        src="/progress-band.svg"
+        alt="The learnmcp progress band above the Claude Code prompt: rank, points, per-cartridge progress bars and the next objective"
+        width={780}
+        height={196}
+      />
+
       <div className="notice">
         <strong>Prefer to keep it off the cloud?</strong> Set <code>LEARNMCP_LOCAL=1</code>{" "}
         and it opts out of tracking entirely — no leaderboard, no cartridge popularity,
