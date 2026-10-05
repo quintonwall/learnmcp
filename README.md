@@ -40,6 +40,16 @@ Restart Claude Code. That's it — no account, no API key, nothing to configure.
 talks to the hosted server at **[learnmcp.ai](https://learnmcp.ai)**, and the moment it
 sees you do something worth rewarding, it starts tracking you automatically.
 
+**Already installed?** Plugins don't update themselves, so pull in new features (like the
+[progress band](#the-progress-band)) with:
+
+```bash
+claude plugin marketplace update quintonwall
+claude plugin update learnmcp@quintonwall
+```
+
+Then restart Claude Code. Your progress lives on the server, so updating never resets it.
+
 ---
 
 ## Use it
