@@ -21,8 +21,10 @@
       "why": "Everything else assumes you can undo.",
       "badge": "committed",
       "criteria": {
-        "type": "bash",
-        "matches": "git\\s+init"
+        "anyOf": [
+          { "type": "bash", "matches": "git\\s+(init|clone)" },
+          { "type": "file", "path": ".git", "exists": true }
+        ]
       },
       "docs": "https://git-scm.com/docs/git-init"
     },

@@ -158,6 +158,31 @@ describe("scanProject", () => {
   });
   afterEach(async () => rm(dir, { recursive: true, force: true }));
 
+  it("reports a project that is already under version control", async () => {
+    const isRepo = (root: string) =>
+      scanProject(root).some((s) => s.kind === "file" && s.path === ".git");
+
+    expect(isRepo(dir)).toBe(false);
+
+    await mkdir(path.join(dir, ".git"));
+    expect(isRepo(dir)).toBe(true);
+
+    // A subfolder of a repo is under version control too.
+    await mkdir(path.join(dir, "packages", "app"), { recursive: true });
+    expect(isRepo(path.join(dir, "packages", "app"))).toBe(true);
+  });
+
+  it("credits version-control for an existing repo, with no `git init` run", async () => {
+    await mkdir(path.join(dir, ".git"));
+    const registry = new CartridgeRegistry({ sources: [bundledCartridges] });
+    await registry.load();
+    const service = new ProgressService(registry, new SqliteStore({ path: ":memory:" }));
+    for (const s of scanProject(dir)) service.record("vc-scope", s);
+    // An empty repo satisfies exactly one general objective: version control.
+    const general = service.progress("vc-scope").cartridges.find((c) => c.id === "general");
+    expect(general?.completed).toBe(1);
+  });
+
   it("emits dependency, file, and mcp signals from a project", async () => {
     await writeFile(
       path.join(dir, "package.json"),

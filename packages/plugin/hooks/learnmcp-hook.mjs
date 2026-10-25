@@ -13,7 +13,7 @@
  *   node learnmcp-hook.mjs session-start | post-tool-use
  */
 
-import { readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
@@ -182,10 +182,24 @@ function walk(root, dir, depth, out) {
   }
 }
 
+/**
+ * `.git` is never walked (it's huge and no cartridge reads inside it), so whether the project
+ * is already under version control has to be reported explicitly — otherwise a repo that
+ * existed before the session can never earn the version-control objective. Looks upward so
+ * a subfolder of a repo counts too; `.git` is a file in worktrees and submodules.
+ */
+function hasGitRepo(root) {
+  for (let dir = root; ; dir = path.dirname(dir)) {
+    if (existsSync(path.join(dir, ".git"))) return true;
+    if (path.dirname(dir) === dir) return false;
+  }
+}
+
 function scanProject(root) {
   const files = [];
   walk(root, root, 0, files);
   const signals = [];
+  if (hasGitRepo(root)) signals.push({ kind: "file", path: ".git", event: "exists" });
 
   for (const rel of files) {
     const base = path.basename(rel);

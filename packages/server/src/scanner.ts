@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { Signal } from "@learnmcp/schema";
 
@@ -39,6 +39,10 @@ export function scanProject(root: string, opts: ScanOptions = {}): Signal[] {
 
   walk(root, root, 0, maxDepth, files);
 
+  // `.git` is never walked, so report an existing repo explicitly (looking upward: a
+  // subfolder of a repo is under version control too; `.git` is a file in worktrees).
+  if (insideGitRepo(root)) signals.push({ kind: "file", path: ".git", event: "exists" });
+
   for (const rel of files) {
     const abs = path.join(root, rel);
     const base = path.basename(rel);
@@ -60,6 +64,13 @@ export function scanProject(root: string, opts: ScanOptions = {}): Signal[] {
   signals.push(...skillSignals(files));
 
   return signals;
+}
+
+function insideGitRepo(root: string): boolean {
+  for (let dir = path.resolve(root); ; dir = path.dirname(dir)) {
+    if (existsSync(path.join(dir, ".git"))) return true;
+    if (path.dirname(dir) === dir) return false;
+  }
 }
 
 function walk(root: string, dir: string, depth: number, maxDepth: number, out: string[]): void {
