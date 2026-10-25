@@ -65,8 +65,32 @@ const REAL_POSTMAN_MCP_TOOLS = new Set([
   "updateSpecFile",
 ]);
 
-/** Every command the official Postman plugin ships (its `commands/` directory). */
+/**
+ * Everything invokable in the official Postman plugin. v2 shipped `commands/`; v2.1+ ships
+ * only `skills/` (the first block below). The commands are kept because the cartridge still
+ * accepts them, so users on the older plugin keep earning badges.
+ */
 const REAL_POSTMAN_COMMANDS = [
+  // skills/ — current plugin
+  "ai-readiness",
+  "api-discovery",
+  "api-documentation",
+  "api-engineer",
+  "api-mocking",
+  "api-monitoring",
+  "api-simulation",
+  "api-testing",
+  "application-testing",
+  "bootstrap",
+  "ci-integration",
+  "collection-schema-v3",
+  "datasets",
+  "flows",
+  "performance-testing",
+  "postman-mcp-server",
+  "variables",
+  "webhook-testing",
+  // commands/ — older plugin
   "deploy-flow",
   "docs",
   "generate-spec",
@@ -184,6 +208,33 @@ describe("Postman cartridge — the walkthrough, executed", () => {
     expect(granted({ kind: "command", name: "postman:security" })).toContain("hardened");
 
     expect(granted({ kind: "command", name: "postman:docs" })).toContain("documentarian");
+  });
+
+  it("grants badges for the skills the current plugin ships, bare or prefixed", async () => {
+    const c = await loadPostman();
+    const granted = (s: Signal) =>
+      evaluateProject([c], [s]).grantedBadges.map((b) => b.badgeId);
+
+    const cases: [string, string][] = [
+      ["api-mocking", "mocker"],
+      ["api-simulation", "simulator"],
+      ["application-testing", "contract-checker"],
+      ["api-monitoring", "watchtower"],
+      ["webhook-testing", "hook-catcher"],
+      ["performance-testing", "load-tester"],
+      ["ai-readiness", "readiness-assessor"],
+      ["datasets", "data-driven"],
+      ["bootstrap", "grounded"],
+      ["flows", "flow-state"],
+      ["api-documentation", "documentarian"],
+    ];
+    for (const [skill, badge] of cases) {
+      expect(granted({ kind: "command", name: `postman:${skill}` }), skill).toContain(badge);
+      expect(granted({ kind: "command", name: skill }), skill).toContain(badge);
+    }
+    expect(granted({ kind: "bash", command: "postman simulation run sim.yaml" } as Signal)).toContain(
+      "simulator",
+    );
   });
 
   it("counts a collection run whether it came from the command, the tool, or the CLI", async () => {

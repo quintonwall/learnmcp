@@ -1,10 +1,10 @@
 {
   "id": "postman",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "trust": "official",
   "provider": {
     "name": "Postman",
-    "homepage": "https://www.postman.com",
+    "homepage": "https://github.com/postmanlabs/postman-plugin",
     "icon": "\ud83d\udef0\ufe0f"
   },
   "detect": [
@@ -87,6 +87,10 @@
             "type": "mcp_tool",
             "server": "postman",
             "tool": "searchPostmanElements"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-discovery)"
           }
         ]
       }
@@ -117,6 +121,10 @@
             "type": "mcp_tool",
             "server": "postman",
             "tool": "syncSpecWithCollection"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:bootstrap)"
           }
         ]
       }
@@ -142,6 +150,10 @@
             "type": "mcp_tool",
             "server": "postman",
             "tool": "publishMock"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-mocking)"
           }
         ]
       }
@@ -184,6 +196,10 @@
             "type": "mcp_tool",
             "server": "postman",
             "tool": "putEnvironment"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:variables)"
           }
         ]
       }
@@ -208,6 +224,10 @@
           {
             "type": "bash",
             "matches": "postman\\s+collection\\s+run"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-testing)"
           }
         ]
       }
@@ -247,6 +267,10 @@
             "type": "mcp_tool",
             "server": "postman",
             "tool": "publishDocumentation"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-documentation)"
           }
         ]
       }
@@ -258,8 +282,128 @@
       "why": "Chaining calls in a Flow beats a scratch script nobody else can run or debug.",
       "badge": "flow-state",
       "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "postman:(deploy-flow|trigger-flow)"
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:flows)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bootstrap-workspace",
+      "title": "Bootstrap your repo's Postman workspace",
+      "docs": "https://learning.postman.com/docs/postman-cli/postman-cli-overview/",
+      "why": "Binding the repo to a workspace and initializing local API files is what lets every later step produce files you can review in Git rather than state that lives only in the cloud.",
+      "badge": "grounded",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:bootstrap)"
+          },
+          {
+            "type": "bash",
+            "matches": "postman\\s+init\\b"
+          }
+        ]
+      }
+    },
+    {
+      "id": "simulate-dependencies",
+      "title": "Run your code against simulated dependencies",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "Running a service against stand-ins for the APIs it calls shows how it behaves when a dependency is slow, wrong or down \u2014 without needing the real ones.",
+      "badge": "simulator",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-simulation)"
+          },
+          {
+            "type": "bash",
+            "matches": "postman\\s+simulation\\s+run"
+          }
+        ]
+      }
+    },
+    {
+      "id": "test-application-traffic",
+      "title": "Check real application traffic against your API contract",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "Playwright tests already exercise your app \u2014 matching the network traffic they capture against the collection finds the calls that drift from the contract.",
+      "badge": "contract-checker",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:application-testing)"
+          },
+          {
+            "type": "bash",
+            "matches": "postman\\s+(app|application)\\s+test"
+          }
+        ]
+      }
+    },
+    {
+      "id": "monitor-api",
+      "title": "Monitor a live endpoint",
+      "docs": "https://learning.postman.com/docs/monitors/intro-monitors/",
+      "why": "A monitor reuses your collection's assertions on a schedule, so a regression is caught by a check rather than by a user.",
+      "badge": "watchtower",
+      "criteria": {
         "type": "command",
-        "name": "postman:(deploy-flow|trigger-flow)"
+        "name": "(?:postman:)?(?:api-monitoring)"
+      }
+    },
+    {
+      "id": "test-webhooks",
+      "title": "Capture and replay webhooks",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "A reusable public URL records deliveries even when your local server is down, which separates 'the sender never sent it' from 'my machine wasn't listening'.",
+      "badge": "hook-catcher",
+      "criteria": {
+        "type": "command",
+        "name": "(?:postman:)?(?:webhook-testing)"
+      }
+    },
+    {
+      "id": "load-test",
+      "title": "Load-test your API",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "Latency and error thresholds under concurrent users are a different question from 'does it return 200', and you'd rather learn the answer before launch.",
+      "badge": "load-tester",
+      "criteria": {
+        "type": "command",
+        "name": "(?:postman:)?(?:performance-testing)"
+      }
+    },
+    {
+      "id": "assess-agent-readiness",
+      "title": "Score how ready your API is for AI agents",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "A measured score turns 'agents struggle with our API' into a list of specific contract gaps to fix.",
+      "badge": "readiness-assessor",
+      "criteria": {
+        "type": "command",
+        "name": "(?:postman:)?(?:ai-readiness)"
+      }
+    },
+    {
+      "id": "data-driven-tests",
+      "title": "Drive a collection from a dataset",
+      "docs": "https://github.com/postmanlabs/postman-plugin",
+      "why": "Queried or joined inputs let one collection cover many cases instead of copying requests per case.",
+      "badge": "data-driven",
+      "criteria": {
+        "type": "command",
+        "name": "(?:postman:)?(?:datasets)"
       }
     }
   ],
@@ -291,6 +435,27 @@
         "rubric": "Do the operations have clear summaries/descriptions and named, described parameters suitable for an AI agent to call?",
         "confidence_gte": 0.8
       }
+    },
+    {
+      "id": "gate-ci-on-contract",
+      "title": "Gate CI on contract checks",
+      "docs": "https://learning.postman.com/docs/postman-cli/postman-cli-overview/",
+      "why": "Tests, lint and AI-readiness checks that only run when someone remembers to run them don't protect the main branch; a CI gate does.",
+      "badge": "gatekeeper",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:ci-integration)"
+          },
+          {
+            "type": "file",
+            "path": "**/.github/workflows/*.{yml,yaml}",
+            "contains": "postman\\s+(collection\\s+run|api\\s+lint)"
+          }
+        ]
+      },
+      "recommended": true
     }
   ],
   "badges": [
@@ -353,6 +518,16 @@
             "server": "postman",
             "tool": "runCollection",
             "gte": 10
+          },
+          {
+            "type": "command",
+            "name": "(?:postman:)?(?:api-testing)",
+            "gte": 10
+          },
+          {
+            "type": "bash",
+            "matches": "postman\\s+collection\\s+run",
+            "gte": 10
           }
         ]
       }
@@ -386,6 +561,60 @@
       "name": "Flow State",
       "tier": "gold",
       "description": "Automated a workflow with Postman Flows."
+    },
+    {
+      "id": "grounded",
+      "name": "Grounded",
+      "tier": "bronze",
+      "description": "Bootstrapped your repo's Postman workspace."
+    },
+    {
+      "id": "simulator",
+      "name": "Simulator",
+      "tier": "silver",
+      "description": "Ran your code against simulated dependencies."
+    },
+    {
+      "id": "contract-checker",
+      "name": "Contract Checker",
+      "tier": "silver",
+      "description": "Checked real application traffic against your API contract."
+    },
+    {
+      "id": "watchtower",
+      "name": "Watchtower",
+      "tier": "silver",
+      "description": "Set up monitoring on a live endpoint."
+    },
+    {
+      "id": "hook-catcher",
+      "name": "Hook Catcher",
+      "tier": "bronze",
+      "description": "Captured and replayed webhooks."
+    },
+    {
+      "id": "load-tester",
+      "name": "Load Tester",
+      "tier": "silver",
+      "description": "Load-tested your API."
+    },
+    {
+      "id": "readiness-assessor",
+      "name": "Readiness Assessor",
+      "tier": "silver",
+      "description": "Scored your API's readiness for AI agents."
+    },
+    {
+      "id": "data-driven",
+      "name": "Data Driven",
+      "tier": "bronze",
+      "description": "Drove a collection from a dataset."
+    },
+    {
+      "id": "gatekeeper",
+      "name": "Gatekeeper",
+      "tier": "gold",
+      "description": "Gated CI on contract checks."
     }
   ]
 }

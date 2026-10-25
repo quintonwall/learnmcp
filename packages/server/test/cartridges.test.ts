@@ -37,6 +37,7 @@ describe("shipped cartridges", () => {
       "slack",
       "stripe",
       "supabase",
+      "twilio",
       "vercel",
     ]);
   });

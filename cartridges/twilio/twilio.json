@@ -1,0 +1,427 @@
+{
+  "id": "twilio",
+  "version": "1.0.0",
+  "trust": "official",
+  "provider": {
+    "name": "Twilio",
+    "homepage": "https://www.twilio.com/docs/ai/mcp",
+    "icon": "📱"
+  },
+  "detect": [
+    {
+      "type": "mcp",
+      "server": "twilio-docs"
+    },
+    {
+      "type": "mcp",
+      "server": "plugin_twilio-developer-kit_twilio-docs"
+    },
+    {
+      "type": "command",
+      "name": "twilio-developer-kit:.*"
+    },
+    {
+      "type": "dependency",
+      "name": "twilio"
+    },
+    {
+      "type": "env",
+      "key": "TWILIO_ACCOUNT_SID"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "search-twilio-api",
+      "title": "Search Twilio's API instead of guessing",
+      "why": "Twilio's API surface spans messaging, voice, verify, email and more — searching for the operation that fits your intent beats recalling an endpoint that may have changed.",
+      "badge": "searcher",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "twilio-docs",
+            "tool": "twilio__search"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "plugin_twilio-developer-kit_twilio-docs",
+            "tool": "twilio__search"
+          }
+        ]
+      },
+      "docs": "https://www.twilio.com/docs/ai/mcp"
+    },
+    {
+      "id": "retrieve-api-schema",
+      "title": "Retrieve the full schema before writing a call",
+      "why": "Retrieve gives the exact parameters and response shape for an operation, so the code you write matches the real API rather than a remembered one.",
+      "badge": "schema-reader",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "twilio-docs",
+            "tool": "twilio__retrieve"
+          },
+          {
+            "type": "mcp_tool",
+            "server": "plugin_twilio-developer-kit_twilio-docs",
+            "tool": "twilio__retrieve"
+          }
+        ]
+      },
+      "docs": "https://www.twilio.com/docs/ai/mcp"
+    },
+    {
+      "id": "setup-account",
+      "title": "Set up your Twilio account and credentials",
+      "why": "First-time setup — account, auth and a sender — is the step every other Twilio product depends on, and the easiest one to get subtly wrong.",
+      "badge": "ready-to-send",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-account-setup|twilio-iam-auth-setup|twilio-organizations-setup|twilio-numbers-senders)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "plan-use-case",
+      "title": "Plan the use case before picking a product",
+      "why": "Twilio has several products that overlap — SMS, WhatsApp, RCS, Verify, Conversations — and an advisor skill helps you choose the right one before code is written.",
+      "badge": "planner",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-[a-z-]+-advisor|twilio-[a-z-]+-architect|twilio-messaging-overview)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "send-message",
+      "title": "Send a message",
+      "why": "Sending an SMS, WhatsApp or RCS message is the core Twilio loop — the product skill covers the patterns and edge cases the quickstart skips.",
+      "badge": "messenger",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-send-message|twilio-sms-send-message|twilio-whatsapp-send-message|twilio-rcs-messaging|twilio-messaging-services)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "verify-users",
+      "title": "Verify a user with a one-time passcode",
+      "why": "Verify handles code generation, delivery, rate limiting and fraud checks — rolling your own OTP flow misses most of that.",
+      "badge": "verifier",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-verify-send-otp|twilio-identity-verification-advisor|twilio-migrate-messaging-to-verify)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "build-voice",
+      "title": "Build a voice call or TwiML flow",
+      "why": "Voice has its own model — TwiML, outbound calls, ConversationRelay for AI agents — and a skill steers you to the right one.",
+      "badge": "caller",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-voice-outbound-calls|twilio-voice-twiml|twilio-voice-conversation-relay|twilio-conference-calls|twilio-call-recordings)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "send-email",
+      "title": "Send email with SendGrid",
+      "why": "Email deliverability is its own discipline — the SendGrid skills cover authentication, settings and sending correctly.",
+      "badge": "mailer",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-email-send|twilio-sendgrid-[a-z-]+)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "handle-webhooks",
+      "title": "Handle webhooks correctly",
+      "why": "Inbound messages, status callbacks and events all arrive as webhooks — signature validation and idempotency are what keep them trustworthy.",
+      "badge": "listener",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-webhook-architecture|twilio-messaging-webhooks|twilio-sendgrid-webhooks|twilio-sendgrid-inbound-parse)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "route-and-automate",
+      "title": "Orchestrate conversations, flows or routing",
+      "why": "Studio, TaskRouter and Conversations let you build workflows on Twilio's side rather than reimplementing them in your own code.",
+      "badge": "orchestrator",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-studio-flows|twilio-taskrouter-routing|twilio-conversation-[a-z-]+|twilio-conversations-classic-api|twilio-content-template-builder)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "build-ai-agent",
+      "title": "Build an AI agent on Twilio",
+      "why": "Twilio's agent skills cover architecture, memory, knowledge and connecting an agent to voice and messaging channels.",
+      "badge": "agent-builder",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-ai-agent-architect|twilio-agent-connect|twilio-agent-augmentation-architect|twilio-customer-support-architect|twilio-enterprise-knowledge)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "look-up-numbers",
+      "title": "Look up phone number intelligence",
+      "why": "Validating a number and its line type before sending avoids wasted sends and failed delivery.",
+      "badge": "number-sleuth",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-lookup-phone-intelligence)"
+      },
+      "docs": "https://github.com/twilio/ai"
+    },
+    {
+      "id": "debug-delivery",
+      "title": "Debug with observability tooling",
+      "why": "When a message or call fails, the debugger and error codes explain why — far faster than guessing from silence.",
+      "badge": "debugger",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "command",
+            "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-debugging-observability|twilio-cli-reference)"
+          },
+          {
+            "type": "bash",
+            "matches": "\\btwilio\\s+(debugger|api:core:(messages|calls))"
+          }
+        ]
+      },
+      "docs": "https://github.com/twilio/ai"
+    }
+  ],
+  "bestPractices": [
+    {
+      "id": "harden-security",
+      "title": "Harden your integration's security",
+      "why": "Credentials in source, unvalidated webhooks and over-privileged keys are the common ways a Twilio account gets abused — the security skills cover each.",
+      "badge": "hardened",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-security-hardening|twilio-security-api-auth|twilio-security-compliance-hipaa)"
+      },
+      "docs": "https://github.com/twilio/ai",
+      "recommended": true
+    },
+    {
+      "id": "use-api-keys",
+      "title": "Use API keys, not your Auth Token",
+      "why": "Twilio recommends API keys for application code — they can be scoped and revoked individually, whereas the Auth Token is the master credential for the whole account.",
+      "badge": "scoped-credentials",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-security-api-auth|twilio-iam-auth-setup)"
+      },
+      "docs": "https://www.twilio.com/docs/iam/api-keys",
+      "recommended": true
+    },
+    {
+      "id": "build-for-reliability",
+      "title": "Build in retries, idempotency and status tracking",
+      "why": "Networks fail and callbacks arrive twice — reliability patterns are what separate a demo from something you can leave running.",
+      "badge": "dependable",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-reliability-patterns)"
+      },
+      "docs": "https://github.com/twilio/ai",
+      "recommended": true
+    },
+    {
+      "id": "check-compliance",
+      "title": "Check messaging compliance before you send at volume",
+      "why": "Carriers block unregistered traffic — A2P 10DLC, toll-free verification and opt-out handling need to be in place before launch, not after messages are filtered.",
+      "badge": "compliant",
+      "criteria": {
+        "type": "command",
+        "name": "(?:[A-Za-z0-9_-]+:)?(?:twilio-compliance-traffic|twilio-compliance-onboarding|twilio-sms-isv-setup|twilio-regulatory-compliance-bundles)"
+      },
+      "docs": "https://github.com/twilio/ai",
+      "recommended": true
+    },
+    {
+      "id": "look-up-before-writing",
+      "title": "Retrieve the schema, then write the call",
+      "why": "Searching and then retrieving the operation's schema is the intended two-step flow; skipping retrieve is how a plausible-looking parameter turns out not to exist.",
+      "badge": "careful-integrator",
+      "criteria": {
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "type": "mcp_tool",
+                "server": "twilio-docs",
+                "tool": "twilio__search"
+              },
+              {
+                "type": "mcp_tool",
+                "server": "plugin_twilio-developer-kit_twilio-docs",
+                "tool": "twilio__search"
+              }
+            ]
+          },
+          {
+            "anyOf": [
+              {
+                "type": "mcp_tool",
+                "server": "twilio-docs",
+                "tool": "twilio__retrieve"
+              },
+              {
+                "type": "mcp_tool",
+                "server": "plugin_twilio-developer-kit_twilio-docs",
+                "tool": "twilio__retrieve"
+              }
+            ]
+          }
+        ]
+      },
+      "docs": "https://www.twilio.com/docs/ai/mcp",
+      "recommended": true
+    }
+  ],
+  "badges": [
+    {
+      "id": "searcher",
+      "name": "Searcher",
+      "tier": "bronze",
+      "description": "Searched Twilio's API."
+    },
+    {
+      "id": "schema-reader",
+      "name": "Schema Reader",
+      "tier": "bronze",
+      "description": "Retrieved an operation's full schema."
+    },
+    {
+      "id": "ready-to-send",
+      "name": "Ready to Send",
+      "tier": "bronze",
+      "description": "Set up a Twilio account and credentials."
+    },
+    {
+      "id": "planner",
+      "name": "Planner",
+      "tier": "bronze",
+      "description": "Planned a use case before picking a product."
+    },
+    {
+      "id": "messenger",
+      "name": "Messenger",
+      "tier": "silver",
+      "description": "Used the messaging skills to send a message."
+    },
+    {
+      "id": "verifier",
+      "name": "Verifier",
+      "tier": "silver",
+      "description": "Built a one-time passcode flow with Verify."
+    },
+    {
+      "id": "caller",
+      "name": "Caller",
+      "tier": "silver",
+      "description": "Built a voice call or TwiML flow."
+    },
+    {
+      "id": "mailer",
+      "name": "Mailer",
+      "tier": "silver",
+      "description": "Sent email with SendGrid."
+    },
+    {
+      "id": "listener",
+      "name": "Listener",
+      "tier": "silver",
+      "description": "Handled Twilio webhooks."
+    },
+    {
+      "id": "orchestrator",
+      "name": "Orchestrator",
+      "tier": "silver",
+      "description": "Orchestrated conversations, flows or routing."
+    },
+    {
+      "id": "agent-builder",
+      "name": "Agent Builder",
+      "tier": "gold",
+      "description": "Built an AI agent on Twilio."
+    },
+    {
+      "id": "number-sleuth",
+      "name": "Number Sleuth",
+      "tier": "bronze",
+      "description": "Looked up phone number intelligence."
+    },
+    {
+      "id": "debugger",
+      "name": "Debugger",
+      "tier": "silver",
+      "description": "Debugged with Twilio's observability tooling."
+    },
+    {
+      "id": "hardened",
+      "name": "Hardened",
+      "tier": "silver",
+      "description": "Applied security hardening guidance."
+    },
+    {
+      "id": "scoped-credentials",
+      "name": "Scoped Credentials",
+      "tier": "silver",
+      "description": "Reminded to use API keys rather than the Auth Token."
+    },
+    {
+      "id": "dependable",
+      "name": "Dependable",
+      "tier": "silver",
+      "description": "Applied reliability patterns."
+    },
+    {
+      "id": "compliant",
+      "name": "Compliant",
+      "tier": "gold",
+      "description": "Checked messaging compliance."
+    },
+    {
+      "id": "careful-integrator",
+      "name": "Careful Integrator",
+      "tier": "bronze",
+      "description": "Retrieves the schema before writing a call."
+    },
+    {
+      "id": "docs-regular",
+      "name": "Docs Regular",
+      "tier": "gold",
+      "description": "Searched Twilio's API 15 times.",
+      "criteria": {
+        "anyOf": [
+          {
+            "type": "mcp_tool",
+            "server": "twilio-docs",
+            "tool": "twilio__search",
+            "gte": 15
+          },
+          {
+            "type": "mcp_tool",
+            "server": "plugin_twilio-developer-kit_twilio-docs",
+            "tool": "twilio__search",
+            "gte": 15
+          }
+        ]
+      }
+    }
+  ]
+}

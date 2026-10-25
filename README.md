@@ -302,7 +302,7 @@ is never granted on a hunch.
 ### Two rules that matter
 
 **Match the tool's real surface.** Run it once and look at what it actually emits. A
-plugin's slash commands (`/postman:mock`) and its MCP tools (`createMock`) are different
+plugin's skills (`api-mocking`) and its MCP tools (`createMock`) are different
 names for the same action, and some actions only ever appear as a shell command — accept
 all of them with `anyOf`. Getting this wrong is the most common way a cartridge silently
 never fires.
