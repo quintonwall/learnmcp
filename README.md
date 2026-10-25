@@ -344,5 +344,6 @@ filing an issue, or telling someone about it all help just as much.
 ## More
 
 - **[POSTMAN.md](POSTMAN.md)** — a full track end to end, and how detection really works
+- **[TWILIO.md](TWILIO.md)** — a sample path through Twilio's MCP server and skills, from setup to production
 - **[HOSTING.md](HOSTING.md)** — running your own server, database, and leaderboards
 - **[RUNNING.md](RUNNING.md)** — building from source

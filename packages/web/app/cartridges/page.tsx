@@ -28,6 +28,11 @@ export default async function CartridgesPage() {
               {c.objectives > 0 ? `${c.objectives} objectives · ${c.badges} badges` : `${c.installs} installs`}
             </div>
             <span className={`badge-tag ${c.trust}`}>{c.trust}</span>
+            {c.guide && (
+              <div className="meta">
+                <a href={c.guide}>Walkthrough →</a>
+              </div>
+            )}
           </div>
         ))}
       </div>

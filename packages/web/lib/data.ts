@@ -1,5 +1,5 @@
 import "server-only";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { rankForPoints } from "@learnmcp/schema";
 import { getSupabase } from "./supabase";
@@ -15,6 +15,8 @@ export interface CartridgeCard {
   name: string;
   icon?: string;
   logo?: string;
+  /** Link to the cartridge's walkthrough (`<ID>.md` at the repo root), when one exists. */
+  guide?: string;
   trust: string;
   objectives: number;
   badges: number;
@@ -130,6 +132,8 @@ export async function getCartridgeLeaders(perCartridge = 5): Promise<CartridgeBo
   return [...boards.values()];
 }
 
+const REPO_BLOB = "https://github.com/quintonwall/learnmcp/blob/main";
+
 /** Read the repo's bundled cartridges from disk (dev fallback, no backend needed). */
 function bundledCartridges(): CartridgeCard[] {
   const dir = path.resolve(process.cwd(), "..", "..", "cartridges");
@@ -150,6 +154,9 @@ function bundledCartridges(): CartridgeCard[] {
         name: c.provider?.name ?? c.id,
         icon: c.provider?.icon,
         logo: c.provider?.logo,
+        guide: existsSync(path.join(dir, "..", `${c.id.toUpperCase()}.md`))
+          ? `${REPO_BLOB}/${c.id.toUpperCase()}.md`
+          : undefined,
         trust: c.trust ?? "official",
         objectives: (c.objectives?.length ?? 0) + (c.bestPractices?.length ?? 0),
         badges: c.badges?.length ?? 0,
