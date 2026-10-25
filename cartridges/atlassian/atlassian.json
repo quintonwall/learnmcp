@@ -5,7 +5,8 @@
   "provider": {
     "name": "Atlassian",
     "homepage": "https://www.atlassian.com/platform/remote-mcp-server",
-    "icon": "🔷"
+    "icon": "🔷",
+    "logo": "/logos/atlassian.png"
   },
   "detect": [
     {

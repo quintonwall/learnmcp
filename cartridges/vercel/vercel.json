@@ -5,7 +5,8 @@
   "provider": {
     "name": "Vercel",
     "homepage": "https://vercel.com",
-    "icon": "\u25b2"
+    "icon": "\u25b2",
+    "logo": "/logos/vercel.png"
   },
   "detect": [
     {

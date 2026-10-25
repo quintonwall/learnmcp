@@ -5,7 +5,8 @@
   "provider": {
     "name": "Exa",
     "homepage": "https://exa.ai",
-    "icon": "\ud83d\udd0e"
+    "icon": "\ud83d\udd0e",
+    "logo": "/logos/exa.png"
   },
   "detect": [
     {

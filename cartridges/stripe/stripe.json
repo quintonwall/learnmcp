@@ -5,7 +5,8 @@
   "provider": {
     "name": "Stripe",
     "homepage": "https://docs.stripe.com/mcp",
-    "icon": "💳"
+    "icon": "💳",
+    "logo": "/logos/stripe.png"
   },
   "detect": [
     {

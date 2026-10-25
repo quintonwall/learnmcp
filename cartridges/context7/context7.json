@@ -5,7 +5,8 @@
   "provider": {
     "name": "Context7",
     "homepage": "https://context7.com",
-    "icon": "\ud83d\udcda"
+    "icon": "\ud83d\udcda",
+    "logo": "/logos/context7.png"
   },
   "detect": [
     {

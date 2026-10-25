@@ -14,6 +14,7 @@ export interface CartridgeCard {
   id: string;
   name: string;
   icon?: string;
+  logo?: string;
   trust: string;
   objectives: number;
   badges: number;
@@ -31,6 +32,7 @@ export interface CartridgeBoard {
   cartridgeId: string;
   name: string;
   icon?: string;
+  logo?: string;
   rows: { position: number; handle: string; points: number }[];
 }
 
@@ -120,7 +122,7 @@ export async function getCartridgeLeaders(perCartridge = 5): Promise<CartridgeBo
     let board = boards.get(r.cartridge_id);
     if (!board) {
       const m = meta.get(r.cartridge_id);
-      board = { cartridgeId: r.cartridge_id, name: m?.name ?? r.cartridge_id, icon: m?.icon, rows: [] };
+      board = { cartridgeId: r.cartridge_id, name: m?.name ?? r.cartridge_id, icon: m?.icon, logo: m?.logo, rows: [] };
       boards.set(r.cartridge_id, board);
     }
     board.rows.push({ position: r.position, handle: r.display_name ?? "anonymous", points: r.points });
@@ -147,6 +149,7 @@ function bundledCartridges(): CartridgeCard[] {
         id: c.id,
         name: c.provider?.name ?? c.id,
         icon: c.provider?.icon,
+        logo: c.provider?.logo,
         trust: c.trust ?? "official",
         objectives: (c.objectives?.length ?? 0) + (c.bestPractices?.length ?? 0),
         badges: c.badges?.length ?? 0,

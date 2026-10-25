@@ -5,7 +5,8 @@
   "provider": {
     "name": "Firebase",
     "homepage": "https://firebase.google.com",
-    "icon": "\ud83d\udd25"
+    "icon": "\ud83d\udd25",
+    "logo": "/logos/firebase.png"
   },
   "detect": [
     {

@@ -5,7 +5,8 @@
   "provider": {
     "name": "Postman",
     "homepage": "https://github.com/postmanlabs/postman-plugin",
-    "icon": "\ud83d\udef0\ufe0f"
+    "icon": "\ud83d\udef0\ufe0f",
+    "logo": "/logos/postman.png"
   },
   "detect": [
     {

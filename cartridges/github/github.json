@@ -5,7 +5,8 @@
   "provider": {
     "name": "GitHub",
     "homepage": "https://github.com",
-    "icon": "\ud83d\udc19"
+    "icon": "\ud83d\udc19",
+    "logo": "/logos/github.png"
   },
   "detect": [
     {

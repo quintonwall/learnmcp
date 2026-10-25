@@ -20,7 +20,9 @@ export default async function CartridgesPage() {
       <div className="grid">
         {cartridges.map((c) => (
           <div className="card" key={c.id}>
-            <div className="icon">{c.icon ?? "📦"}</div>
+            <div className="icon">
+              {c.logo ? <img src={c.logo} alt="" width={40} height={40} /> : (c.icon ?? "📦")}
+            </div>
             <div className="name">{c.name}</div>
             <div className="meta">
               {c.objectives > 0 ? `${c.objectives} objectives · ${c.badges} badges` : `${c.installs} installs`}

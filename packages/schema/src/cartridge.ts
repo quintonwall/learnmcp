@@ -39,6 +39,8 @@ export const Provider = z.object({
   name: z.string(),
   homepage: z.string().url().optional(),
   icon: z.string().optional(),
+  /** Website-only logo (a path or URL the gallery renders as an image). `icon` stays the emoji used everywhere else, including the terminal. */
+  logo: z.string().optional(),
 });
 
 export const Trust = z.enum(["official", "community", "generated"]);

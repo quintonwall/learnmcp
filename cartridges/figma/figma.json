@@ -5,7 +5,8 @@
   "provider": {
     "name": "Figma",
     "homepage": "https://figma.com",
-    "icon": "\ud83c\udfa8"
+    "icon": "\ud83c\udfa8",
+    "logo": "/logos/figma.png"
   },
   "detect": [
     {

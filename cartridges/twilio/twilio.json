@@ -5,7 +5,8 @@
   "provider": {
     "name": "Twilio",
     "homepage": "https://www.twilio.com/docs/ai/mcp",
-    "icon": "📱"
+    "icon": "📱",
+    "logo": "/logos/twilio.png"
   },
   "detect": [
     {

@@ -5,7 +5,8 @@
   "provider": {
     "name": "Notion",
     "homepage": "https://notion.so",
-    "icon": "\ud83d\udcd3"
+    "icon": "\ud83d\udcd3",
+    "logo": "/logos/notion.png"
   },
   "detect": [
     {

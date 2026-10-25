@@ -5,7 +5,8 @@
   "provider": {
     "name": "Playwright",
     "homepage": "https://playwright.dev",
-    "icon": "\ud83c\udfad"
+    "icon": "\ud83c\udfad",
+    "logo": "/logos/playwright.png"
   },
   "detect": [
     {

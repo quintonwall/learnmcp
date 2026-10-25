@@ -49,7 +49,9 @@ export default async function LeaderboardPage() {
             <div className="grid">
               {boards.map((b) => (
                 <div className="card" key={b.cartridgeId}>
-                  <div className="icon">{b.icon ?? "📦"}</div>
+                  <div className="icon">
+              {b.logo ? <img src={b.logo} alt="" width={40} height={40} /> : (b.icon ?? "📦")}
+            </div>
                   <div className="name">{b.name}</div>
                   <table className="board" style={{ marginTop: 8 }}>
                     <tbody>

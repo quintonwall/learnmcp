@@ -50,6 +50,7 @@ p.lead { color: var(--muted); font-size: 17px; max-width: 640px; }
   padding: 16px;
 }
 .card .icon { font-size: 26px; }
+.card .icon img { display: block; border-radius: 8px; object-fit: cover; }
 .card .name { font-weight: 600; margin-top: 6px; }
 .card .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
 

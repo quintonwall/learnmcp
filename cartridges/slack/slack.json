@@ -5,7 +5,8 @@
   "provider": {
     "name": "Slack",
     "homepage": "https://slack.com",
-    "icon": "\ud83d\udcac"
+    "icon": "\ud83d\udcac",
+    "logo": "/logos/slack.png"
   },
   "detect": [
     {

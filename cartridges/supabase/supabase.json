@@ -5,7 +5,8 @@
   "provider": {
     "name": "Supabase",
     "homepage": "https://supabase.com",
-    "icon": "\u26a1"
+    "icon": "\u26a1",
+    "logo": "/logos/supabase.png"
   },
   "detect": [
     {

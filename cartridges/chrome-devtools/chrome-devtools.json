@@ -5,7 +5,8 @@
   "provider": {
     "name": "Chrome DevTools MCP",
     "homepage": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
-    "icon": "🔍"
+    "icon": "🔍",
+    "logo": "/logos/chrome-devtools.png"
   },
   "detect": [
     {

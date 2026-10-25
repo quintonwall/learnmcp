@@ -16,7 +16,8 @@
       "properties": {
         "name": { "type": "string" },
         "homepage": { "type": "string", "format": "uri" },
-        "icon": { "type": "string" }
+        "icon": { "type": "string" },
+        "logo": { "type": "string" }
       }
     },
     "trust": { "enum": ["official", "community", "generated"], "default": "community" },
