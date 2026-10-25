@@ -76,6 +76,17 @@ export class ProgressService {
 
   /** Ingest a signal, persist any newly-earned badges/objectives, return the deltas. */
   record(scope: string, signal: Signal): RecordResult {
+    return this.recordMany(scope, [signal]);
+  }
+
+  /**
+   * Ingest a batch of signals with one evaluation before and one after, instead of one pair
+   * per signal. A session-start scan can carry hundreds of signals; evaluating the whole log
+   * for each made that quadratic and slow enough to blow past the hook's timeout, which
+   * silently discarded the scan. The deltas are the same either way: the store only reports
+   * a badge/objective as new the first time it is granted.
+   */
+  recordMany(scope: string, signals: Signal[]): RecordResult {
     const beforeSignals = this.store.getSignals(scope);
     // Snapshot which tracks were already known so we can tell the difference between
     // "postman track just activated" and "postman was already active". Evaluation is pure
@@ -85,7 +96,7 @@ export class ProgressService {
         .activeCartridgeIds,
     );
 
-    this.store.recordSignal(scope, signal);
+    for (const signal of signals) this.store.recordSignal(scope, signal);
     const result = this.recompute(scope);
 
     const byId = new Map(this.registry.list().map((c) => [c.id, c]));
@@ -100,10 +111,13 @@ export class ProgressService {
         };
       });
 
-    if (signal.kind === "mcp.added") {
-      const seenBefore = beforeSignals.some(
-        (s) => s.kind === "mcp.added" && s.server === signal.server,
-      );
+    // The last new server wins, as when signals were recorded one at a time.
+    const seen = new Set<string>();
+    for (const s of beforeSignals) if (s.kind === "mcp.added") seen.add(s.server);
+    for (const signal of signals) {
+      if (signal.kind !== "mcp.added") continue;
+      const seenBefore = seen.has(signal.server);
+      seen.add(signal.server);
       const hasCartridge = this.registry
         .list()
         .some((c) => c.detect.some((m) => matcherReferencesMcpServer(m, signal.server)));

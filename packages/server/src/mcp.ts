@@ -127,26 +127,9 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
     },
   );
 
-  /**
-   * Shared by scan_project and record_activities: record every signal in order, aggregating
-   * what each one earned rather than keeping only the last — a session-start scan spans many
-   * signals and dropping all but the final one's badges would silently swallow the rest.
-   */
+  /** Shared by scan_project and record_activities: one batch, evaluated once. */
   function recordAll(sc: string, signals: Signal[]): RecordResult {
-    let last: RecordResult | null = null;
-    const newBadges: RecordResult["newBadges"] = [];
-    const newObjectives: RecordResult["newObjectives"] = [];
-    const newCartridges: RecordResult["newCartridges"] = [];
-    let newMcpServerWithoutCartridge: string | undefined;
-    for (const sig of signals) {
-      last = service.record(sc, sig);
-      newBadges.push(...last.newBadges);
-      newObjectives.push(...last.newObjectives);
-      newCartridges.push(...last.newCartridges);
-      if (last.newMcpServerWithoutCartridge) newMcpServerWithoutCartridge = last.newMcpServerWithoutCartridge;
-    }
-    const result = last ?? service.recompute(sc);
-    return { ...result, newBadges, newObjectives, newCartridges, newMcpServerWithoutCartridge };
+    return signals.length ? service.recordMany(sc, signals) : service.recompute(sc);
   }
 
   server.registerTool(

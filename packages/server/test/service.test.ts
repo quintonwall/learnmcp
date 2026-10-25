@@ -172,6 +172,36 @@ describe("scanProject", () => {
     expect(isRepo(path.join(dir, "packages", "app"))).toBe(true);
   });
 
+  it("recordMany matches recording the same signals one at a time", async () => {
+    await mkdir(path.join(dir, ".git"));
+    await writeFile(path.join(dir, ".gitignore"), "node_modules\n.env\n");
+    await writeFile(
+      path.join(dir, ".mcp.json"),
+      JSON.stringify({ mcpServers: { postman: { command: "x" }, mystery: { command: "y" } } }),
+    );
+    const signals = scanProject(dir);
+
+    const fresh = async () => {
+      const registry = new CartridgeRegistry({ sources: [bundledCartridges] });
+      await registry.load();
+      return new ProgressService(registry, new SqliteStore({ path: ":memory:" }));
+    };
+    const one = await fresh();
+    const batch = await fresh();
+
+    const seq = signals.map((sig) => one.record("s", sig));
+    const all = batch.recordMany("s", signals);
+
+    const ids = (r: { newBadges: { badgeId: string }[] }) => r.newBadges.map((b) => b.badgeId).sort();
+    expect(ids(all)).toEqual(seq.flatMap(ids).sort());
+    expect(all.newObjectives.length).toBe(seq.flatMap((r) => r.newObjectives).length);
+    expect(all.newCartridges.map((c) => c.id).sort()).toEqual(
+      seq.flatMap((r) => r.newCartridges).map((c) => c.id).sort(),
+    );
+    expect(all.newMcpServerWithoutCartridge).toBe("mystery");
+    expect(all.points).toBe(seq[seq.length - 1].points);
+  });
+
   it("credits version-control for an existing repo, with no `git init` run", async () => {
     await mkdir(path.join(dir, ".git"));
     const registry = new CartridgeRegistry({ sources: [bundledCartridges] });
