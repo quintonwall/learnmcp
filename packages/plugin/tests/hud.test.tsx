@@ -215,18 +215,18 @@ test('this folder’s tracks come first in the band', async () => {
   expect(shown[0]?.id).toBe('supabase')
 })
 
-test('the band rotates through every track’s next item every two seconds', async ($, on) => {
+test('the band rotates through every track’s next item every four seconds', async ($, on) => {
   const calls = learnmcp(on)
   await $.session.start(start)
   await $.turn.complete(TURN)
 
   const ui = await $.ui.mount({ ...BAND(120), surface: 'terminal' } as never)
   expect(await ui.find({ type: 'Text', text: /Next: Sync your spec.*1\/3/ })).toBeDefined()
-  await calls.clock!.advance(2000)
+  await calls.clock!.advance(4000)
   expect(await ui.find({ type: 'Text', text: /Next: Open your first pull request.*2\/3/ })).toBeDefined()
-  await calls.clock!.advance(2000)
+  await calls.clock!.advance(4000)
   expect(await ui.find({ type: 'Text', text: /Next: Turn on row level security.*3\/3/ })).toBeDefined()
-  await calls.clock!.advance(2000)
+  await calls.clock!.advance(4000)
   expect(await ui.find({ type: 'Text', text: /Next: Sync your spec.*1\/3/ })).toBeDefined()
   await ui.unmount()
 })

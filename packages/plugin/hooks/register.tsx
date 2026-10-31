@@ -12,7 +12,7 @@ const project = atom({ plugin: 'learnmcp', key: 'project' } as const, null)
 
 /** Which of the next items the band shows; steps every ROTATE_MS while there is more than one. */
 const tick = atom({ plugin: 'learnmcp', key: 'tick' } as const, 0)
-const ROTATE_MS = 2000
+const ROTATE_MS = 4000
 
 /** Tracks whose steps are open in the large view. */
 const expanded = atom({ plugin: 'learnmcp', key: 'expanded' } as const, [] as string[])
