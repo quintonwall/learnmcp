@@ -36,7 +36,9 @@ printf '%s' "$DIFF" > "$SANDBOX/staged.diff"
 ROOT=$(git rev-parse --show-toplevel)
 LOG_DIR="$ROOT/.droid-review"
 LOG="$LOG_DIR/review.log"
+umask 077
 mkdir -p "$LOG_DIR"
+chmod 700 "$LOG_DIR"
 {
   echo "=== $(date '+%Y-%m-%d %H:%M:%S') branch=$(git rev-parse --abbrev-ref HEAD) ==="
   git diff --cached --name-only --diff-filter=ACM -- . "${EXCLUDES[@]}"
@@ -52,7 +54,11 @@ After that, list findings as file:line - severity - issue." 2>&1)
 STATUS=$?
 
 echo "$OUT"
-echo "$OUT" >> "$LOG"
+# The log keeps only the verdict and file:line - severity. The issue text can quote a secret.
+{
+  printf '%s\n' "$OUT" | sed -E -n 's/^VERDICT: (PASS|FAIL)[[:space:]]*$/VERDICT: \1/p' | head -n 1
+  printf '%s\n' "$OUT" | sed -E -n 's/^([^ ]+:[0-9]+ - [^-]+) - .*/\1 (details: terminal only)/p'
+} >> "$LOG"
 
 if [ "$STATUS" -ne 0 ]; then
   # Fail open: a broken or offline reviewer must not lock you out of committing.
