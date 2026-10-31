@@ -62,6 +62,15 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
       expect(service.learnNext(SCOPE, undefined, "brand-new-cccccc")).toEqual(service.learnNext(SCOPE));
     });
 
+    it("lists the next item of every active track, this project's first", () => {
+      service.record(SCOPE, firebase, "other-aaaaaa");
+      service.record(SCOPE, twilio, "twilio-demo-bbbbbb");
+      const ids = service.progress(SCOPE, "twilio-demo-bbbbbb").upNext.map((r) => r.cartridgeId);
+      expect(ids).toEqual(expect.arrayContaining(["firebase", "twilio"]));
+      expect(ids.indexOf("twilio")).toBeLessThan(ids.indexOf("firebase"));
+      expect(new Set(ids).size, "one per track").toBe(ids.length);
+    });
+
     it("reports a project's own tracks from progress", () => {
       service.record(SCOPE, firebase, "other-aaaaaa");
       service.record(SCOPE, twilio, "twilio-demo-bbbbbb");

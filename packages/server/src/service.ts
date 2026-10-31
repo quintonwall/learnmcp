@@ -11,6 +11,7 @@ import type { ProgressStore, StoredBadge } from "./store.js";
 import {
   evaluateProject,
   nextObjective,
+  type DetectionState,
   type GrantedBadge,
   type ObjectiveRef,
 } from "./detection.js";
@@ -216,6 +217,20 @@ export class ProgressService {
     return null;
   }
 
+  /** One suggestion per active cartridge that has something left, in the order learnNext would try them. */
+  private upNext(scope: string, state: DetectionState, project?: string): Recommendation[] {
+    const projectActive = project ? this.activeInProject(scope, project) : [];
+    const order = [...projectActive, ...state.activeCartridgeIds.filter((id) => !projectActive.includes(id))];
+    const byId = new Map(this.registry.list().map((c) => [c.id, c]));
+    return order.flatMap((id) => {
+      const cartridge = byId.get(id);
+      const obj = cartridge && nextObjective(cartridge, state);
+      return cartridge && obj
+        ? [{ cartridgeId: cartridge.id, objectiveId: obj.id, title: obj.title, why: obj.why, docs: obj.docs, badge: obj.badge }]
+        : [];
+    });
+  }
+
   /** Cartridges whose detection matches only the signals observed in `project`. */
   activeInProject(scope: string, project: string): string[] {
     const inProject = this.store.getSignals(scope).filter((s) => s.project === project);
@@ -238,6 +253,8 @@ export class ProgressService {
     activeCartridgeIds: string[];
     /** Present with a project: the cartridges active in that project alone. */
     projectCartridgeIds?: string[];
+    /** The next objective of every active cartridge, this project's first: what a rotating "Next" cycles through. */
+    upNext: Recommendation[];
     points: number;
     rank: RankProgress;
     cartridges: Array<{ id: string; completed: number; total: number }>;
@@ -255,6 +272,7 @@ export class ProgressService {
     return {
       activeCartridgeIds: state.activeCartridgeIds,
       ...(project ? { projectCartridgeIds: this.activeInProject(scope, project) } : {}),
+      upNext: this.upNext(scope, state, project),
       points: state.points,
       rank: state.rank,
       cartridges: state.activeCartridgeIds.map((id) => {

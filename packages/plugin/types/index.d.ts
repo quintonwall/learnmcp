@@ -16,10 +16,12 @@ export type HudSnapshot = {
   /** Cartridges active in the folder this session is in, as the server sees it. */
   projectCartridges: string[]
   next?: HudNext
+  /** The next objective of every active track; the band's "Next" rotates through them. */
+  upNext: HudNext[]
 }
 
 declare module 'claude-code' {
   interface PluginState {
-    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean; focus: string | null; project: string | null }
+    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean; focus: string | null; project: string | null; tick: number }
   }
 }

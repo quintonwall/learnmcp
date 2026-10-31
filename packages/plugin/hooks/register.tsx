@@ -10,6 +10,10 @@ const focus = atom({ plugin: 'learnmcp', key: 'focus' } as const, null)
 /** Id of the folder this session is in, as the plugin's hook and proxy compute it. */
 const project = atom({ plugin: 'learnmcp', key: 'project' } as const, null)
 
+/** Which of the next items the band shows; steps every ROTATE_MS while there is more than one. */
+const tick = atom({ plugin: 'learnmcp', key: 'tick' } as const, 0)
+const ROTATE_MS = 2000
+
 const PANE = 'learnmcp'
 
 const DEFAULT_URL = 'https://learnmcp.ai/mcp'
@@ -26,6 +30,7 @@ type Progress = {
   }
   cartridges: HudCartridge[]
   projectCartridgeIds?: string[]
+  upNext?: HudNext[]
   earnedBadges: number
 }
 
@@ -109,6 +114,15 @@ export function fitCartridges(
   return { shown: sorted, more: 0 }
 }
 
+/**
+ * What the band's "Next" cycles through: every track's suggestion, the followed track's
+ * first. Servers that predate `upNext` send only one, which is shown alone.
+ */
+export function nextItems(shot: HudSnapshot, chosen: string | null): HudNext[] {
+  const all = shot.upNext?.length ? shot.upNext : shot.next ? [shot.next] : []
+  return [...all].sort((a, b) => Number(b.cartridgeId === chosen) - Number(a.cartridgeId === chosen))
+}
+
 /** Sort key for the pane: the followed track, then this folder's, then the rest. */
 function rankIn(id: string, chosen: string | null, here: string[]): number {
   if (id === chosen) return -1
@@ -185,6 +199,7 @@ async function refresh($: EngineInterface): Promise<void> {
         badges: progress.earnedBadges,
         cartridges: progress.cartridges,
         projectCartridges: progress.projectCartridgeIds ?? [],
+        upNext: progress.upNext ?? [],
         next: next?.title
           ? { title: next.title, cartridgeId: next.cartridgeId, badge: next.badge, docs: next.docs }
           : undefined,
@@ -224,6 +239,11 @@ export const register: Register = on => {
     if (cached && (await read($, snapshot)) === null) {
       await update($, snapshot, () => ({ ...cached, gained: 0 }))
     }
+    // Step the band's "Next" through every track's suggestion, a couple of seconds each.
+    $.clock.every(ROTATE_MS, async () => {
+      const shot = await read($, snapshot)
+      if ((shot?.upNext?.length ?? 0) > 1) await update($, tick, n => n + 1)
+    })
     void refresh($)
     // The plugin's own SessionStart hook records the project scan; read again once it has.
     $.clock.after(10_000, () => void refresh($))
@@ -328,6 +348,9 @@ export const register: Register = on => {
     const { Box, Text } = $.ui.resolve(e)
     const rank = rankStyle(shot.rank)
     const chosenTrack = await read($, focus)
+    const items = nextItems(shot, chosenTrack)
+    const position = items.length ? (await read($, tick)) % items.length : 0
+    const current = items[position]
     const { shown, more } = fitCartridges(shot.cartridges, e.props.bodyColumns, [
       ...(chosenTrack ? [chosenTrack] : []),
       ...(shot.projectCartridges ?? []),
@@ -376,11 +399,12 @@ export const register: Register = on => {
           })}
           {more > 0 && <Text dimColor> +{more} more</Text>}
         </Text>
-        {shot.next && (
+        {current && (
           <Text wrap="truncate-end">
-            <Text color="#ff8700">Next: {shot.next.title}</Text>
+            <Text color="#ff8700">Next: {current.title}</Text>
             <Text dimColor>
-              {' '}({shot.next.cartridgeId}){shot.next.badge ? ` → ${titleCase(shot.next.badge)}` : ''}
+              {' '}({current.cartridgeId}){current.badge ? ` → ${titleCase(current.badge)}` : ''}
+              {items.length > 1 ? ` · ${position + 1}/${items.length}` : ''}
             </Text>
           </Text>
         )}

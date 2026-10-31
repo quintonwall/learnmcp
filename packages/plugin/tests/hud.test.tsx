@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { fitCartridges, heat, projectId, rankStyle } from '../hooks/register'
+import { fitCartridges, heat, nextItems, projectId, rankStyle } from '../hooks/register'
 
 const PROGRESS = {
   points: 140,
@@ -12,13 +12,18 @@ const PROGRESS = {
     { id: 'supabase', completed: 0, total: 5 },
   ],
   earnedBadges: 7,
+  upNext: [
+    { cartridgeId: 'postman', title: 'Sync your spec to a collection', badge: 'spec-syncer' },
+    { cartridgeId: 'github', title: 'Open your first pull request', badge: 'first-pr' },
+    { cartridgeId: 'supabase', title: 'Turn on row level security', badge: 'locked-down' },
+  ],
 }
 const NEXT = { cartridgeId: 'postman', objectiveId: 'sync', title: 'Sync your spec to a collection', badge: 'spec-syncer' }
 
 function learnmcp(on: On, token = 'tok') {
   mock.env(on, { HOME: '/home/me' })
   mock.store(on)
-  mock.clock(on)
+  const clock = mock.clock(on)
   on('session.start', async (_$, e) => ({ cwd: e.cwd }))
   on('turn.complete', async () => ({ text: '' }))
   on('command.register', async (_$, e) => ({ value: { command: e.name } }))
@@ -30,8 +35,9 @@ function learnmcp(on: On, token = 'tok') {
     if (e.path === '/home/me/.learnmcp/token' && token) return { value: `${token}\n` }
     return { deny: 'ENOENT' }
   })
-  const calls: string[] & { args?: Array<Record<string, unknown>> } = []
+  const calls: string[] & { args?: Array<Record<string, unknown>>; clock?: typeof clock } = []
   calls.args = []
+  calls.clock = clock
   on('http.fetch', async (_$, e) => {
     const params = JSON.parse(String(e.init?.body)).params
     const name = params.name as string
@@ -196,4 +202,26 @@ test('the followed track is remembered per folder', async ($, on) => {
 test('this folder’s tracks come first in the band', async () => {
   const { shown } = fitCartridges(PROGRESS.cartridges, 200, ['supabase'])
   expect(shown[0]?.id).toBe('supabase')
+})
+
+test('the band rotates through every track’s next item every two seconds', async ($, on) => {
+  const calls = learnmcp(on)
+  await $.session.start(start)
+  await $.turn.complete(TURN)
+
+  const ui = await $.ui.mount({ ...BAND(120), surface: 'terminal' } as never)
+  expect(await ui.find({ type: 'Text', text: /Next: Sync your spec.*1\/3/ })).toBeDefined()
+  await calls.clock!.advance(2000)
+  expect(await ui.find({ type: 'Text', text: /Next: Open your first pull request.*2\/3/ })).toBeDefined()
+  await calls.clock!.advance(2000)
+  expect(await ui.find({ type: 'Text', text: /Next: Turn on row level security.*3\/3/ })).toBeDefined()
+  await calls.clock!.advance(2000)
+  expect(await ui.find({ type: 'Text', text: /Next: Sync your spec.*1\/3/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the followed track is shown first in the rotation', async () => {
+  const shot = { upNext: PROGRESS.upNext, next: PROGRESS.upNext[0] } as never
+  expect(nextItems(shot, 'supabase')[0]?.cartridgeId).toBe('supabase')
+  expect(nextItems(shot, null)[0]?.cartridgeId).toBe('postman')
 })
