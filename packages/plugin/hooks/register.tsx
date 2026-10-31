@@ -149,8 +149,8 @@ const CARTRIDGE_COLORS: Record<string, string> = {
 const FALLBACK_COLORS = ['#ff7b72', '#79c0ff', '#56d364', '#e3b341', '#d2a8ff', '#ffa657', '#39c5cf', '#f778ba']
 
 export function cartridgeColor(id: string): string {
-  const known = CARTRIDGE_COLORS[id]
-  if (known) return known
+  // Own keys only: an id like `constructor` must not resolve to an inherited function.
+  if (Object.hasOwn(CARTRIDGE_COLORS, id)) return CARTRIDGE_COLORS[id]!
   let h = 0
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
   return FALLBACK_COLORS[h % FALLBACK_COLORS.length]!

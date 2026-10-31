@@ -281,4 +281,5 @@ test('every bundled track has its own colour, and unknown ones get a stable one'
   const ids = ['twilio', 'general', 'firebase', 'postman', 'supabase', 'vercel', 'github', 'stripe', 'figma', 'notion', 'slack', 'exa', 'playwright', 'context7', 'serena', 'atlassian', 'chrome-devtools']
   expect(new Set(ids.map(cartridgeColor)).size).toBe(ids.length)
   expect(cartridgeColor('brand-new')).toBe(cartridgeColor('brand-new'))
+  for (const odd of ['constructor', 'toString', '__proto__']) expect(cartridgeColor(odd)).toMatch(/^#[0-9a-f]{6}$/)
 })
