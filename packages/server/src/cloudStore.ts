@@ -64,13 +64,19 @@ export class CloudStore implements ProgressStore {
     };
   }
 
-  private async req(method: string, path: string, body?: unknown, prefer?: string): Promise<Response> {
+  private async req(
+    method: string,
+    path: string,
+    body?: unknown,
+    prefer?: string,
+    okStatuses?: number[],
+  ): Promise<Response> {
     const res = await this.fetchImpl(`${this.base}${path}`, {
       method,
       headers: this.headers(prefer ? { Prefer: prefer } : {}),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
-    if (!res.ok) {
+    if (!res.ok && !okStatuses?.includes(res.status)) {
       throw new Error(`supabase ${method} ${path} → ${res.status} ${await res.text().catch(() => "")}`.trim());
     }
     return res;
@@ -121,12 +127,17 @@ export class CloudStore implements ProgressStore {
     if (this.pendingSignals.length) {
       // Idempotent kinds collide with the partial unique index by design; merge-duplicates
       // turns that collision into a no-op instead of a failed batch.
-      await this.req(
-        "POST",
-        "/learner_signals",
-        this.pendingSignals.map((s) => ({ learner_id: learnerId, kind: s.kind, payload: s })),
-        "resolution=merge-duplicates,return=minimal",
-      );
+      const rows = this.pendingSignals.map((s) => ({ learner_id: learnerId, kind: s.kind, payload: s }));
+      const batch = await this.req("POST", "/learner_signals", rows, "resolution=merge-duplicates,return=minimal", [409]);
+      if (batch.status === 409) {
+        // One already-stored signal rejects the whole batch (the idempotency index is on an
+        // expression, so PostgREST can't target it with on_conflict). Retry row by row and
+        // treat a duplicate as "already recorded" — otherwise the badges and objectives
+        // below never get written and progress silently never advances.
+        for (const row of rows) {
+          await this.req("POST", "/learner_signals", [row], "return=minimal", [409]);
+        }
+      }
     }
     if (this.pendingBadges.length) {
       await this.req(
@@ -190,8 +201,11 @@ export class CloudStore implements ProgressStore {
 
   recordSignal(_scope: string, signal: Signal): void {
     if (IDEMPOTENT.has(signal.kind)) {
-      const encoded = JSON.stringify(signal);
-      if (this.signals.some((s) => s.kind === signal.kind && JSON.stringify(s) === encoded)) return;
+      // Canonical, not JSON.stringify: stored rows are jsonb (key order normalised) and
+      // re-parsed by zod, so plain stringify can call an already-stored signal "new" and
+      // trip idx_signals_idempotent, which aborts the whole flush.
+      const encoded = canonical(signal);
+      if (this.signals.some((s) => s.kind === signal.kind && canonical(s) === encoded)) return;
     }
     this.signals.push(signal);
     this.pendingSignals.push(signal);
@@ -241,4 +255,16 @@ export class CloudStore implements ProgressStore {
   close(): void {
     /* stateless HTTP — nothing to close */
   }
+}
+
+/** Key-order-independent JSON, so two spellings of the same signal compare equal. */
+function canonical(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
 }

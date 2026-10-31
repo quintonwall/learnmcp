@@ -198,6 +198,27 @@ describe("CloudStore — hydrate, evaluate, flush", () => {
     expect((signalWrites[0].body as unknown[]).length, "state signals are idempotent").toBe(1);
   });
 
+  it("still saves badges and objectives when a signal batch hits the idempotency index", async () => {
+    const fake = fakeSupabase();
+    // Mirror idx_signals_idempotent: Postgres rejects a multi-row insert containing a
+    // signal that's already stored; single-row inserts of the new ones succeed.
+    const fetchImpl = async (url: string, init: RequestInit = {}) => {
+      const rows = init.body ? JSON.parse(init.body as string) : undefined;
+      if (url.includes("/learner_signals") && init.method === "POST" && Array.isArray(rows) && rows.length > 1) {
+        return new Response(JSON.stringify({ code: "23505" }), { status: 409 });
+      }
+      return fake.fetchImpl(url, init);
+    };
+    const { store, service: svc } = await service(fetchImpl as never);
+
+    svc.record("learner-1", { kind: "file", path: "a.md" });
+    svc.record("learner-1", { kind: "file", path: "b.md" });
+    svc.record("learner-1", { kind: "command", name: "postman:generate-spec" });
+
+    await expect(store.flush()).resolves.toMatchObject({ points: 10 });
+    expect(fake.writes.some((w) => w.table.startsWith("learner_badges"))).toBe(true);
+  });
+
   it("keeps counting repeated activity, so gte thresholds still work", async () => {
     const fake = fakeSupabase();
     const { store, service: svc } = await service(fake.fetchImpl as never);
