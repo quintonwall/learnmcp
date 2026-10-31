@@ -39,6 +39,33 @@ export interface DetectionState {
   pending: JudgeRequest[];
 }
 
+/** Evidence that lives in the project's own code counts more than a tool merely being installed. */
+const CODE_EVIDENCE = new Set(["dependency", "file", "env"]);
+
+/**
+ * How strongly each cartridge shows up in these signals: one point per matching `detect`
+ * rule, two for rules about the project's code (dependencies, files, env keys). Absent
+ * from the map means it doesn't apply at all. Used to put the cartridges a project is
+ * really built on ahead of ones that merely matched once.
+ */
+export function detectionStrength(
+  cartridges: Cartridge[],
+  signals: Signal[],
+  judgements?: Map<string, { confidence: number }>,
+): Map<string, number> {
+  const ctx = buildContext(signals);
+  if (judgements) ctx.judgements = judgements;
+  const out = new Map<string, number>();
+  for (const c of cartridges) {
+    let score = 0;
+    for (const m of c.detect) {
+      if (evaluateMatcher(m, ctx).matched) score += "type" in m && CODE_EVIDENCE.has(m.type) ? 2 : 1;
+    }
+    if (score) out.set(c.id, score);
+  }
+  return out;
+}
+
 /** Which of the given cartridges apply to a project, per their `detect` matchers. */
 export function detectActive(
   cartridges: Cartridge[],

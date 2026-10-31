@@ -225,3 +225,21 @@ test('the followed track is shown first in the rotation', async () => {
   expect(nextItems(shot, 'supabase')[0]?.cartridgeId).toBe('supabase')
   expect(nextItems(shot, null)[0]?.cartridgeId).toBe('postman')
 })
+
+test('the band has a button that opens the large view', async ($, on) => {
+  const opened: string[] = []
+  learnmcp(on)
+  on('ui.open', async (_$, e) => {
+    opened.push(e.id)
+    return { value: { isPlaced: true } }
+  })
+  await $.session.start(start)
+  await $.turn.complete(TURN)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...BAND(120), surface } as never)
+    await ui.press({ key: 'open-large' })
+    await ui.unmount()
+  }
+  expect(opened).toEqual(['learnmcp', 'learnmcp'])
+})

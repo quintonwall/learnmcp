@@ -9,6 +9,7 @@ import {
 import type { CartridgeRegistry } from "./registry.js";
 import type { ProgressStore, StoredBadge } from "./store.js";
 import {
+  detectionStrength,
   evaluateProject,
   nextObjective,
   type DetectionState,
@@ -231,12 +232,21 @@ export class ProgressService {
     });
   }
 
-  /** Cartridges whose detection matches only the signals observed in `project`. */
+  /**
+   * Cartridges whose detection matches only the signals observed in `project`, most
+   * relevant first: how much of the project's own code points at each one, with the
+   * catch-all `general` last, so the tools the app is built on lead its suggestions.
+   */
   activeInProject(scope: string, project: string): string[] {
     const inProject = this.store.getSignals(scope).filter((s) => s.project === project);
     if (!inProject.length) return [];
-    return evaluateProject(this.registry.list(), inProject, this.store.getJudgements(scope))
-      .activeCartridgeIds;
+    const strength = detectionStrength(this.registry.list(), inProject, this.store.getJudgements(scope));
+    const weight = (id: string) => (id === "general" ? -1 : (strength.get(id) ?? 0));
+    return this.registry
+      .list()
+      .map((c) => c.id)
+      .filter((id) => strength.has(id))
+      .sort((a, b) => weight(b) - weight(a)); // stable: ties keep registry order
   }
 
   listBadges(scope: string): {

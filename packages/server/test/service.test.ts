@@ -71,6 +71,21 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
       expect(new Set(ids).size, "one per track").toBe(ids.length);
     });
 
+    it("ranks a project's tracks by how much of its code points at them, general last", () => {
+      // One MCP server for firebase (1 point) against a dependency + env key for twilio (4).
+      service.record(SCOPE, { kind: "file", path: "README.md" }, "app-aaaaaa");
+      service.record(SCOPE, firebase, "app-aaaaaa");
+      service.record(SCOPE, { kind: "dependency", name: "twilio", manifest: "package.json" }, "app-aaaaaa");
+      service.record(SCOPE, { kind: "env", key: "TWILIO_ACCOUNT_SID" }, "app-aaaaaa");
+
+      const order = service.activeInProject(SCOPE, "app-aaaaaa");
+      expect(order[0]).toBe("twilio");
+      expect(order.indexOf("firebase")).toBeGreaterThan(order.indexOf("twilio"));
+      expect(order.at(-1)).toBe("general");
+      // And the suggestion follows: the app's own tool, not the fundamentals.
+      expect(service.learnNext(SCOPE, undefined, "app-aaaaaa")?.cartridgeId).toBe("twilio");
+    });
+
     it("reports a project's own tracks from progress", () => {
       service.record(SCOPE, firebase, "other-aaaaaa");
       service.record(SCOPE, twilio, "twilio-demo-bbbbbb");

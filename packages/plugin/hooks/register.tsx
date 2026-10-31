@@ -345,7 +345,7 @@ export const register: Register = on => {
       return next(e)
     }
 
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Text, Button } = $.ui.resolve(e)
     const rank = rankStyle(shot.rank)
     const chosenTrack = await read($, focus)
     const items = nextItems(shot, chosenTrack)
@@ -369,21 +369,31 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Text wrap="truncate-end">
-          <Text color="magenta" bold>🎓 learnmcp</Text>
-          <Text>  </Text>
-          <Text color={rank.color} bold>{rank.emoji} {shot.rank}</Text>
-          <Text> </Text>
-          {coloredBar(shot.rankProgress, BAR)}
-          <Text color="#ffd700" bold> {shot.points} pts</Text>
-          {shot.gained > 0 && <Text color="green" bold> +{shot.gained}</Text>}
-          {shot.nextRank && (
-            <Text dimColor>
-              {' '}· {shot.pointsToNext} to {rankStyle(shot.nextRank).emoji} {shot.nextRank}
-            </Text>
-          )}
-          <Text dimColor> · 🏅 {shot.badges}</Text>
-        </Text>
+        <Box flexDirection="row" justifyContent="space-between">
+          <Text wrap="truncate-end">
+            <Text color="magenta" bold>🎓 learnmcp</Text>
+            <Text>  </Text>
+            <Text color={rank.color} bold>{rank.emoji} {shot.rank}</Text>
+            <Text> </Text>
+            {coloredBar(shot.rankProgress, BAR)}
+            <Text color="#ffd700" bold> {shot.points} pts</Text>
+            {shot.gained > 0 && <Text color="green" bold> +{shot.gained}</Text>}
+            {shot.nextRank && (
+              <Text dimColor>
+                {' '}· {shot.pointsToNext} to {rankStyle(shot.nextRank).emoji} {shot.nextRank}
+              </Text>
+            )}
+            <Text dimColor> · 🏅 {shot.badges}</Text>
+          </Text>
+          <Button
+            key="open-large"
+            plain
+            hotkey="o"
+            onPress={() => $.ui.open({ id: PANE, title: 'learnmcp' })}
+          >
+            ⤢ more
+          </Button>
+        </Box>
         <Text wrap="truncate-end">
           {shown.length === 0 && <Text dimColor>No cartridges active yet — use a tool learnmcp knows</Text>}
           {shown.map((c, i) => {
