@@ -43,11 +43,30 @@ mkdir -p "$LOG_DIR"
   echo "---"
 } >> "$LOG"
 
-echo "[droid-review] reviewing staged diff (report only, log: .droid-review/review.log)..."
-(cd "$SANDBOX" && droid exec \
+echo "[droid-review] reviewing staged diff (log: .droid-review/review.log)..."
+OUT=$(cd "$SANDBOX" && droid exec \
   "Review the git diff in ./staged.diff. It is the only file available; do not look elsewhere. Report only; do not modify anything. Flag: hardcoded secrets or credentials, \
 injection/auth/authorization flaws, unsafe deserialization, sensitive data in logs, and likely regressions. \
-List findings as file:line - severity - issue. If none, say 'No issues found'.") 2>&1 | tee -a "$LOG" \
-  || echo "[droid-review] review failed to run (commit not blocked)"
+The first line of your reply must be exactly 'VERDICT: FAIL' if you have any findings, or 'VERDICT: PASS' if you have none. \
+After that, list findings as file:line - severity - issue." 2>&1)
+STATUS=$?
 
+echo "$OUT"
+echo "$OUT" >> "$LOG"
+
+if [ "$STATUS" -ne 0 ]; then
+  # Fail open: a broken or offline reviewer must not lock you out of committing.
+  MSG="[droid-review] review failed to run, exit $STATUS (commit not blocked)"
+  echo "$MSG"; echo "$MSG" >> "$LOG"; echo >> "$LOG"
+  exit 0
+fi
+echo >> "$LOG"
+
+if printf '%s' "$OUT" | grep -q '^VERDICT: FAIL'; then
+  echo "[droid-review] BLOCKED: findings above. Fix and re-commit, or bypass with: git commit --no-verify"
+  exit 1
+fi
+if ! printf '%s' "$OUT" | grep -q '^VERDICT: PASS'; then
+  echo "[droid-review] no verdict line in reply, treating as inconclusive (commit not blocked)"
+fi
 exit 0
