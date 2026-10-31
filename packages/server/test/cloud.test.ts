@@ -13,7 +13,7 @@ const bundled = path.resolve(here, "../../../cartridges");
  * Minimal in-memory PostgREST. Enough to exercise hydrate → evaluate → flush without a
  * live Supabase: records what was written so the assertions can check the shape.
  */
-function fakeSupabase(seed: Record<string, unknown[]> = {}) {
+function fakeSupabase(seed: Record<string, unknown[]> = {}, maxRows = Infinity) {
   const tables: Record<string, unknown[]> = {
     learners: [],
     learner_signals: [],
@@ -30,7 +30,10 @@ function fakeSupabase(seed: Record<string, unknown[]> = {}) {
     const body = init.body ? JSON.parse(init.body as string) : undefined;
 
     if (method === "GET") {
-      return new Response(JSON.stringify(tables[table] ?? []), { status: 200 });
+      // Honour limit/offset like PostgREST, and cap a response at `maxRows`.
+      const offset = Number(query.match(/offset=(\d+)/)?.[1] ?? 0);
+      const limit = Math.min(Number(query.match(/limit=(\d+)/)?.[1] ?? Infinity), maxRows);
+      return new Response(JSON.stringify((tables[table] ?? []).slice(offset, offset + limit)), { status: 200 });
     }
     if (table === "learners" && method === "PATCH") {
       // Mirrors the real unique index: reject a handle already held by a DIFFERENT row.
@@ -217,6 +220,21 @@ describe("CloudStore — hydrate, evaluate, flush", () => {
 
     await expect(store.flush()).resolves.toMatchObject({ points: 10 });
     expect(fake.writes.some((w) => w.table.startsWith("learner_badges"))).toBe(true);
+  });
+
+  it("loads every signal row even when the server caps a response", async () => {
+    // 2500 stored signals, 1000 rows per response (PostgREST's default cap): the .git
+    // signal sits past the first page and must still be seen, not re-inserted.
+    const stored = Array.from({ length: 2500 }, (_, i) => ({
+      payload: i === 2400 ? { kind: "file", path: ".git", event: "exists" } : { kind: "file", path: `f${i}.txt`, event: "exists" },
+    }));
+    const fake = fakeSupabase({ learner_signals: stored }, 1000);
+    const { store, service: svc } = await service(fake.fetchImpl as never);
+
+    svc.record("learner-1", { kind: "file", path: ".git", event: "exists" });
+    await store.flush();
+
+    expect(fake.writes.some((w) => w.table.startsWith("learner_signals") && w.method === "POST")).toBe(false);
   });
 
   it("keeps counting repeated activity, so gte thresholds still work", async () => {

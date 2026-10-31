@@ -82,6 +82,25 @@ export class CloudStore implements ProgressStore {
     return res;
   }
 
+  /**
+   * Every signal row, not just the first page. PostgREST caps a response (1000 rows by
+   * default), and a learner who has been scanned a few times easily has more. A truncated
+   * log hides later signals from the engine and from the dedupe check, so a re-sent state
+   * signal is "new", collides with idx_signals_idempotent, and progress never advances.
+   * Paging until an empty page also holds if the server's cap is lower than ours.
+   */
+  private async allSignalRows(q: string): Promise<Row[]> {
+    const rows: Row[] = [];
+    for (;;) {
+      const page = (await this.req(
+        "GET",
+        `/learner_signals?${q}&select=payload&order=id.asc&limit=1000&offset=${rows.length}`,
+      ).then((r) => r.json())) as Row[];
+      if (page.length === 0) return rows;
+      rows.push(...page);
+    }
+  }
+
   /** Load one learner's full state into memory. Call before handing the store to the engine. */
   async hydrate(learnerId: string): Promise<void> {
     this.learnerId = learnerId;
@@ -92,7 +111,7 @@ export class CloudStore implements ProgressStore {
 
     const q = `learner_id=eq.${learnerId}`;
     const [sig, bad, obj, jud] = await Promise.all([
-      this.req("GET", `/learner_signals?${q}&select=payload&order=id.asc`).then((r) => r.json()),
+      this.allSignalRows(q),
       this.req("GET", `/learner_badges?${q}&select=cartridge_id,badge_id,name,points,earned_at`).then((r) => r.json()),
       this.req("GET", `/learner_objectives?${q}&select=cartridge_id,objective_id,completed_at`).then((r) => r.json()),
       this.req("GET", `/learner_judgements?${q}&select=key,confidence`).then((r) => r.json()),
