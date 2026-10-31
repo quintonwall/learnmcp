@@ -30,6 +30,47 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
 
   afterEach(() => store.close());
 
+  describe("project-scoped suggestions", () => {
+    const firebase = { kind: "mcp.added", server: "firebase" } as const;
+    const twilio = { kind: "mcp.added", server: "twilio-docs" } as const;
+
+    it("favours the cartridges active in the project over ones seen elsewhere", () => {
+      // Firebase was set up in another project first, so it wins the global order.
+      service.record(SCOPE, firebase, "other-aaaaaa");
+      service.record(SCOPE, twilio, "twilio-demo-bbbbbb");
+
+      expect(service.learnNext(SCOPE)?.cartridgeId).not.toBe("twilio");
+      expect(service.activeInProject(SCOPE, "twilio-demo-bbbbbb")).toContain("twilio");
+      expect(service.activeInProject(SCOPE, "twilio-demo-bbbbbb")).not.toContain("firebase");
+    });
+
+    it("recommends twilio before firebase when asked about the twilio project", () => {
+      service.record(SCOPE, firebase, "other-aaaaaa");
+      service.record(SCOPE, { kind: "file", path: "README.md" }, "twilio-demo-bbbbbb");
+      service.record(SCOPE, twilio, "twilio-demo-bbbbbb");
+
+      // `general` (active on any file) comes first by registry order; the point is that
+      // firebase, active only elsewhere, never outranks the project's own cartridges.
+      const projectIds = service.activeInProject(SCOPE, "twilio-demo-bbbbbb");
+      expect(projectIds).toEqual(expect.arrayContaining(["general", "twilio"]));
+      expect(projectIds).not.toContain("firebase");
+    });
+
+    it("falls back to the global order for a project it has never seen", () => {
+      service.record(SCOPE, firebase, "other-aaaaaa");
+      expect(service.activeInProject(SCOPE, "brand-new-cccccc")).toEqual([]);
+      expect(service.learnNext(SCOPE, undefined, "brand-new-cccccc")).toEqual(service.learnNext(SCOPE));
+    });
+
+    it("reports a project's own tracks from progress", () => {
+      service.record(SCOPE, firebase, "other-aaaaaa");
+      service.record(SCOPE, twilio, "twilio-demo-bbbbbb");
+      const p = service.progress(SCOPE, "twilio-demo-bbbbbb");
+      expect(p.projectCartridgeIds).toEqual(["twilio"]);
+      expect(p.activeCartridgeIds).toEqual(expect.arrayContaining(["firebase", "twilio"]));
+    });
+  });
+
   it("persists a signal log and credits a badge exactly once", () => {
     const r1 = service.record(SCOPE, { kind: "file", path: "src/api/openapi.yaml" });
     expect(r1.newBadges.map((b) => b.badgeId)).toContain("spec-author");

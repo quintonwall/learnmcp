@@ -13,11 +13,13 @@ export type HudSnapshot = {
   rankProgress: number
   badges: number
   cartridges: HudCartridge[]
+  /** Cartridges active in the folder this session is in, as the server sees it. */
+  projectCartridges: string[]
   next?: HudNext
 }
 
 declare module 'claude-code' {
   interface PluginState {
-    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean }
+    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean; focus: string | null; project: string | null }
   }
 }

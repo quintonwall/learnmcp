@@ -5,6 +5,12 @@ import type { HudCartridge, HudNext, HudSnapshot } from '../types'
 
 const snapshot = atom({ plugin: 'learnmcp', key: 'snapshot' } as const, null)
 const isHidden = atom({ plugin: 'learnmcp', key: 'isHidden' } as const, false)
+/** The track the person chose to follow; null means follow whatever is active here. */
+const focus = atom({ plugin: 'learnmcp', key: 'focus' } as const, null)
+/** Id of the folder this session is in, as the plugin's hook and proxy compute it. */
+const project = atom({ plugin: 'learnmcp', key: 'project' } as const, null)
+
+const PANE = 'learnmcp'
 
 const DEFAULT_URL = 'https://learnmcp.ai/mcp'
 const STORE_KEY = 'snapshot'
@@ -19,7 +25,23 @@ type Progress = {
     progress: number
   }
   cartridges: HudCartridge[]
+  projectCartridgeIds?: string[]
   earnedBadges: number
+}
+
+/**
+ * Same id the hook and the MCP proxy send (folder name + FNV-1a of the path), so the
+ * server can tell which cartridges belong to the app being built. The path itself never
+ * leaves the machine.
+ */
+export function projectId(dir: string): string {
+  const abs = dir.length > 1 ? dir.replace(/[\\/]+$/, '') : dir
+  let h = 0x811c9dc5
+  for (let i = 0; i < abs.length; i++) {
+    h ^= abs.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return `${abs.split(/[\\/]/).pop() || 'root'}-${(h >>> 0).toString(16).padStart(8, '0')}`
 }
 
 export function bar(fraction: number, width = BAR): string {
@@ -64,14 +86,17 @@ export function titleCase(id: string): string {
 
 /**
  * The cartridge row, fitted to `columns`: as many tracks as fit, then `+N more`. Tracks
- * with progress come first, so the ones you're actually working on are the ones shown.
+ * in `priority` (this project's, the chosen one first) come first, then those with progress,
+ * so the ones you're actually working on are the ones shown.
  */
 export function fitCartridges(
   cartridges: HudCartridge[],
   columns: number,
+  priority: string[] = [],
 ): { shown: HudCartridge[]; more: number } {
+  const rank = (id: string) => (priority.includes(id) ? priority.indexOf(id) : priority.length)
   const sorted = [...cartridges].sort(
-    (a, b) => b.completed / (b.total || 1) - a.completed / (a.total || 1),
+    (a, b) => rank(a.id) - rank(b.id) || b.completed / (b.total || 1) - a.completed / (a.total || 1),
   )
   let width = 0
   for (const [i, c] of sorted.entries()) {
@@ -82,6 +107,13 @@ export function fitCartridges(
     width += part
   }
   return { shown: sorted, more: 0 }
+}
+
+/** Sort key for the pane: the followed track, then this folder's, then the rest. */
+function rankIn(id: string, chosen: string | null, here: string[]): number {
+  if (id === chosen) return -1
+  const i = here.indexOf(id)
+  return i === -1 ? here.length : i
 }
 
 /** The server answers either a plain JSON body or one SSE frame, as the plugin's hook handles. */
@@ -98,7 +130,13 @@ export function parseToolResult(text: string, contentType: string): unknown {
   return payload ? JSON.parse(payload) : null
 }
 
-async function callTool($: EngineInterface, url: string, token: string, name: string) {
+async function callTool(
+  $: EngineInterface,
+  url: string,
+  token: string,
+  name: string,
+  args: Record<string, unknown> = {},
+) {
   const res = await $.http.fetch(url, {
     method: 'POST',
     headers: {
@@ -106,7 +144,7 @@ async function callTool($: EngineInterface, url: string, token: string, name: st
       accept: 'application/json, text/event-stream',
       authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: {} } }),
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }),
   })
   if (!res.ok) return null
   return parseToolResult(res.text, res.headers['content-type'] ?? '')
@@ -126,9 +164,13 @@ async function refresh($: EngineInterface): Promise<void> {
     if (!token) return
     const url = (await $.env.get('LEARNMCP_URL')) || DEFAULT_URL
 
+    const here = (await read($, project)) ?? undefined
+    const chosen = (await read($, focus)) ?? undefined
     const [progress, next] = await Promise.all([
-      callTool($, url, token, 'progress') as Promise<Progress | null>,
-      callTool($, url, token, 'learn_next') as Promise<(HudNext & { message?: string }) | null>,
+      callTool($, url, token, 'progress', { project: here }) as Promise<Progress | null>,
+      callTool($, url, token, 'learn_next', { project: here, cartridge: chosen }) as Promise<
+        (HudNext & { message?: string }) | null
+      >,
     ])
     if (!progress) return
 
@@ -142,6 +184,7 @@ async function refresh($: EngineInterface): Promise<void> {
         rankProgress: progress.rank.progress,
         badges: progress.earnedBadges,
         cartridges: progress.cartridges,
+        projectCartridges: progress.projectCartridgeIds ?? [],
         next: next?.title
           ? { title: next.title, cartridgeId: next.cartridgeId, badge: next.badge, docs: next.docs }
           : undefined,
@@ -154,12 +197,28 @@ async function refresh($: EngineInterface): Promise<void> {
   }
 }
 
+/** Follow `id` (a cartridge) from now on in this folder; null goes back to following what's active here. */
+async function choose($: EngineInterface, id: string | null): Promise<void> {
+  await update($, focus, () => id)
+  const here = await read($, project)
+  if (here) void $.store.set(`focus:${here}`, id ?? '')
+  void refresh($)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'learnmcp-hud',
       description: 'Show or hide the learnmcp progress band above the prompt',
     })
+    await $.command.register({
+      name: 'learnmcp-pane',
+      description: 'Open the large learnmcp view: every track, and a picker for the one to follow',
+    })
+    const here = projectId(e.cwd)
+    await update($, project, () => here)
+    const chosen = ((await $.store.get(`focus:${here}`)) as string | undefined) || null
+    await update($, focus, () => chosen)
     // Draw last session's numbers at once, with this session's gains starting from zero.
     const cached = (await $.store.get(STORE_KEY)) as HudSnapshot | undefined
     if (cached && (await read($, snapshot)) === null) {
@@ -179,6 +238,81 @@ export const register: Register = on => {
     return result
   })
 
+  on('command.run', { command: 'learnmcp-pane' }, async $ => {
+    await $.ui.open({ id: PANE, title: 'learnmcp' })
+
+    return { text: 'learnmcp pane opened.' }
+  })
+
+  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    const shot = await read($, snapshot)
+    const { Box, Text, Button } = $.ui.resolve(e)
+    if (shot === null) return <Text dimColor>No progress yet — learnmcp fills this in after the first scan.</Text>
+
+    const chosen = await read($, focus)
+    const here = shot.projectCartridges ?? []
+    const rank = rankStyle(shot.rank)
+    const tracks = [...shot.cartridges].sort(
+      (a, b) => rankIn(a.id, chosen, here) - rankIn(b.id, chosen, here),
+    )
+
+    return (
+      <Box flexDirection="column">
+        <Text>
+          <Text color={rank.color} bold>{rank.emoji} {shot.rank}</Text>
+          <Text color="#ffd700" bold> {shot.points} pts</Text>
+          {shot.gained > 0 && <Text color="green" bold> +{shot.gained}</Text>}
+          {shot.nextRank && (
+            <Text dimColor> · {shot.pointsToNext} to {rankStyle(shot.nextRank).emoji} {shot.nextRank}</Text>
+          )}
+          <Text dimColor> · 🏅 {shot.badges}</Text>
+        </Text>
+        <Text dimColor>Points and badges come from every track. Your pick only changes what is suggested next.</Text>
+        <Text> </Text>
+        <Text bold>Follow a track</Text>
+        <Box flexDirection="row" flexWrap="wrap">
+          <Button key="track-auto" variant={chosen === null ? 'primary' : undefined} onPress={() => choose($, null)}>
+            Auto
+          </Button>
+          {tracks.map(c => (
+            <Button
+              key={`track-${c.id}`}
+              variant={chosen === c.id ? 'primary' : undefined}
+              onPress={() => choose($, c.id)}
+            >
+              {c.id}
+              {here.includes(c.id) ? ' ●' : ''}
+            </Button>
+          ))}
+        </Box>
+        <Text dimColor>● active in this folder{chosen ? ` · following ${chosen}` : ' · Auto follows this folder'}</Text>
+        <Text> </Text>
+        {tracks.map(c => {
+          const fraction = c.completed / (c.total || 1)
+          return (
+            <Text>
+              <Text>{c.id.padEnd(14)}</Text>
+              <Text color={heat(fraction)}>{bar(fraction, 12)}</Text>
+              <Text color={heat(fraction)}> {c.completed}/{c.total}</Text>
+              {here.includes(c.id) && <Text dimColor> ● here</Text>}
+              {chosen === c.id && <Text color="#ff8700"> ← following</Text>}
+            </Text>
+          )
+        })}
+        {shot.next && (
+          <Box flexDirection="column" marginTop={1}>
+            <Text color="#ff8700" bold>Next: {shot.next.title}</Text>
+            <Text dimColor>
+              {shot.next.cartridgeId}
+              {shot.next.badge ? ` → ${titleCase(shot.next.badge)}` : ''}
+              {shot.next.docs ? ` · ${shot.next.docs}` : ''}
+            </Text>
+          </Box>
+        )}
+      </Box>
+    )
+  })
+
   on('command.run', { command: 'learnmcp-hud' }, async $ => {
     const hidden = await update($, isHidden, h => !h)
 
@@ -193,7 +327,11 @@ export const register: Register = on => {
 
     const { Box, Text } = $.ui.resolve(e)
     const rank = rankStyle(shot.rank)
-    const { shown, more } = fitCartridges(shot.cartridges, e.props.bodyColumns)
+    const chosenTrack = await read($, focus)
+    const { shown, more } = fitCartridges(shot.cartridges, e.props.bodyColumns, [
+      ...(chosenTrack ? [chosenTrack] : []),
+      ...(shot.projectCartridges ?? []),
+    ])
 
     /** A bar whose filled part shades toward green as it nears complete. */
     const coloredBar = (fraction: number, width: number) => {

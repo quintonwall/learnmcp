@@ -115,21 +115,21 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       title: "Record a session activity",
       description:
         "Ingest one observed signal (a bash command, file change, dependency, MCP server/tool use). Returns any newly-earned badges, completed objectives, and your current points/rank.",
-      inputSchema: { signal: Signal, scope: z.string().optional() },
+      inputSchema: { signal: Signal, scope: z.string().optional(), project: z.string().optional().describe("Opaque id of the project this call is about; suggestions favour what is active there.") },
     },
-    async ({ signal, scope: s }) => {
+    async ({ signal, scope: s, project }) => {
       const sc = scope(s);
-      const result = service.record(sc, signal);
+      const result = service.record(sc, signal, project);
       // Computed from the same in-memory state `record` just updated — a caller that reads
       // `next` off this response can never see a suggestion for what it was just awarded,
       // which a separate learn_next round-trip (a second hydrate from Supabase) could.
-      return ok({ ...summarizeRecord(result), next: service.learnNext(sc) });
+      return ok({ ...summarizeRecord(result), next: service.learnNext(sc, undefined, project) });
     },
   );
 
   /** Shared by scan_project and record_activities: one batch, evaluated once. */
-  function recordAll(sc: string, signals: Signal[]): RecordResult {
-    return signals.length ? service.recordMany(sc, signals) : service.recompute(sc);
+  function recordAll(sc: string, signals: Signal[], project?: string): RecordResult {
+    return signals.length ? service.recordMany(sc, signals, project) : service.recompute(sc);
   }
 
   server.registerTool(
@@ -140,12 +140,12 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
         "Batch version of record_activity — ingest many observed signals (e.g. a session-start project scan) in a " +
         "single round trip instead of one per signal. Returns the same shape as record_activity, aggregated across " +
         "every signal in the batch.",
-      inputSchema: { signals: z.array(Signal), scope: z.string().optional() },
+      inputSchema: { signals: z.array(Signal), scope: z.string().optional(), project: z.string().optional().describe("Opaque id of the project this call is about; suggestions favour what is active there.") },
     },
-    async ({ signals, scope: s }) => {
+    async ({ signals, scope: s, project }) => {
       const sc = scope(s);
-      const result = recordAll(sc, signals);
-      return ok({ ...summarizeRecord(result), next: service.learnNext(sc) });
+      const result = recordAll(sc, signals, project);
+      return ok({ ...summarizeRecord(result), next: service.learnNext(sc, undefined, project) });
     },
   );
 
@@ -164,10 +164,11 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       inputSchema: {
         scope: z.string().optional(),
         cartridge: z.string().optional().describe("A cartridge id to scope the recommendation to."),
+        project: z.string().optional().describe("Opaque id of the project this call is about; suggestions favour what is active there."),
       },
     },
-    async ({ scope: s, cartridge }) => {
-      const rec = service.learnNext(scope(s), cartridge);
+    async ({ scope: s, cartridge, project }) => {
+      const rec = service.learnNext(scope(s), cartridge, project);
       if (rec) return ok(rec);
       return ok({
         message: cartridge
@@ -193,9 +194,9 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       title: "Progress summary",
       description:
         "Summarize progress: active cartridges, objectives completed vs. total, points, rank, and pending checks.",
-      inputSchema: { scope: z.string().optional() },
+      inputSchema: { scope: z.string().optional(), project: z.string().optional().describe("Opaque id of the project this call is about; suggestions favour what is active there.") },
     },
-    async ({ scope: s }) => ok(service.progress(scope(s))),
+    async ({ scope: s, project }) => ok(service.progress(scope(s), project)),
   );
 
   server.registerTool(
@@ -204,18 +205,18 @@ export function createMcpServer(deps: McpServerDeps): McpServer {
       title: "Scan a project",
       description:
         "Introspect a project directory (dependencies, files, configured MCP servers, skills) and record the resulting signals. Idempotent — safe to call on every session start.",
-      inputSchema: { dir: z.string(), scope: z.string().optional() },
+      inputSchema: { dir: z.string(), scope: z.string().optional(), project: z.string().optional().describe("Opaque id of the project this call is about; suggestions favour what is active there.") },
     },
-    async ({ dir, scope: s }) => {
+    async ({ dir, scope: s, project }) => {
       const sc = scope(s);
       // Plugin/user-level MCP servers too — on Codex (no hooks) this scan is the only
       // chance to notice them, and the project itself never references them.
       const signals = [...scanProject(dir), ...claudeEnvSignals(homedir())];
-      const result = recordAll(sc, signals);
+      const result = recordAll(sc, signals, project);
       return ok({
         scannedSignals: signals.length,
         ...summarizeRecord(result),
-        next: service.learnNext(sc),
+        next: service.learnNext(sc, undefined, project),
       });
     },
   );

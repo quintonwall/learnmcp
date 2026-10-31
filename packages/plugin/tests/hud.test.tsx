@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { fitCartridges, heat, rankStyle } from '../hooks/register'
+import { fitCartridges, heat, projectId, rankStyle } from '../hooks/register'
 
 const PROGRESS = {
   points: 140,
@@ -30,10 +30,13 @@ function learnmcp(on: On, token = 'tok') {
     if (e.path === '/home/me/.learnmcp/token' && token) return { value: `${token}\n` }
     return { deny: 'ENOENT' }
   })
-  const calls: string[] = []
+  const calls: string[] & { args?: Array<Record<string, unknown>> } = []
+  calls.args = []
   on('http.fetch', async (_$, e) => {
-    const name = JSON.parse(String(e.init?.body)).params.name as string
+    const params = JSON.parse(String(e.init?.body)).params
+    const name = params.name as string
     calls.push(name)
+    calls.args!.push({ name, ...params.arguments })
     const payload = name === 'progress' ? PROGRESS : NEXT
     const body = { jsonrpc: '2.0', id: 1, result: { content: [{ type: 'text', text: JSON.stringify(payload) }] } }
     return { value: { status: 200, ok: true, headers: { 'content-type': 'application/json' }, text: JSON.stringify(body) } }
@@ -106,4 +109,91 @@ test('bars shade toward green and ranks have their own emoji', async () => {
   expect(heat(1)).toBe('#2ea043')
   expect(rankStyle('Legend').emoji).toBe('👑')
   expect(rankStyle('Unknown').emoji).toBe('🎓')
+})
+
+const PANE = {
+  plugin: 'learnmcp',
+  component: 'Pane',
+  requestId: 'learnmcp',
+  props: {
+    title: 'learnmcp',
+    isFocused: false,
+    bodyColumns: 80,
+    placement: 'dock',
+    scroll: { offset: 0, bodyRows: 30 },
+    view: {},
+  },
+} as const
+
+/** The refresh after a turn is not awaited; mounting the band waits for it, as the band test does. */
+async function settled($: Parameters<Parameters<typeof test>[1]>[0]) {
+  const ui = await $.ui.mount({ ...BAND(120), surface: 'terminal' } as never)
+  await ui.find({ type: 'Text', text: /pts/ })
+  await ui.unmount()
+}
+
+test('the project id matches the one the hook and proxy send', async () => {
+  // Same value `node` computes in packages/plugin/hooks for this path.
+  expect(projectId('/Users/q/Code/twilio-demo')).toBe('twilio-demo-19807669')
+  expect(projectId('/Users/q/Code/twilio-demo/')).toBe('twilio-demo-19807669')
+})
+
+test('reads are tagged with the project they are about', async ($, on) => {
+  const calls = learnmcp(on)
+  await $.session.start({ ...start, cwd: '/Users/q/Code/twilio-demo' })
+  await $.turn.complete(TURN)
+  await settled($)
+
+  expect(calls.args!.find(c => c.name === 'progress')?.project).toBe('twilio-demo-19807669')
+  expect(calls.args!.find(c => c.name === 'learn_next')?.project).toBe('twilio-demo-19807669')
+})
+
+test('the large view lists every track and following one changes only what is suggested', async ($, on) => {
+  const calls = learnmcp(on)
+  await $.session.start(start)
+  await $.turn.complete(TURN)
+  await settled($)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...PANE, surface } as never)
+    for (const id of ['github', 'postman', 'supabase']) {
+      expect(await ui.find({ type: 'Button', key: `track-${id}` })).toBeDefined()
+    }
+    expect(await ui.find({ type: 'Text', text: /Points and badges come from every track/ })).toBeDefined()
+    await ui.unmount()
+  }
+
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' } as never)
+  await ui.press({ key: 'track-supabase' })
+  const asked = calls.args!.filter(c => c.name === 'learn_next').at(-1)
+  expect(asked?.cartridge).toBe('supabase')
+  // Points are not a function of the pick: progress is read the same way either side.
+  expect(calls.args!.filter(c => c.name === 'progress').at(-1)).not.toHaveProperty('cartridge')
+
+  await ui.press({ key: 'track-auto' })
+  expect(calls.args!.filter(c => c.name === 'learn_next').at(-1)?.cartridge).toBeUndefined()
+})
+
+test('the followed track is remembered per folder', async ($, on) => {
+  const calls = learnmcp(on)
+  await $.session.start({ ...start, cwd: '/proj/a' })
+  await $.turn.complete(TURN)
+  await settled($)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' } as never)
+  await ui.press({ key: 'track-postman' })
+
+  await $.session.start({ ...start, cwd: '/proj/a' })
+  await $.turn.complete(TURN)
+  await settled($)
+  expect(calls.args!.filter(c => c.name === 'learn_next').at(-1)?.cartridge).toBe('postman')
+
+  await $.session.start({ ...start, cwd: '/proj/b' })
+  await $.turn.complete(TURN)
+  await settled($)
+  expect(calls.args!.filter(c => c.name === 'learn_next').at(-1)?.cartridge).toBeUndefined()
+})
+
+test('this folder’s tracks come first in the band', async () => {
+  const { shown } = fitCartridges(PROGRESS.cartridges, 200, ['supabase'])
+  expect(shown[0]?.id).toBe('supabase')
 })

@@ -79,6 +79,7 @@ Check in anytime:
 | `/progress` | your points, rank, and standing |
 | `/cartridges` | everything learnmcp can teach, and what's active for you |
 | `/learnmcp-hud` | hide or show the progress band |
+| `/learnmcp-pane` | open the large view: every track, and a picker for the one to follow (points still come from all tracks) |
 
 ### The progress band
 

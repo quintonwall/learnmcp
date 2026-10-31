@@ -28,6 +28,23 @@ import path from "node:path";
 import os from "node:os";
 
 const DEFAULT_URL = "https://learnmcp.ai/mcp";
+
+/**
+ * Opaque id for the project a call is about: folder name plus a short hash of the full
+ * path. The server groups signals by it so suggestions can follow the app being built;
+ * hashing keeps the real path (and your username) on this machine.
+ */
+function projectId(dir) {
+  const abs = path.resolve(dir);
+  // FNV-1a over the path: a few lines of plain JS so the HUD module (which has no Node)
+  // can compute the very same id.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < abs.length; i++) {
+    h ^= abs.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return `${abs.split(/[\\/]/).pop() || "root"}-${(h >>> 0).toString(16).padStart(8, "0")}`;
+}
 const TOKEN_HEADER = "x-learnmcp-token";
 const TIMEOUT_MS = 30000; // generous: some tools (generate_cartridge) call an LLM
 
@@ -111,6 +128,26 @@ function localModeReply(message) {
   return null;
 }
 
+/** Tools whose answer depends on which project is being worked on. */
+const PROJECT_TOOLS = new Set([
+  "progress",
+  "learn_next",
+  "record_activity",
+  "record_activities",
+  "scan_project",
+]);
+
+/**
+ * Claude Code spawns this process in the project folder, so its cwd names the project the
+ * model is talking about. Fill it in unless the caller already chose one.
+ */
+function withProject(message) {
+  if (message?.method !== "tools/call" || !PROJECT_TOOLS.has(message.params?.name)) return message;
+  const args = message.params.arguments ?? {};
+  if (args.project) return message;
+  return { ...message, params: { ...message.params, arguments: { ...args, project: projectId(process.cwd()) } } };
+}
+
 async function forward(message) {
   const isRequest = message && typeof message === "object" && "id" in message;
 
@@ -134,7 +171,7 @@ async function forward(message) {
       method: "POST",
       headers,
       signal: controller.signal,
-      body: JSON.stringify(message),
+      body: JSON.stringify(withProject(message)),
     });
 
     const issued = res.headers.get(TOKEN_HEADER);

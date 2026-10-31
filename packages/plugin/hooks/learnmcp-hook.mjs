@@ -18,6 +18,23 @@ import path from "node:path";
 import os from "node:os";
 
 const DEFAULT_URL = "https://learnmcp.ai/mcp";
+
+/**
+ * Opaque id for the project a call is about: folder name plus a short hash of the full
+ * path. The server groups signals by it so suggestions can follow the app being built;
+ * hashing keeps the real path (and your username) on this machine.
+ */
+function projectId(dir) {
+  const abs = path.resolve(dir);
+  // FNV-1a over the path: a few lines of plain JS so the HUD module (which has no Node)
+  // can compute the very same id.
+  let h = 0x811c9dc5;
+  for (let i = 0; i < abs.length; i++) {
+    h ^= abs.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return `${abs.split(/[\\/]/).pop() || "root"}-${(h >>> 0).toString(16).padStart(8, "0")}`;
+}
 const TOKEN_HEADER = "x-learnmcp-token";
 const TIMEOUT_MS = 6000;
 
@@ -352,7 +369,7 @@ async function main() {
     // project can produce hundreds of signals, and awaiting them one at a time made
     // session start as slow as the project is large (slow enough to blow past a host's
     // own startup watchdog, e.g. the VS Code extension's subprocess-init timeout).
-    const progress = await callTool(url, "record_activities", { signals });
+    const progress = await callTool(url, "record_activities", { signals, project: projectId(dir) });
     if (!progress) return;
     const next = progress.next;
     const rank = progress.rank?.rank?.name ?? "Novice";
@@ -380,6 +397,7 @@ async function main() {
   }
 
   // post-tool-use / user-prompt-submit
+  const project = projectId(event.cwd || process.cwd());
   const signals = eventToSignals(event);
   if (!signals.length) return;
 
@@ -389,7 +407,7 @@ async function main() {
   const bareMcpServers = new Set();
   let last = null;
   for (const signal of signals) {
-    const res = await callTool(url, "record_activity", { signal });
+    const res = await callTool(url, "record_activity", { signal, project });
     if (!res) continue;
     last = res;
     badges.push(...(res.newBadges ?? []));

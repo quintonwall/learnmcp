@@ -75,8 +75,8 @@ export class ProgressService {
   ) {}
 
   /** Ingest a signal, persist any newly-earned badges/objectives, return the deltas. */
-  record(scope: string, signal: Signal): RecordResult {
-    return this.recordMany(scope, [signal]);
+  record(scope: string, signal: Signal, project?: string): RecordResult {
+    return this.recordMany(scope, [signal], project);
   }
 
   /**
@@ -86,7 +86,10 @@ export class ProgressService {
    * silently discarded the scan. The deltas are the same either way: the store only reports
    * a badge/objective as new the first time it is granted.
    */
-  recordMany(scope: string, signals: Signal[]): RecordResult {
+  recordMany(scope: string, signals: Signal[], project?: string): RecordResult {
+    // Tag what the caller observed with the project it was observed in, so suggestions can
+    // follow the app being built. A signal that already names a project keeps it.
+    if (project) signals = signals.map((s) => (s.project ? s : { ...s, project }));
     const beforeSignals = this.store.getSignals(scope);
     // Snapshot which tracks were already known so we can tell the difference between
     // "postman track just activated" and "postman was already active". Evaluation is pure
@@ -172,17 +175,22 @@ export class ProgressService {
    * in chat often hasn't triggered one: they installed the tool and are asking before
    * they've used it.
    */
-  learnNext(scope: string, cartridgeId?: string): Recommendation | null {
+  learnNext(scope: string, cartridgeId?: string, project?: string): Recommendation | null {
     const signals = this.store.getSignals(scope);
     const judgements = this.store.getJudgements(scope);
     const cartridges = this.registry.list();
     const state = evaluateProject(cartridges, signals, judgements);
 
+    // Completion is the learner's (badges follow the person), but *relevance* is the
+    // project's: with a project, try the cartridges active there first and only fall back
+    // to everything the learner has ever touched once the project's own are exhausted.
+    const projectActive = project ? this.activeInProject(scope, project) : [];
+    const globalOrder = state.activeCartridgeIds.length
+      ? state.activeCartridgeIds
+      : cartridges.map((c) => c.id);
     const order = cartridgeId
       ? [cartridgeId]
-      : state.activeCartridgeIds.length
-        ? state.activeCartridgeIds
-        : cartridges.map((c) => c.id);
+      : [...projectActive, ...globalOrder.filter((id) => !projectActive.includes(id))];
 
     for (const id of order) {
       const cartridge = cartridges.find((c) => c.id === id);
@@ -208,6 +216,14 @@ export class ProgressService {
     return null;
   }
 
+  /** Cartridges whose detection matches only the signals observed in `project`. */
+  activeInProject(scope: string, project: string): string[] {
+    const inProject = this.store.getSignals(scope).filter((s) => s.project === project);
+    if (!inProject.length) return [];
+    return evaluateProject(this.registry.list(), inProject, this.store.getJudgements(scope))
+      .activeCartridgeIds;
+  }
+
   listBadges(scope: string): {
     badges: StoredBadge[];
     points: number;
@@ -218,8 +234,10 @@ export class ProgressService {
     return { badges, points, rank: rankForPoints(points) };
   }
 
-  progress(scope: string): {
+  progress(scope: string, project?: string): {
     activeCartridgeIds: string[];
+    /** Present with a project: the cartridges active in that project alone. */
+    projectCartridgeIds?: string[];
     points: number;
     rank: RankProgress;
     cartridges: Array<{ id: string; completed: number; total: number }>;
@@ -236,6 +254,7 @@ export class ProgressService {
     }
     return {
       activeCartridgeIds: state.activeCartridgeIds,
+      ...(project ? { projectCartridgeIds: this.activeInProject(scope, project) } : {}),
       points: state.points,
       rank: state.rank,
       cartridges: state.activeCartridgeIds.map((id) => {
