@@ -86,6 +86,15 @@ describe("SqliteStore + ProgressService (in-memory)", () => {
       expect(service.learnNext(SCOPE, undefined, "app-aaaaaa")?.cartridgeId).toBe("twilio");
     });
 
+    it("lists every step of a track with whether it is done", () => {
+      service.record(SCOPE, { kind: "file", path: ".git", event: "exists" }, "app-aaaaaa");
+      const general = service.progress(SCOPE).cartridges.find((c) => c.id === "general")!;
+      expect(general.steps).toHaveLength(general.total);
+      expect(general.steps.filter((s) => s.done)).toHaveLength(general.completed);
+      expect(general.steps.find((s) => s.id === "version-control")?.done).toBe(true);
+      expect(general.steps.every((s) => s.title)).toBe(true);
+    });
+
     it("reports a project's own tracks from progress", () => {
       service.record(SCOPE, firebase, "other-aaaaaa");
       service.record(SCOPE, twilio, "twilio-demo-bbbbbb");

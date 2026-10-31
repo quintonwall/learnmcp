@@ -8,7 +8,16 @@ const PROGRESS = {
   rank: { rank: { name: 'Apprentice' }, next: { name: 'Journeyman' }, pointsToNext: 60, progress: 0.4 },
   cartridges: [
     { id: 'github', completed: 1, total: 6 },
-    { id: 'postman', completed: 3, total: 8 },
+    {
+      id: 'postman',
+      completed: 3,
+      total: 8,
+      steps: [
+        { id: 'a', title: 'Generate a spec', badge: 'spec-author', done: true },
+        { id: 'b', title: 'Sync your spec to a collection', why: 'Keeps tests honest', docs: 'https://example.com/sync', done: false },
+        { id: 'c', title: 'Run the collection in CI', done: false },
+      ],
+    },
     { id: 'supabase', completed: 0, total: 5 },
   ],
   earnedBadges: 7,
@@ -242,4 +251,26 @@ test('the band has a button that opens the large view', async ($, on) => {
     await ui.unmount()
   }
   expect(opened).toEqual(['learnmcp', 'learnmcp'])
+})
+
+test('selecting a track in the large view shows every step, and again hides them', async ($, on) => {
+  learnmcp(on)
+  await $.session.start(start)
+  await $.turn.complete(TURN)
+  await settled($)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...PANE, surface } as never)
+    expect(await ui.find({ type: 'Text', text: /Generate a spec/ })).toBeUndefined()
+
+    await ui.press({ key: 'row-postman' })
+    expect(await ui.find({ type: 'Text', text: /✓ Generate a spec/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /▶ Sync your spec to a collection/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /○ Run the collection in CI/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /Keeps tests honest/ })).toBeDefined()
+
+    await ui.press({ key: 'row-postman' })
+    expect(await ui.find({ type: 'Text', text: /Generate a spec/ })).toBeUndefined()
+    await ui.unmount()
+  }
 })

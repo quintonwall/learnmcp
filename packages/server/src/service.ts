@@ -17,6 +17,16 @@ import {
   type ObjectiveRef,
 } from "./detection.js";
 
+/** One thing a cartridge teaches, and whether it has been done. */
+export interface Step {
+  id: string;
+  title: string;
+  why?: string;
+  docs?: string;
+  badge?: string;
+  done: boolean;
+}
+
 export interface RecordResult {
   /** Badges newly earned by this signal (not previously credited). */
   newBadges: GrantedBadge[];
@@ -267,7 +277,7 @@ export class ProgressService {
     upNext: Recommendation[];
     points: number;
     rank: RankProgress;
-    cartridges: Array<{ id: string; completed: number; total: number }>;
+    cartridges: Array<{ id: string; completed: number; total: number; steps: Step[] }>;
     earnedBadges: number;
     pending: number;
   } {
@@ -287,10 +297,22 @@ export class ProgressService {
       rank: state.rank,
       cartridges: state.activeCartridgeIds.map((id) => {
         const c = cartridges.find((x) => x.id === id)!;
+        const done = new Set(
+          state.completedObjectives.filter((o) => o.cartridgeId === id).map((o) => o.objectiveId),
+        );
         return {
           id,
           completed: completedByCartridge.get(id) ?? 0,
           total: c.objectives.length + c.bestPractices.length,
+          // Every step, core objectives first, in the order they are suggested.
+          steps: [...c.objectives, ...c.bestPractices].map((o) => ({
+            id: o.id,
+            title: o.title,
+            why: o.why,
+            docs: o.docs,
+            badge: o.badge,
+            done: done.has(o.id),
+          })),
         };
       }),
       earnedBadges: this.store.getGrantedBadges(scope).length,

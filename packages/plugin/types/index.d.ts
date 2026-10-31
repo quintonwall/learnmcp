@@ -1,4 +1,6 @@
-export type HudCartridge = { id: string; completed: number; total: number }
+export type HudStep = { id: string; title: string; why?: string; docs?: string; badge?: string; done: boolean }
+
+export type HudCartridge = { id: string; completed: number; total: number; steps?: HudStep[] }
 
 export type HudNext = { title: string; cartridgeId: string; badge?: string; docs?: string }
 
@@ -22,6 +24,6 @@ export type HudSnapshot = {
 
 declare module 'claude-code' {
   interface PluginState {
-    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean; focus: string | null; project: string | null; tick: number }
+    learnmcp: { snapshot: HudSnapshot | null; isHidden: boolean; focus: string | null; project: string | null; tick: number; expanded: string[] }
   }
 }

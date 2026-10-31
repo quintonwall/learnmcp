@@ -14,6 +14,9 @@ const project = atom({ plugin: 'learnmcp', key: 'project' } as const, null)
 const tick = atom({ plugin: 'learnmcp', key: 'tick' } as const, 0)
 const ROTATE_MS = 2000
 
+/** Tracks whose steps are open in the large view. */
+const expanded = atom({ plugin: 'learnmcp', key: 'expanded' } as const, [] as string[])
+
 const PANE = 'learnmcp'
 
 const DEFAULT_URL = 'https://learnmcp.ai/mcp'
@@ -270,6 +273,7 @@ export const register: Register = on => {
     if (shot === null) return <Text dimColor>No progress yet — learnmcp fills this in after the first scan.</Text>
 
     const chosen = await read($, focus)
+    const open = await read($, expanded)
     const here = shot.projectCartridges ?? []
     const rank = rankStyle(shot.rank)
     const tracks = [...shot.cartridges].sort(
@@ -307,16 +311,40 @@ export const register: Register = on => {
         </Box>
         <Text dimColor>● active in this folder{chosen ? ` · following ${chosen}` : ' · Auto follows this folder'}</Text>
         <Text> </Text>
+        <Text dimColor>Select a track to see every step.</Text>
         {tracks.map(c => {
           const fraction = c.completed / (c.total || 1)
+          const isOpen = open.includes(c.id)
+          const nextStep = c.steps?.find(step => !step.done)
           return (
-            <Text>
-              <Text>{c.id.padEnd(14)}</Text>
-              <Text color={heat(fraction)}>{bar(fraction, 12)}</Text>
-              <Text color={heat(fraction)}> {c.completed}/{c.total}</Text>
-              {here.includes(c.id) && <Text dimColor> ● here</Text>}
-              {chosen === c.id && <Text color="#ff8700"> ← following</Text>}
-            </Text>
+            <Box flexDirection="column">
+              <Button
+                key={`row-${c.id}`}
+                plain
+                onPress={() => update($, expanded, list => (list.includes(c.id) ? list.filter(x => x !== c.id) : [...list, c.id]))}
+              >
+                {isOpen ? '▾ ' : '▸ '}
+                {c.id.padEnd(14)}
+                <Text color={heat(fraction)}>{bar(fraction, 12)}</Text>
+                <Text color={heat(fraction)}> {c.completed}/{c.total}</Text>
+                {here.includes(c.id) ? <Text dimColor> ● here</Text> : ''}
+                {chosen === c.id ? <Text color="#ff8700"> ← following</Text> : ''}
+              </Button>
+              {isOpen && (c.steps ?? []).length === 0 && <Text dimColor>    No step list yet — update the learnmcp server.</Text>}
+              {isOpen &&
+                (c.steps ?? []).map(step => (
+                  <Box flexDirection="column" marginLeft={4}>
+                    <Text>
+                      <Text color={step.done ? '#2ea043' : undefined} dimColor={step.done}>
+                        {step.done ? '✓' : step === nextStep ? '▶' : '○'} {step.title}
+                      </Text>
+                      {step.badge && <Text dimColor> → {titleCase(step.badge)}</Text>}
+                    </Text>
+                    {!step.done && step.why && <Text dimColor>    {step.why}</Text>}
+                    {!step.done && step.docs && <Text dimColor>    {step.docs}</Text>}
+                  </Box>
+                ))}
+            </Box>
           )
         })}
         {shot.next && (
