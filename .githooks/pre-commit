@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Report-only pre-commit review of the staged diff via Factory's Droid.
+# Never blocks a commit (always exits 0). Sensitive files are never sent.
+set -uo pipefail
+
+command -v droid >/dev/null 2>&1 || { echo "[droid-review] droid not installed, skipping"; exit 0; }
+
+# Sensitive paths are excluded from the diff, always. Add to this list, never remove.
+EXCLUDES=(
+  ':!.env' ':!.env.*' ':!**/.env' ':!**/.env.*'
+  ':!*.pem' ':!*.key' ':!*.p12' ':!*.pfx' ':!*.crt' ':!*.jks' ':!*.keystore'
+  ':!**/id_rsa*' ':!**/id_ed25519*'
+  ':!**/credentials*' ':!**/secret*' ':!**/*token*' ':!**/*.secrets.*'
+  ':!.npmrc' ':!**/.npmrc' ':!.netrc' ':!*.tfstate' ':!*.tfvars'
+  ':!.learnmcp/**' ':!**/.learnmcp/**' ':!*.sqlite' ':!*.db'
+  ':!supabase/.temp/**' ':!*service-account*.json' ':!package-lock.json'
+)
+
+DIFF=$(git diff --cached --diff-filter=ACM -- . "${EXCLUDES[@]}" | head -c 200000)
+[ -z "$DIFF" ] && exit 0
+
+# If a secret scanner is available, never ship a diff that contains a secret.
+if command -v gitleaks >/dev/null 2>&1; then
+  if ! gitleaks protect --staged --redact >/dev/null 2>&1; then
+    echo "[droid-review] gitleaks flagged the staged changes, skipping AI review. Run: gitleaks protect --staged --redact"
+    exit 0
+  fi
+fi
+
+# Run droid from an empty temp dir so its file tools can only see the filtered diff,
+# never the repo (and any .env or token files in it).
+SANDBOX=$(mktemp -d)
+trap 'rm -rf "$SANDBOX"' EXIT
+printf '%s' "$DIFF" > "$SANDBOX/staged.diff"
+
+echo "[droid-review] reviewing staged diff (report only)..."
+(cd "$SANDBOX" && droid exec \
+  "Review the git diff in ./staged.diff. It is the only file available; do not look elsewhere. Report only; do not modify anything. Flag: hardcoded secrets or credentials, \
+injection/auth/authorization flaws, unsafe deserialization, sensitive data in logs, and likely regressions. \
+List findings as file:line - severity - issue. If none, say 'No issues found'.") \
+  || echo "[droid-review] review failed to run (commit not blocked)"
+
+exit 0
