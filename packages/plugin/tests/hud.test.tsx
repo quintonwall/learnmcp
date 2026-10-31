@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { fitCartridges, heat, nextItems, projectId, rankStyle } from '../hooks/register'
+import { cartridgeColor, fitCartridges, heat, nextItems, projectId, rankStyle } from '../hooks/register'
 
 const PROGRESS = {
   points: 140,
@@ -172,13 +172,14 @@ test('the large view lists every track and following one changes only what is su
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface } as never)
     for (const id of ['github', 'postman', 'supabase']) {
-      expect(await ui.find({ type: 'Button', key: `track-${id}` })).toBeDefined()
+      expect(await ui.find({ type: 'Button', key: `row-${id}` })).toBeDefined()
     }
     expect(await ui.find({ type: 'Text', text: /Points and badges come from every track/ })).toBeDefined()
     await ui.unmount()
   }
 
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' } as never)
+  await ui.press({ key: 'row-supabase' })
   await ui.press({ key: 'track-supabase' })
   const asked = calls.args!.filter(c => c.name === 'learn_next').at(-1)
   expect(asked?.cartridge).toBe('supabase')
@@ -195,6 +196,7 @@ test('the followed track is remembered per folder', async ($, on) => {
   await $.turn.complete(TURN)
   await settled($)
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' } as never)
+  await ui.press({ key: 'row-postman' })
   await ui.press({ key: 'track-postman' })
 
   await $.session.start({ ...start, cwd: '/proj/a' })
@@ -273,4 +275,10 @@ test('selecting a track in the large view shows every step, and again hides them
     expect(await ui.find({ type: 'Text', text: /Generate a spec/ })).toBeUndefined()
     await ui.unmount()
   }
+})
+
+test('every bundled track has its own colour, and unknown ones get a stable one', async () => {
+  const ids = ['twilio', 'general', 'firebase', 'postman', 'supabase', 'vercel', 'github', 'stripe', 'figma', 'notion', 'slack', 'exa', 'playwright', 'context7', 'serena', 'atlassian', 'chrome-devtools']
+  expect(new Set(ids.map(cartridgeColor)).size).toBe(ids.length)
+  expect(cartridgeColor('brand-new')).toBe(cartridgeColor('brand-new'))
 })

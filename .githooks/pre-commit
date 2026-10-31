@@ -13,7 +13,7 @@ EXCLUDES=(
   ':!**/credentials*' ':!**/secret*' ':!**/*token*' ':!**/*.secrets.*'
   ':!.npmrc' ':!**/.npmrc' ':!.netrc' ':!*.tfstate' ':!*.tfvars'
   ':!.learnmcp/**' ':!**/.learnmcp/**' ':!*.sqlite' ':!*.db'
-  ':!supabase/.temp/**' ':!*service-account*.json' ':!package-lock.json'
+  ':!.droid-review/**' ':!supabase/.temp/**' ':!*service-account*.json' ':!package-lock.json'
 )
 
 DIFF=$(git diff --cached --diff-filter=ACM -- . "${EXCLUDES[@]}" | head -c 200000)
@@ -33,11 +33,21 @@ SANDBOX=$(mktemp -d)
 trap 'rm -rf "$SANDBOX"' EXIT
 printf '%s' "$DIFF" > "$SANDBOX/staged.diff"
 
-echo "[droid-review] reviewing staged diff (report only)..."
+ROOT=$(git rev-parse --show-toplevel)
+LOG_DIR="$ROOT/.droid-review"
+LOG="$LOG_DIR/review.log"
+mkdir -p "$LOG_DIR"
+{
+  echo "=== $(date '+%Y-%m-%d %H:%M:%S') branch=$(git rev-parse --abbrev-ref HEAD) ==="
+  git diff --cached --name-only --diff-filter=ACM -- . "${EXCLUDES[@]}"
+  echo "---"
+} >> "$LOG"
+
+echo "[droid-review] reviewing staged diff (report only, log: .droid-review/review.log)..."
 (cd "$SANDBOX" && droid exec \
   "Review the git diff in ./staged.diff. It is the only file available; do not look elsewhere. Report only; do not modify anything. Flag: hardcoded secrets or credentials, \
 injection/auth/authorization flaws, unsafe deserialization, sensitive data in logs, and likely regressions. \
-List findings as file:line - severity - issue. If none, say 'No issues found'.") \
+List findings as file:line - severity - issue. If none, say 'No issues found'.") 2>&1 | tee -a "$LOG" \
   || echo "[droid-review] review failed to run (commit not blocked)"
 
 exit 0

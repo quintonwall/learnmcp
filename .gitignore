@@ -17,3 +17,6 @@ requirements/
 
 # prepack copy of the shared cartridges/ into the publishable server package
 packages/server/cartridges/
+
+# droid pre-commit review log (may quote code)
+.droid-review/

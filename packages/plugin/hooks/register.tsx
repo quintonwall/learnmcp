@@ -126,6 +126,54 @@ export function nextItems(shot: HudSnapshot, chosen: string | null): HudNext[] {
   return [...all].sort((a, b) => Number(b.cartridgeId === chosen) - Number(a.cartridgeId === chosen))
 }
 
+/** A colour per known track, so each reads as its own thing; unknown ones are picked by name. */
+const CARTRIDGE_COLORS: Record<string, string> = {
+  twilio: '#f22f46',
+  general: '#8b949e',
+  firebase: '#ffa611',
+  postman: '#ff6c37',
+  supabase: '#3ecf8e',
+  vercel: '#e6edf3',
+  github: '#a371f7',
+  stripe: '#7a73ff',
+  figma: '#d26bff',
+  notion: '#d2b48c',
+  slack: '#e8386d',
+  exa: '#5b9dff',
+  playwright: '#45ba4b',
+  context7: '#1fc8e0',
+  serena: '#d29922',
+  atlassian: '#3d8bff',
+  'chrome-devtools': '#6ea8fe',
+}
+const FALLBACK_COLORS = ['#ff7b72', '#79c0ff', '#56d364', '#e3b341', '#d2a8ff', '#ffa657', '#39c5cf', '#f778ba']
+
+export function cartridgeColor(id: string): string {
+  const known = CARTRIDGE_COLORS[id]
+  if (known) return known
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
+  return FALLBACK_COLORS[h % FALLBACK_COLORS.length]!
+}
+
+const METER_CELLS = 14
+
+/**
+ * A progress meter drawn from coloured cells rather than block characters: surfaces
+ * that draw their own buttons and fonts render `█░` as odd squares, while a Box's
+ * background is painted the same everywhere.
+ */
+function meter($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0], fraction: number, color: string) {
+  const { Box } = $.ui.resolve(e)
+  const filled = fraction > 0 ? Math.max(1, Math.round(Math.min(1, fraction) * METER_CELLS)) : 0
+
+  return (
+    <Box flexDirection="row" width={METER_CELLS} height={1} backgroundColor="#30363d">
+      {filled > 0 && <Box width={filled} height={1} backgroundColor={color} />}
+    </Box>
+  )
+}
+
 /** Sort key for the pane: the followed track, then this folder's, then the rest. */
 function rankIn(id: string, chosen: string | null, here: string[]): number {
   if (id === chosen) return -1
@@ -276,6 +324,7 @@ export const register: Register = on => {
     const open = await read($, expanded)
     const here = shot.projectCartridges ?? []
     const rank = rankStyle(shot.rank)
+    // The followed track, then this folder's, then the rest.
     const tracks = [...shot.cartridges].sort(
       (a, b) => rankIn(a.id, chosen, here) - rankIn(b.id, chosen, here),
     )
@@ -291,51 +340,54 @@ export const register: Register = on => {
           )}
           <Text dimColor> · 🏅 {shot.badges}</Text>
         </Text>
-        <Text dimColor>Points and badges come from every track. Your pick only changes what is suggested next.</Text>
+        <Text dimColor>Points and badges come from every track. Following one only changes what is suggested next.</Text>
         <Text> </Text>
-        <Text bold>Follow a track</Text>
-        <Box flexDirection="row" flexWrap="wrap">
-          <Button key="track-auto" variant={chosen === null ? 'primary' : undefined} onPress={() => choose($, null)}>
-            Auto
+        <Text dimColor>
+          {chosen ? `Following ${chosen}.` : 'Auto: suggestions follow this folder.'} ● = active in this folder. Select a track for its steps.
+        </Text>
+        {chosen && (
+          <Button key="track-auto" plain onPress={() => choose($, null)}>
+            Stop following {chosen} (Auto)
           </Button>
-          {tracks.map(c => (
-            <Button
-              key={`track-${c.id}`}
-              variant={chosen === c.id ? 'primary' : undefined}
-              onPress={() => choose($, c.id)}
-            >
-              {c.id}
-              {here.includes(c.id) ? ' ●' : ''}
-            </Button>
-          ))}
-        </Box>
-        <Text dimColor>● active in this folder{chosen ? ` · following ${chosen}` : ' · Auto follows this folder'}</Text>
+        )}
         <Text> </Text>
-        <Text dimColor>Select a track to see every step.</Text>
         {tracks.map(c => {
+          const color = cartridgeColor(c.id)
           const fraction = c.completed / (c.total || 1)
           const isOpen = open.includes(c.id)
           const nextStep = c.steps?.find(step => !step.done)
           return (
             <Box flexDirection="column">
-              <Button
-                key={`row-${c.id}`}
-                plain
-                onPress={() => update($, expanded, list => (list.includes(c.id) ? list.filter(x => x !== c.id) : [...list, c.id]))}
-              >
-                {isOpen ? '▾ ' : '▸ '}
-                {c.id.padEnd(14)}
-                <Text color={heat(fraction)}>{bar(fraction, 12)}</Text>
-                <Text color={heat(fraction)}> {c.completed}/{c.total}</Text>
-                {here.includes(c.id) ? <Text dimColor> ● here</Text> : ''}
-                {chosen === c.id ? <Text color="#ff8700"> ← following</Text> : ''}
-              </Button>
-              {isOpen && (c.steps ?? []).length === 0 && <Text dimColor>    No step list yet — update the learnmcp server.</Text>}
+              <Box flexDirection="row">
+                <Button
+                  key={`row-${c.id}`}
+                  plain
+                  onPress={() => update($, expanded, list => (list.includes(c.id) ? list.filter(x => x !== c.id) : [...list, c.id]))}
+                >
+                  {isOpen ? '▾' : '▸'}
+                </Button>
+                <Text color={color} bold> {c.id.padEnd(12)}</Text>
+                <Text> </Text>
+                {meter($, e, fraction, color)}
+                <Text color={color} bold> {c.completed}/{c.total}</Text>
+                {here.includes(c.id) && <Text dimColor> ● here</Text>}
+                {chosen === c.id && <Text color="#ff8700"> ← following</Text>}
+              </Box>
+              {isOpen && chosen !== c.id && (
+                <Box marginLeft={4}>
+                  <Button key={`track-${c.id}`} plain onPress={() => choose($, c.id)}>
+                    Follow {c.id}
+                  </Button>
+                </Box>
+              )}
+              {isOpen && (c.steps ?? []).length === 0 && (
+                <Text dimColor>    No step list yet — update the learnmcp server.</Text>
+              )}
               {isOpen &&
                 (c.steps ?? []).map(step => (
                   <Box flexDirection="column" marginLeft={4}>
                     <Text>
-                      <Text color={step.done ? '#2ea043' : undefined} dimColor={step.done}>
+                      <Text color={step.done ? '#2ea043' : step === nextStep ? color : undefined} dimColor={step.done}>
                         {step.done ? '✓' : step === nextStep ? '▶' : '○'} {step.title}
                       </Text>
                       {step.badge && <Text dimColor> → {titleCase(step.badge)}</Text>}
@@ -429,7 +481,7 @@ export const register: Register = on => {
             return (
               <Text>
                 {i > 0 && <Text dimColor> · </Text>}
-                <Text>{c.id} </Text>
+                <Text color={cartridgeColor(c.id)} bold>{c.id} </Text>
                 {coloredBar(fraction, 5)}
                 <Text color={heat(fraction)}> {c.completed}/{c.total}</Text>
               </Text>
