@@ -350,20 +350,65 @@ function readStdin() {
 const emit = (obj) => process.stdout.write(JSON.stringify(obj));
 
 /**
- * Tell the model, not the user, which objective is still open before it starts working.
+ * The open objectives (one per track) are kept in a small local file per project, written
+ * at session start and patched as objectives are earned. The prompt hook reads that file
+ * and never touches the network: a call on every prompt would stall each one by the
+ * server's latency (up to TIMEOUT_MS), and fail silently when it timed out.
+ */
+const upNextPath = (project) => path.join(os.homedir(), ".learnmcp", `upnext-${project}.json`);
+
+function readUpNext(project) {
+  try {
+    const list = JSON.parse(readFileSync(upNextPath(project), "utf8"));
+    return Array.isArray(list) ? list.filter((o) => o?.objectiveId && o?.cartridgeId) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeUpNext(project, list) {
+  try {
+    mkdirSync(path.dirname(upNextPath(project)), { recursive: true });
+    writeFileSync(
+      upNextPath(project),
+      JSON.stringify(list.map(({ cartridgeId, objectiveId, title, why }) => ({ cartridgeId, objectiveId, title, why }))),
+      "utf8",
+    );
+  } catch {
+    /* non-fatal: no nudges until the next session start */
+  }
+}
+
+/**
+ * Fallback when the full list can't be refetched after an objective is earned: drop what
+ * was earned and slot in the server's fresh `next` for its track. Other tracks that earned
+ * something in the same call lose their entry until the next session start.
+ */
+function patchUpNext(project, earned, next) {
+  const gone = new Set(earned.map((o) => `${o.cartridgeId}/${o.objectiveId}`));
+  let list = readUpNext(project).filter((o) => !gone.has(`${o.cartridgeId}/${o.objectiveId}`));
+  if (next?.objectiveId) list = [...list.filter((o) => o.cartridgeId !== next.cartridgeId), next];
+  writeUpNext(project, list);
+}
+
+/**
+ * Tell the model, not the user, which objectives are still open before it starts working.
  * Badges are earned by using the right skill or tool, and people don't know the skill
  * names — so the model has to reach for them unprompted. additionalContext is the model's
  * channel; nothing is printed to the user.
  *
+ * Every track's objective is listed, not one pick: a single "next" is the same for any
+ * prompt, so it could name a Firebase step while the user is asking about Twilio.
+ *
  * Once per objective per session: repeating it on every prompt would be noise, and an
  * ignored nudge shouldn't be re-sent. Short prompts ("yes", "continue") are skipped.
  */
-async function nudge(url, event, project) {
+function nudge(event, project) {
   const prompt = String(event.prompt ?? "").trim();
   if (prompt.length < 20) return;
 
-  const rec = await callTool(url, "learn_next", { project });
-  if (!rec?.objectiveId) return;
+  const open = readUpNext(project);
+  if (!open.length) return;
 
   const seenFile = path.join(os.tmpdir(), `learnmcp-nudged-${event.session_id || "session"}.json`);
   let seen = [];
@@ -372,10 +417,11 @@ async function nudge(url, event, project) {
   } catch {
     /* first nudge this session */
   }
-  const key = `${rec.cartridgeId}/${rec.objectiveId}`;
-  if (seen.includes(key)) return;
+  const keyOf = (o) => `${o.cartridgeId}/${o.objectiveId}`;
+  const fresh = open.filter((o) => !seen.includes(keyOf(o)));
+  if (!fresh.length) return;
   try {
-    writeFileSync(seenFile, JSON.stringify([...seen, key]), "utf8");
+    writeFileSync(seenFile, JSON.stringify([...seen, ...fresh.map(keyOf)]), "utf8");
   } catch {
     /* worst case we nudge twice */
   }
@@ -384,9 +430,10 @@ async function nudge(url, event, project) {
     hookSpecificOutput: {
       hookEventName: "UserPromptSubmit",
       additionalContext:
-        `learnmcp: the learner's next open objective is "${rec.title}" (${rec.cartridgeId}). ${rec.why ?? ""} ` +
-        `If it fits what they're asking for, do it with the matching skill or MCP tool rather than from memory, ` +
-        `and say which one you used. Don't force it if it doesn't fit.`,
+        `learnmcp: the learner has these open objectives, one per track:\n` +
+        fresh.map((o) => `- [${o.cartridgeId}] ${o.title}: ${o.why ?? ""}`).join("\n") +
+        `\nIf one belongs to the technology they're asking about, do it with the matching skill or MCP tool ` +
+        `before answering from memory, and say which you used. Ignore the rest.`,
     },
   });
 }
@@ -411,8 +458,13 @@ async function main() {
     // project can produce hundreds of signals, and awaiting them one at a time made
     // session start as slow as the project is large (slow enough to blow past a host's
     // own startup watchdog, e.g. the VS Code extension's subprocess-init timeout).
-    const progress = await callTool(url, "record_activities", { signals, project: projectId(dir) });
+    const here = projectId(dir);
+    // In order, not side by side: the list has to reflect what this scan just completed,
+    // and the first-ever call mints the anonymous identity, which two at once would do twice.
+    const progress = await callTool(url, "record_activities", { signals, project: here });
     if (!progress) return;
+    const overview = await callTool(url, "progress", { project: here });
+    if (overview?.upNext) writeUpNext(here, overview.upNext);
     const next = progress.next;
     const rank = progress.rank?.rank?.name ?? "Novice";
     const points = progress.points ?? 0;
@@ -444,7 +496,7 @@ async function main() {
   if (!signals.length) {
     // An ordinary prompt (not a slash command) earns nothing, but it's the moment before
     // the work starts — the one time a nudge can still change which skills get used.
-    if (event.hook_event_name === "UserPromptSubmit") await nudge(url, event, project);
+    if (event.hook_event_name === "UserPromptSubmit") nudge(event, project);
     return;
   }
 
@@ -480,6 +532,13 @@ async function main() {
     // exact state that call just wrote) rather than a second learn_next round-trip, so it
     // can never suggest the objective this very message just awarded a badge for.
     const next = last.next;
+    if (objectives.length) {
+      // An earned objective's successor is only known for the track `next` belongs to, so
+      // ask for the whole list; patching is the fallback when that call fails.
+      const overview = await callTool(url, "progress", { project });
+      if (overview?.upNext) writeUpNext(project, overview.upNext);
+      else patchUpNext(project, objectives, next);
+    }
     const r = last.rank ?? {};
     const standing = r.next
       ? `${r.rank?.name} · ${last.points} pts (${r.pointsToNext} to ${r.next.name})`

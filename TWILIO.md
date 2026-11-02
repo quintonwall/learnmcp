@@ -168,8 +168,9 @@ Earns **Compliant**.
 | `/learnmcp:progress` | What you've completed so far on each track |
 | "Use any relevant Twilio skills and the Twilio docs tools at each stage" | Added to any prompt, makes Claude look for skills itself |
 
-learnmcp also tells Claude about your next open objective when you submit a prompt, once per
-objective per session, so the right skill is often used without you asking. It's a hint,
+learnmcp also tells Claude which objectives are still open (one per track) when you submit a
+prompt, once per objective per session, so the right skill is often used without you asking.
+The list is saved locally at session start, so it adds no delay to your prompts. It's a hint,
 not a guarantee: Claude can still skip a skill that doesn't fit, so if a badge doesn't
 arrive, ask for the skill by name.
 
