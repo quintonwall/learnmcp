@@ -14,6 +14,8 @@
  */
 
 import { existsSync, readFileSync, readdirSync, statSync, mkdirSync, writeFileSync, chmodSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 
@@ -37,6 +39,8 @@ function projectId(dir) {
 }
 const TOKEN_HEADER = "x-learnmcp-token";
 const TIMEOUT_MS = 6000;
+/** The background sync blocks nobody, so it can wait out a slow server. */
+const SYNC_TIMEOUT_MS = 60_000;
 
 // Colour the one line the user actually sees, so a badge doesn't read as grey noise.
 // Honours the NO_COLOR convention (https://no-color.org) — some terminals and log
@@ -296,13 +300,13 @@ function claudeEnvSignals(home) {
 
 // --- transport -----------------------------------------------------------------------
 
-async function callTool(url, name, args) {
+async function callTool(url, name, args, timeoutMs = TIMEOUT_MS) {
   const token = loadToken();
   const headers = { "content-type": "application/json", accept: "application/json, text/event-stream" };
   if (token) headers.authorization = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -438,6 +442,63 @@ function nudge(event, project) {
   });
 }
 
+// --- session start: background sync + what it saved ---------------------------------
+
+const summaryPath = (project) => path.join(os.homedir(), ".learnmcp", `session-${project}.json`);
+
+function readSummary(project) {
+  try {
+    return JSON.parse(readFileSync(summaryPath(project), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function writeSummary(project, summary) {
+  try {
+    mkdirSync(path.dirname(summaryPath(project)), { recursive: true });
+    writeFileSync(summaryPath(project), JSON.stringify(summary), "utf8");
+  } catch {
+    /* non-fatal: the next session start just has nothing to show */
+  }
+}
+
+/** Run `sync` for `dir` as its own process, outliving this hook. */
+function spawnSync(dir) {
+  try {
+    const child = spawn(process.execPath, [fileURLToPath(import.meta.url), "sync", dir], {
+      detached: true,
+      stdio: "ignore",
+      env: process.env,
+    });
+    child.on("error", () => {});
+    child.unref();
+  } catch {
+    /* fail open: no sync this session */
+  }
+}
+
+/** The session-start message: what the user sees, and what the model is told. */
+function sessionOutput({ rank, points, tracks, next }) {
+  const lines = [
+    `learnmcp is tracking your progress. Rank ${rank} · ${points} pts.`,
+    tracks?.length ? `Active learning tracks: ${tracks.join(", ")}.` : "No cartridges active yet.",
+    next?.title ? `Suggested next: ${next.title} (${next.cartridgeId}) — ${next.why ?? ""}`.trim() : "",
+  ].filter(Boolean);
+
+  // Two audiences, two channels. additionalContext is wrapped in a system reminder for
+  // the model and never rendered, so on its own the user sees nothing at all — which
+  // reads as learnmcp being broken. systemMessage is the only part they actually see.
+  return {
+    systemMessage: block(
+      gold(`${rank} · ${points} pts`),
+      next?.title ? `${orange(link(next.docs, `Next: ${next.title}`))} ${dim(`(${next.cartridgeId})`)}` : null,
+    ),
+    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
+  };
+}
+
+
 async function main() {
   const cmd = process.argv[2];
   const url = remoteUrl();
@@ -452,40 +513,44 @@ async function main() {
   }
 
   if (cmd === "session-start") {
+    // The sync can take as long as the server needs, so it runs detached and this hook
+    // returns at once from what the last sync saved. Waiting on it made every session start
+    // as slow as the server — past the hook's timeout, so nothing was ever recorded.
     const dir = event.cwd || process.cwd();
-    const signals = [...scanProject(dir), ...claudeEnvSignals(os.homedir())];
-    // One round trip for the whole scan, not one per file/dependency/MCP server — a real
-    // project can produce hundreds of signals, and awaiting them one at a time made
-    // session start as slow as the project is large (slow enough to blow past a host's
-    // own startup watchdog, e.g. the VS Code extension's subprocess-init timeout).
+    spawnSync(dir);
+    const saved = readSummary(projectId(dir));
+    emit(
+      saved
+        ? sessionOutput(saved)
+        : {
+            // First session here: nothing saved yet, and saying nothing reads as broken.
+            systemMessage: block(dim("syncing your progress — it shows up from the next session")),
+            hookSpecificOutput: {
+              hookEventName: "SessionStart",
+              additionalContext: "learnmcp is tracking your progress; the first sync for this project is running.",
+            },
+          },
+    );
+    return;
+  }
+
+  if (cmd === "sync") {
+    // Run by session-start, detached: no stdin, no output, may take a while.
+    const dir = process.argv[3] || process.cwd();
     const here = projectId(dir);
+    const signals = [...scanProject(dir), ...claudeEnvSignals(os.homedir())];
+    // One round trip for the whole scan, not one per file/dependency/MCP server.
     // In order, not side by side: the list has to reflect what this scan just completed,
     // and the first-ever call mints the anonymous identity, which two at once would do twice.
-    const progress = await callTool(url, "record_activities", { signals, project: here });
+    const progress = await callTool(url, "record_activities", { signals, project: here }, SYNC_TIMEOUT_MS);
     if (!progress) return;
-    const overview = await callTool(url, "progress", { project: here });
+    const overview = await callTool(url, "progress", { project: here }, SYNC_TIMEOUT_MS);
     if (overview?.upNext) writeUpNext(here, overview.upNext);
-    const next = progress.next;
-    const rank = progress.rank?.rank?.name ?? "Novice";
-    const points = progress.points ?? 0;
-    const tracks = (progress.activeCartridgeIds ?? []).join(", ");
-    const lines = [
-      `learnmcp is tracking your progress. Rank ${rank} · ${points} pts.`,
-      tracks ? `Active learning tracks: ${tracks}.` : "No cartridges active yet.",
-      next?.title ? `Suggested next: ${next.title} (${next.cartridgeId}) — ${next.why ?? ""}`.trim() : "",
-    ].filter(Boolean);
-
-    // Two audiences, two channels. additionalContext is wrapped in a system reminder for
-    // the model and never rendered, so on its own the user sees nothing at all — which
-    // reads as learnmcp being broken. systemMessage is the only part they actually see.
-    emit({
-      systemMessage: block(
-        gold(`${rank} · ${points} pts`),
-        next?.title
-          ? `${orange(link(next.docs, `Next: ${next.title}`))} ${dim(`(${next.cartridgeId})`)}`
-          : null,
-      ),
-      hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: lines.join(" ") },
+    writeSummary(here, {
+      rank: progress.rank?.rank?.name ?? "Novice",
+      points: progress.points ?? 0,
+      tracks: progress.activeCartridgeIds ?? [],
+      next: progress.next,
     });
     return;
   }

@@ -33,7 +33,11 @@ function fakeSupabase(seed: Record<string, unknown[]> = {}, maxRows = Infinity) 
       // Honour limit/offset like PostgREST, and cap a response at `maxRows`.
       const offset = Number(query.match(/offset=(\d+)/)?.[1] ?? 0);
       const limit = Math.min(Number(query.match(/limit=(\d+)/)?.[1] ?? Infinity), maxRows);
-      return new Response(JSON.stringify((tables[table] ?? []).slice(offset, offset + limit)), { status: 200 });
+      const all = tables[table] ?? [];
+      const headers: Record<string, string> = {};
+      const prefer = (init.headers as Record<string, string> | undefined)?.Prefer ?? "";
+      if (prefer.includes("count=exact")) headers["content-range"] = `${offset}-${offset + limit - 1}/${all.length}`;
+      return new Response(JSON.stringify(all.slice(offset, offset + limit)), { status: 200, headers });
     }
     if (table === "learners" && method === "PATCH") {
       // Mirrors the real unique index: reject a handle already held by a DIFFERENT row.
@@ -257,5 +261,53 @@ describe("CloudStore — hydrate, evaluate, flush", () => {
     const { store } = await service(fake.fetchImpl as never);
     await store.flush();
     expect(fake.writes).toHaveLength(0);
+  });
+
+  it("reads every page of a long log, with a total, in parallel", async () => {
+    const stored = Array.from({ length: 5200 }, (_, i) => ({
+      payload: { kind: "file", path: `f${i}.md`, event: "exists" },
+    }));
+    const fake = fakeSupabase({ learner_signals: stored });
+    let inFlight = 0;
+    let peak = 0;
+    const slow = async (url: string, init?: RequestInit) => {
+      if (!url.includes("learner_signals")) return fake.fetchImpl(url, init);
+      inFlight++;
+      peak = Math.max(peak, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight--;
+      return fake.fetchImpl(url, init);
+    };
+    const store = new CloudStore({ url: "https://x.supabase.co", key: "svc", fetchImpl: slow as never });
+    await store.hydrate("learner-1");
+    expect(store.getSignals("learner-1")).toHaveLength(5200);
+    expect(peak).toBeGreaterThan(1);
+  });
+
+  it("still reads everything when the server caps pages below ours", async () => {
+    const stored = Array.from({ length: 1234 }, (_, i) => ({
+      payload: { kind: "file", path: `g${i}.md`, event: "exists" },
+    }));
+    const fake = fakeSupabase({ learner_signals: stored }, 300);
+    const store = new CloudStore({ url: "https://x.supabase.co", key: "svc", fetchImpl: fake.fetchImpl as never });
+    await store.hydrate("learner-1");
+    expect(store.getSignals("learner-1")).toHaveLength(1234);
+  });
+
+  it("falls back to paging in order when no total comes back", async () => {
+    const stored = Array.from({ length: 2100 }, (_, i) => ({
+      payload: { kind: "file", path: `h${i}.md`, event: "exists" },
+    }));
+    const fake = fakeSupabase({ learner_signals: stored });
+    const noTotal = async (url: string, init: RequestInit = {}) => {
+      const { Prefer: _drop, ...rest } = (init.headers ?? {}) as Record<string, string>;
+      return fake.fetchImpl(url, { ...init, headers: rest });
+    };
+    const store = new CloudStore({ url: "https://x.supabase.co", key: "svc", fetchImpl: noTotal as never });
+    await store.hydrate("learner-1");
+    const paths = store.getSignals("learner-1").map((x) => (x as { path: string }).path);
+    expect(paths).toHaveLength(2100);
+    expect(paths[0]).toBe("h0.md");
+    expect(paths[2099]).toBe("h2099.md");
   });
 });

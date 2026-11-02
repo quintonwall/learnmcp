@@ -17,6 +17,10 @@ import type { FetchLike } from "./remote.js";
 
 const IDEMPOTENT = new Set<Signal["kind"]>(["file", "dependency", "mcp.added", "skill", "env"]);
 
+const PAGE_SIZE = 1000;
+/** Pages read at once: enough to hide latency without hammering the database. */
+const PAGE_CONCURRENCY = 6;
+
 interface Row {
   [k: string]: unknown;
 }
@@ -87,17 +91,43 @@ export class CloudStore implements ProgressStore {
    * default), and a learner who has been scanned a few times easily has more. A truncated
    * log hides later signals from the engine and from the dedupe check, so a re-sent state
    * signal is "new", collides with idx_signals_idempotent, and progress never advances.
-   * Paging until an empty page also holds if the server's cap is lower than ours.
+   *
+   * The first page also asks for the total, so every other page can be fetched at once:
+   * paging one request after another made each call as slow as the log is long, which grew
+   * past the plugin's timeout. The page size is whatever the first page returned, so a
+   * server cap below ours still lines up, and a final sequential pass until an empty page
+   * covers a missing total or rows written while we were reading.
    */
   private async allSignalRows(q: string): Promise<Row[]> {
-    const rows: Row[] = [];
+    const page = (offset: number) =>
+      `/learner_signals?${q}&select=payload&order=id.asc&limit=${PAGE_SIZE}&offset=${offset}`;
+
+    const head = await this.req("GET", page(0), undefined, "count=exact");
+    const rows = (await head.json()) as Row[];
+    if (rows.length === 0) return rows;
+
+    const total = Number(head.headers.get("content-range")?.split("/")[1]);
+    const step = rows.length;
+    if (Number.isFinite(total) && total > step) {
+      const offsets: number[] = [];
+      for (let o = step; o < total; o += step) offsets.push(o);
+      const pages = new Array<Row[]>(offsets.length);
+      let next = 0;
+      await Promise.all(
+        Array.from({ length: Math.min(PAGE_CONCURRENCY, offsets.length) }, async () => {
+          while (next < offsets.length) {
+            const i = next++;
+            pages[i] = (await this.req("GET", page(offsets[i]!)).then((r) => r.json())) as Row[];
+          }
+        }),
+      );
+      for (const p of pages) rows.push(...p);
+    }
+
     for (;;) {
-      const page = (await this.req(
-        "GET",
-        `/learner_signals?${q}&select=payload&order=id.asc&limit=1000&offset=${rows.length}`,
-      ).then((r) => r.json())) as Row[];
-      if (page.length === 0) return rows;
-      rows.push(...page);
+      const more = (await this.req("GET", page(rows.length)).then((r) => r.json())) as Row[];
+      if (more.length === 0) return rows;
+      rows.push(...more);
     }
   }
 
