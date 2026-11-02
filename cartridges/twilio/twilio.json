@@ -423,6 +423,16 @@
           }
         ]
       }
+    },
+    {
+      "id": "rickroll",
+      "name": "Rickroll",
+      "tier": "bronze",
+      "description": "Sent an SMS that was never going to give you up.",
+      "criteria": {
+        "type": "bash",
+        "matches": "^(?=.*[Nn][Ee][Vv][Ee][Rr] (?:[Gg][Oo][Ii][Nn][Gg] [Tt][Oo]|[Gg][Oo][Nn][Nn][Aa]) [Gg][Ii][Vv][Ee] (?:[Yy][Oo][Uu] )?[Uu][Pp])(?=.*(?:[Tt]wilio|[Mm]essages|[Ss][Mm][Ss]|/send))"
+      }
     }
   ]
 }
