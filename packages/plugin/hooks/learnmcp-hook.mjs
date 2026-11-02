@@ -349,6 +349,48 @@ function readStdin() {
 
 const emit = (obj) => process.stdout.write(JSON.stringify(obj));
 
+/**
+ * Tell the model, not the user, which objective is still open before it starts working.
+ * Badges are earned by using the right skill or tool, and people don't know the skill
+ * names — so the model has to reach for them unprompted. additionalContext is the model's
+ * channel; nothing is printed to the user.
+ *
+ * Once per objective per session: repeating it on every prompt would be noise, and an
+ * ignored nudge shouldn't be re-sent. Short prompts ("yes", "continue") are skipped.
+ */
+async function nudge(url, event, project) {
+  const prompt = String(event.prompt ?? "").trim();
+  if (prompt.length < 20) return;
+
+  const rec = await callTool(url, "learn_next", { project });
+  if (!rec?.objectiveId) return;
+
+  const seenFile = path.join(os.tmpdir(), `learnmcp-nudged-${event.session_id || "session"}.json`);
+  let seen = [];
+  try {
+    seen = JSON.parse(readFileSync(seenFile, "utf8"));
+  } catch {
+    /* first nudge this session */
+  }
+  const key = `${rec.cartridgeId}/${rec.objectiveId}`;
+  if (seen.includes(key)) return;
+  try {
+    writeFileSync(seenFile, JSON.stringify([...seen, key]), "utf8");
+  } catch {
+    /* worst case we nudge twice */
+  }
+
+  emit({
+    hookSpecificOutput: {
+      hookEventName: "UserPromptSubmit",
+      additionalContext:
+        `learnmcp: the learner's next open objective is "${rec.title}" (${rec.cartridgeId}). ${rec.why ?? ""} ` +
+        `If it fits what they're asking for, do it with the matching skill or MCP tool rather than from memory, ` +
+        `and say which one you used. Don't force it if it doesn't fit.`,
+    },
+  });
+}
+
 async function main() {
   const cmd = process.argv[2];
   const url = remoteUrl();
@@ -399,7 +441,12 @@ async function main() {
   // post-tool-use / user-prompt-submit
   const project = projectId(event.cwd || process.cwd());
   const signals = eventToSignals(event);
-  if (!signals.length) return;
+  if (!signals.length) {
+    // An ordinary prompt (not a slash command) earns nothing, but it's the moment before
+    // the work starts — the one time a nudge can still change which skills get used.
+    if (event.hook_event_name === "UserPromptSubmit") await nudge(url, event, project);
+    return;
+  }
 
   const badges = [];
   const objectives = [];
