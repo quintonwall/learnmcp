@@ -11,7 +11,7 @@ import {
   type Runtime,
 } from "./config.js";
 import { eventToSignals, type HookEvent } from "./hookAdapter.js";
-import { scanProject, claudeEnvSignals } from "./scanner.js";
+import { scanProject, claudeEnvSignals, isEnvFile, envKeyNames } from "./scanner.js";
 import { recordRemote, callRemoteTool, remoteUrl } from "./remoteClient.js";
 import { generateCartridge } from "./generate.js";
 import { httpFetchText, createAnthropicComplete } from "./generate-anthropic.js";
@@ -40,18 +40,39 @@ function readStdin(): Promise<string> {
   });
 }
 
-function enrichFileContent(sig: Signal, cwd?: string): Signal {
-  if (sig.kind !== "file" || !cwd) return sig;
+function enrichFileContent(sig: Signal, cwd?: string): Signal[] {
+  if (sig.kind !== "file") return [sig];
+  if (isEnvFile(sig.path)) {
+    // Secrets: never forward content. Content already on the signal is dropped, and the
+    // variable names are read from disk instead, so editing a .env still registers its keys.
+    // Handled before anything else, so a missing cwd can't skip the redaction.
+    const { content: _drop, ...bare } = sig;
+    const keys: Signal[] = [];
+    if (cwd) {
+      try {
+        const abs = path.isAbsolute(sig.path) ? sig.path : path.join(cwd, sig.path);
+        if (statSync(abs).size <= MAX_CONTENT) {
+          for (const key of envKeyNames(readFileSync(abs, "utf8"))) {
+            keys.push({ kind: "env", key, ...(sig.project ? { project: sig.project } : {}) });
+          }
+        }
+      } catch {
+        /* unreadable — the path alone */
+      }
+    }
+    return [bare, ...keys];
+  }
+  if (!cwd) return [sig];
   const base = path.basename(sig.path);
   const ext = path.extname(sig.path);
-  if (!TEXT_EXTS.has(ext) && !TEXT_BASENAMES.has(base)) return sig;
+  if (!TEXT_EXTS.has(ext) && !TEXT_BASENAMES.has(base)) return [sig];
   try {
     const abs = path.isAbsolute(sig.path) ? sig.path : path.join(cwd, sig.path);
-    if (statSync(abs).size <= MAX_CONTENT) return { ...sig, content: readFileSync(abs, "utf8") };
+    if (statSync(abs).size <= MAX_CONTENT) return [{ ...sig, content: readFileSync(abs, "utf8") }];
   } catch {
     /* unreadable — leave as-is */
   }
-  return sig;
+  return [sig];
 }
 
 function recordSummary(r: RecordResult): string {
@@ -130,7 +151,7 @@ async function recordViaCloud(signals: Signal[]): Promise<string | null> {
 }
 
 async function postToolUse(rt: Runtime, event: HookEvent): Promise<void> {
-  const signals = eventToSignals(event).map((s) => enrichFileContent(s, event.cwd));
+  const signals = eventToSignals(event).flatMap((s) => enrichFileContent(s, event.cwd));
 
   const cloud = await recordViaCloud(signals);
   if (cloud !== null) {

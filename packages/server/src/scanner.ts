@@ -27,6 +27,57 @@ const TEXT_EXTS = new Set([".md", ".yml", ".yaml", ".sql", ".toml", ".txt", ".js
 const TEXT_BASENAMES = new Set([".gitignore", "CODEOWNERS", ".env", "Dockerfile"]);
 const MAX_CONTENT_BYTES = 128 * 1024;
 
+/** `.env`, `.env.local`, `.env.production`, `prod.env` — files that hold secrets. */
+export function isEnvFile(rel: string): boolean {
+  // Split on both separators and ignore case: a Windows client sends `config\.env.local`,
+  // which path.basename on a POSIX server would treat as one long file name.
+  const base = (rel.split(/[\\/]/).pop() ?? "").toLowerCase();
+  return base === ".env" || base.startsWith(".env.") || base.endsWith(".env");
+}
+
+/**
+ * The variable names in a dotenv file, never the values. Content of these files must not
+ * leave the machine: they hold credentials, and nothing downstream needs more than "this
+ * key is set" (the `env` matcher).
+ */
+export function envKeyNames(text: string): string[] {
+  const keys = new Set<string>();
+  // True when a line has an odd number of unescaped quotes of some kind, i.e. it may open a
+  // value that runs onto later lines (a private key, say). Parsing dotenv's quoting rules
+  // line by line is a losing game — `KEY=`, `KEY:`, dotted names, escapes — and a missed
+  // case turns a line of secret (padded base64 like `YWJjZA==`) into a "key name". So when
+  // a line is ambiguous, stop reading: keys already seen are safe, later ones are dropped.
+  const mayOpenMultiline = (line: string): boolean => {
+    // Parsers disagree about what a backslash before a quote means, so don't guess: any
+    // such line is ambiguous. Without one, escapes can't matter and plain parity is exact.
+    if (/\\["'`]/.test(line)) return true;
+    for (const q of ['"', "'", "`"]) {
+      if (line.split(q).length % 2 === 0) return true;
+    }
+    return false;
+  };
+  for (const line of text.split(/\r?\n/)) {
+    if (/^\s*#/.test(line)) continue;
+    // Upper-snake names only: what real variables look like.
+    const m = line.match(/^\s*(?:export\s+)?([A-Z_][A-Z0-9_]*)\s*[=:]/);
+    if (m) keys.add(m[1]!);
+    if (mayOpenMultiline(line)) break;
+  }
+  return [...keys];
+}
+
+/**
+ * Applied to every signal the server ingests, whatever client sent it: an older plugin
+ * still ships `.env` content, and the server must not store it. The content is replaced by
+ * the key names it holds, which is all the `env` matcher needs.
+ */
+export function scrubSecrets(signal: Signal): Signal[] {
+  if (signal.kind !== "file" || !isEnvFile(signal.path) || signal.content === undefined) return [signal];
+  const { content, ...bare } = signal;
+  const project = signal.project ? { project: signal.project } : {};
+  return [bare, ...envKeyNames(content).map((key): Signal => ({ kind: "env", key, ...project }))];
+}
+
 export interface ScanOptions {
   maxDepth?: number;
   now?: () => number;
@@ -47,6 +98,18 @@ export function scanProject(root: string, opts: ScanOptions = {}): Signal[] {
     const abs = path.join(root, rel);
     const base = path.basename(rel);
     const ext = path.extname(rel);
+    if (isEnvFile(rel)) {
+      // Names only: report which keys are set, and the file's existence, but no content.
+      try {
+        if (statSync(abs).size <= MAX_CONTENT_BYTES) {
+          for (const key of envKeyNames(readFileSync(abs, "utf8"))) signals.push({ kind: "env", key });
+        }
+      } catch {
+        /* unreadable — emit path only */
+      }
+      signals.push({ kind: "file", path: rel, event: "exists" });
+      continue;
+    }
     const wantContent = TEXT_EXTS.has(ext) || TEXT_BASENAMES.has(base);
     let content: string | undefined;
     if (wantContent) {

@@ -8,6 +8,7 @@ import {
 } from "@learnmcp/schema";
 import type { CartridgeRegistry } from "./registry.js";
 import type { ProgressStore, StoredBadge } from "./store.js";
+import { scrubSecrets } from "./scanner.js";
 import {
   detectionStrength,
   evaluateProject,
@@ -99,6 +100,8 @@ export class ProgressService {
    * a badge/objective as new the first time it is granted.
    */
   recordMany(scope: string, signals: Signal[], project?: string): RecordResult {
+    // Whatever the client sent, secrets in it are not stored.
+    signals = signals.flatMap(scrubSecrets);
     // Tag what the caller observed with the project it was observed in, so suggestions can
     // follow the app being built. A signal that already names a project keeps it.
     if (project) signals = signals.map((s) => (s.project ? s : { ...s, project }));
