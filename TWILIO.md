@@ -45,6 +45,7 @@ A trial account can only text numbers you have verified, and each message starts
 sending fails with error 21608.
 
 Put the values in a `.env` file in your project, and make sure `.env` is in `.gitignore`:
+(Doing this earns **Keys in the Env**: learnmcp sees the variable names — never the values. It doesn't check your `.gitignore`, so confirm `.env` is ignored yourself.)
 
 ```
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

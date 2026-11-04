@@ -229,6 +229,42 @@
       "recommended": true
     },
     {
+      "id": "keep-credentials-in-env",
+      "title": "Keep your Twilio credentials in the environment, not in code",
+      "why": "Credentials read from environment variables stay out of your source and your history — hard-coded keys are how Twilio accounts get abused, and one commit makes them permanent.",
+      "badge": "keys-in-the-env",
+      "criteria": {
+        "allOf": [
+          {
+            "type": "env",
+            "key": "TWILIO_ACCOUNT_SID"
+          },
+          {
+            "anyOf": [
+              {
+                "type": "env",
+                "key": "TWILIO_AUTH_TOKEN"
+              },
+              {
+                "allOf": [
+                  {
+                    "type": "env",
+                    "key": "TWILIO_API_KEY_SID"
+                  },
+                  {
+                    "type": "env",
+                    "key": "TWILIO_API_KEY_SECRET"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "docs": "https://www.twilio.com/docs/usage/secure-credentials",
+      "recommended": true
+    },
+    {
       "id": "build-for-reliability",
       "title": "Build in retries, idempotency and status tracking",
       "why": "Networks fail and callbacks arrive twice — reliability patterns are what separate a demo from something you can leave running.",
@@ -383,6 +419,12 @@
       "name": "Scoped Credentials",
       "tier": "silver",
       "description": "Reminded to use API keys rather than the Auth Token."
+    },
+    {
+      "id": "keys-in-the-env",
+      "name": "Keys in the Env",
+      "tier": "bronze",
+      "description": "Set up Twilio credentials as environment variables."
     },
     {
       "id": "dependable",
