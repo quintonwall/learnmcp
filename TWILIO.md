@@ -45,13 +45,17 @@ A trial account can only text numbers you have verified, and each message starts
 sending fails with error 21608.
 
 Put the values in a `.env` file in your project, and make sure `.env` is in `.gitignore`:
-(Doing this earns **Keys in the Env**: learnmcp sees the variable names — never the values. It doesn't check your `.gitignore`, so confirm `.env` is ignored yourself.)
 
 ```
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_auth_token
 TWILIO_FROM_NUMBER=+15551234567
 ```
+
+Doing this earns **Keys in the Env**. learnmcp sees only the variable names, never the values,
+and it doesn't check your `.gitignore`, so confirm `.env` is ignored yourself. The badge
+arrives at your next session start, when learnmcp syncs the project in the background; the
+very first session in a project only does that first sync.
 
 Phone numbers must be in **E.164** format: `+`, country code, number, no spaces —
 `+14155550123`.

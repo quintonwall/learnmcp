@@ -10,8 +10,10 @@ because a marketplace install only ever ships this directory.
 Claude Code
   │
   ├─ hooks/learnmcp-hook.mjs ───── POST signals ────┐
-  │    SessionStart      → scan the project          │
-  │    UserPromptSubmit  → catch slash commands       ▼
+  │    SessionStart      → sync the project (in the  │
+  │                        background)         │
+  │    UserPromptSubmit  → catch slash commands,      ▼
+  │                        nudge open objectives
   │    PostToolUse       → catch tool calls    https://learnmcp.ai/mcp
   │                                                    ▲
   ├─ hooks/mcp-proxy.mjs ───────── tools/call ─────────┘
@@ -27,7 +29,10 @@ Claude Code
 Progress lives entirely on the hosted server, not on this machine. Both scripts share one
 identity: the first call mints an anonymous learner and saves a bearer token to
 `~/.learnmcp/token`; every call after that sends it. That file is the only local state
-this plugin keeps.
+this plugin keeps for identity. It also caches two small files per project, written by the
+background sync and read by the hooks so they never wait on the network:
+`~/.learnmcp/session-<project>.json` (last rank and next step) and
+`~/.learnmcp/upnext-<project>.json` (the open objective for each track).
 
 **Why two scripts instead of one.** Claude Code's actual MCP client — the thing the model
 calls tools through — has no way to attach a custom header to a `type: "http"` server
@@ -44,13 +49,24 @@ would be two different, disconnected identities.
   `record_activity`, `list_badges`, `progress`, `my_progress`, `leaderboard`,
   `list_cartridges`, `add_cartridge`, `generate_cartridge`, `claim_profile`, …).
 - **`hooks/hooks.json`** — the passive-monitoring layer, all running `learnmcp-hook.mjs`:
-  - `SessionStart` → scans the project *and your installed plugins* (a plugin-supplied MCP
-    server is invisible to a project-only scan), then shows a one-line progress summary.
+  - `SessionStart` → starts a **background** sync (the project scan *and your installed
+    plugins* — a plugin-supplied MCP server is invisible to a project-only scan) and returns
+    at once with the summary the last sync saved. The first session in a project has nothing
+    saved yet, so it says it is syncing; the summary appears from the next session. The sync
+    can take as long as the server needs, so a slow server never delays session start.
   - `UserPromptSubmit` → catches slash commands. Most plugins expose their value as
     commands rather than MCP tools — `/postman:mock` is a command, not an
-    `mcp__postman__mock` call — so without this the whole surface is invisible.
+    `mcp__postman__mock` call — so without this the whole surface is invisible. On an
+    ordinary prompt it also tells the model (not you) which objectives are still open, read
+    from the cached `upnext` file, once per objective per session, so it can reach for the
+    matching skill or tool.
   - `PostToolUse` (Bash / Edit / Write / Skill / SlashCommand / MCP tools) → records the
     resulting signal and, when you earn something, prints it.
+- **What the scan sends.** File paths, the contents of small text files (`.md`, `.json`,
+  `.yml`, `.toml`, `.txt`, `Dockerfile`, `.gitignore`) for content matching, dependency names
+  and MCP server names. For `.env` files it sends only the variable *names* — never the
+  values — and the server drops `.env` content from any client that still sends it. Nothing
+  scrubs secrets from the other text files, so keep credentials out of them.
 - **`commands/`** — `/learn`, `/badges`, `/progress`, `/cartridges`, `/cartridge`.
 - **`hooks/register.tsx`** — the progress band above the prompt, named under `modules` in
   `hooks.json`. Unlike the two scripts it's a Claude Code hooks module: it runs inside
