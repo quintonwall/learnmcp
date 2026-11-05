@@ -368,8 +368,8 @@ export const register: Register = on => {
                 </Button>
                 <Text color={color} bold> {c.id.padEnd(12)}</Text>
                 <Text> </Text>
-                {meter($, e, fraction, color)}
-                <Text color={color} bold> {c.completed}/{c.total}</Text>
+                {meter($, e, fraction, heat(fraction))}
+                <Text color={heat(fraction)} bold> {c.completed}/{c.total}</Text>
                 {here.includes(c.id) && <Text dimColor> ● here</Text>}
                 {chosen === c.id && <Text color="#ff8700"> ← following</Text>}
               </Box>
@@ -387,7 +387,7 @@ export const register: Register = on => {
                 (c.steps ?? []).map(step => (
                   <Box flexDirection="column" marginLeft={4}>
                     <Text>
-                      <Text color={step.done ? '#2ea043' : step === nextStep ? color : undefined} dimColor={step.done}>
+                      <Text color={step.done ? '#2ea043' : step === nextStep ? '#ff8700' : undefined}>
                         {step.done ? '✓' : step === nextStep ? '▶' : '○'} {step.title}
                       </Text>
                       {step.badge && <Text dimColor> → {titleCase(step.badge)}</Text>}
